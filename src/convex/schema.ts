@@ -54,6 +54,7 @@ const schema = defineSchema(
       message: v.string(),
       rating: v.number(),
       createdAt: v.number(),
+      status: v.union(v.literal("unresolved"), v.literal("resolved")),
     })
       .index("by_businessId", ["businessId"])
       .index("by_businessSlug", ["businessSlug"])

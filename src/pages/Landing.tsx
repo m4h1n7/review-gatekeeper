@@ -14,6 +14,7 @@ import {
   Smartphone,
   Zap,
   BarChart3,
+  LayoutDashboard,
 } from "lucide-react";
 
 function GlassPanel({
@@ -162,14 +163,11 @@ export default function Landing() {
             <Button
               size="lg"
               variant="outline"
-              onClick={() => {
-                document
-                  .getElementById("how-it-works")
-                  ?.scrollIntoView({ behavior: "smooth" });
-              }}
+              onClick={() => navigate("/demo")}
               className="h-14 px-8 bg-white/[0.04] backdrop-blur-sm border-white/[0.08] text-zinc-300 font-semibold hover:bg-white/[0.08] cursor-pointer"
             >
-              Learn More
+              <Eye className="w-5 h-5 mr-2" />
+              Try Demo Dashboard
             </Button>
           </motion.div>
         </div>

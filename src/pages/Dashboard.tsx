@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "../convex/_generated/api";
+import { PrintableQR } from "@/components/PrintableQR";
+import { motion } from "framer-motion";
 import {
   LayoutDashboard,
   LogOut,
@@ -19,6 +21,8 @@ import {
   TestTube,
   Share2,
   CheckCircle2,
+  Copy,
+  Printer,
 } from "lucide-react";
 import { useNavigate } from "react-router";
 
@@ -131,6 +135,29 @@ export default function Dashboard() {
 
   // Show checklist for new users (fewer than 3 interactions)
   const showChecklist = overview && overview.totalVisits < 3;
+
+  const toggleFeedbackStatus = useMutation(api.feedback.toggleStatus);
+  const [feedbackStatuses, setFeedbackStatuses] = useState<Record<string, "resolved" | "unresolved">>({});
+  const [showQuickReply, setShowQuickReply] = useState<string | null>(null);
+  const [copiedTemplate, setCopiedTemplate] = useState(false);
+
+  const handleToggleStatus = async (feedbackId: string, currentStatus: "resolved" | "unresolved") => {
+    const newStatus = currentStatus === "resolved" ? "unresolved" : "resolved";
+    setFeedbackStatuses((prev) => ({ ...prev, [feedbackId]: newStatus }));
+    try {
+      await toggleFeedbackStatus({ feedbackId, status: newStatus });
+    } catch (e) {
+      console.error("Failed to toggle status:", e);
+      setFeedbackStatuses((prev) => ({ ...prev, [feedbackId]: currentStatus }));
+    }
+  };
+
+  const copyReplyTemplate = (customerName: string) => {
+    const template = `Dear ${customerName},\n\nThank you for sharing your feedback with us. We sincerely apologize for the inconvenience you experienced. Your input is invaluable, and we are actively working to improve.\n\nWe would love the opportunity to make things right. Please feel free to reach out to us directly so we can assist you further.\n\nWarm regards,\nSTAR CATCH Reviews and Feedback Agency Bd`;
+    navigator.clipboard.writeText(template);
+    setCopiedTemplate(true);
+    setTimeout(() => setCopiedTemplate(false), 2000);
+  };
 
   const displayStats = selectedBusinessId && stats ? stats : overview ? {
     totalVisits: overview.totalVisits,
@@ -410,96 +437,147 @@ export default function Dashboard() {
               </div>
             </GlassPanel>
 
-            {/* Recent Feedback Table */}
-            {feedbacks && feedbacks.length > 0 && (
-              <GlassPanel className="overflow-hidden mb-8">
-                <div className="p-6 pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div>
-                    <h3 className="text-sm font-semibold text-white">
-                      Recent Private Feedback
-                    </h3>
-                    <p className="text-xs text-[#A1A1AA] mt-0.5">
-                      Latest submissions from dissatisfied customers
-                    </p>
+            {/* QR Code + Feedback Table Grid */}
+            <div className="grid lg:grid-cols-3 gap-6 mb-8">
+              {/* QR Code Card */}
+              {overview.businesses.length > 0 && (
+                <PrintableQR
+                  slug={selectedBusinessId
+                    ? overview.businesses.find((b) => b.id === selectedBusinessId)?.slug ?? overview.businesses[0].slug
+                    : overview.businesses[0].slug
+                  }
+                  businessName={selectedBusinessId
+                    ? overview.businesses.find((b) => b.id === selectedBusinessId)?.name ?? overview.businesses[0].name
+                    : overview.businesses[0].name
+                  }
+                />
+              )}
+
+              {/* Recent Feedback Table */}
+              {feedbacks && feedbacks.length > 0 && (
+                <GlassPanel className="lg:col-span-2 overflow-hidden">
+                  <div className="p-6 pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div>
+                      <h3 className="text-sm font-semibold text-white">
+                        Recent Private Feedback
+                      </h3>
+                      <p className="text-xs text-[#A1A1AA] mt-0.5">
+                        Latest submissions from dissatisfied customers
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDownloadCSV}
+                      className="border-white/10 bg-white/5 hover:bg-white/10 text-[#A1A1AA] hover:text-white cursor-pointer shrink-0"
+                    >
+                      <Download className="w-4 h-4 mr-1.5" />
+                      Download CSV
+                    </Button>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleDownloadCSV}
-                    className="border-white/10 bg-white/5 hover:bg-white/10 text-[#A1A1AA] hover:text-white cursor-pointer shrink-0"
-                  >
-                    <Download className="w-4 h-4 mr-1.5" />
-                    Download CSV
-                  </Button>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-t border-white/5">
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-[#A1A1AA] uppercase tracking-wider">
-                          Customer
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-[#A1A1AA] uppercase tracking-wider">
-                          Rating
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-[#A1A1AA] uppercase tracking-wider hidden sm:table-cell">
-                          Phone
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-[#A1A1AA] uppercase tracking-wider hidden md:table-cell">
-                          Email
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-[#A1A1AA] uppercase tracking-wider">
-                          Feedback
-                        </th>
-                        <th className="px-6 py-3 text-right text-xs font-semibold text-[#A1A1AA] uppercase tracking-wider">
-                          Time
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/5">
-                      {feedbacks.map((fb) => (
-                        <tr
-                          key={fb.id}
-                          className="hover:bg-white/[0.03] transition-colors"
-                        >
-                          <td className="px-6 py-4">
-                            <span className="text-sm font-medium text-white">
-                              {fb.customerName}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className="text-amber-400 text-sm">
-                              {"★".repeat(fb.rating)}
-                              {"☆".repeat(5 - fb.rating)}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 hidden sm:table-cell">
-                            <span className="text-sm text-[#A1A1AA]">
-                              {fb.phone}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 hidden md:table-cell">
-                            <span className="text-sm text-[#A1A1AA]">
-                              {fb.email}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 max-w-[200px]">
-                            <p className="text-sm text-[#A1A1AA] truncate">
-                              {fb.message}
-                            </p>
-                          </td>
-                          <td className="px-6 py-4 text-right">
-                            <span className="text-xs text-[#A1A1AA]/60 whitespace-nowrap">
-                              {formatTime(fb.createdAt)}
-                            </span>
-                          </td>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-t border-white/5">
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-[#A1A1AA] uppercase tracking-wider">
+                            Customer
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-[#A1A1AA] uppercase tracking-wider">
+                            Rating
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-[#A1A1AA] uppercase tracking-wider hidden md:table-cell">
+                            Feedback
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-[#A1A1AA] uppercase tracking-wider">
+                            Status
+                          </th>
+                          <th className="px-4 py-3 text-right text-xs font-semibold text-[#A1A1AA] uppercase tracking-wider">
+                            Actions
+                          </th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </GlassPanel>
-            )}
+                      </thead>
+                      <tbody className="divide-y divide-white/5">
+                        {feedbacks.map((fb) => {
+                          const status = feedbackStatuses[fb.id] ?? (fb as any).status ?? "unresolved";
+                          return (
+                            <tr
+                              key={fb.id}
+                              className="hover:bg-white/[0.03] transition-colors"
+                            >
+                              <td className="px-4 py-3">
+                                <span className="text-sm font-medium text-white">
+                                  {fb.customerName}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3">
+                                <span className="text-amber-400 text-sm">
+                                  {"★".repeat(fb.rating)}
+                                  {"☆".repeat(5 - fb.rating)}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 max-w-[200px] hidden md:table-cell">
+                                <p className="text-sm text-[#A1A1AA] truncate">
+                                  {fb.message}
+                                </p>
+                              </td>
+                              <td className="px-4 py-3">
+                                <button
+                                  onClick={() => handleToggleStatus(fb.id, status)}
+                                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors cursor-pointer ${status === "resolved" ? "bg-[#16A34A]" : "bg-red-500/80"}`}
+                                >
+                                  <span
+                                    className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
+                                      status === "resolved" ? "translate-x-[18px]" : "translate-x-[3px]"
+                                    }`}
+                                  />
+                                </button>
+                                <span className={`ml-2 text-[10px] font-semibold ${status === "resolved" ? "text-[#16A34A]" : "text-red-400"}`}>
+                                  {status === "resolved" ? "Resolved" : "Unresolved"}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-right">
+                                <div className="relative inline-block">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setShowQuickReply(showQuickReply === fb.id ? null : fb.id)}
+                                    className="h-7 px-2 text-[10px] text-[#A1A1AA] hover:text-white hover:bg-white/5 cursor-pointer"
+                                  >
+                                    <ExternalLink className="w-3 h-3 mr-1" />
+                                    Quick Reply
+                                  </Button>
+                                  {showQuickReply === fb.id && (
+                                    <div className="absolute right-0 top-9 z-30 w-72 rounded-xl border border-white/10 bg-[#18181B]/95 backdrop-blur-xl shadow-2xl p-4">
+                                      <p className="text-xs font-semibold text-white mb-2">Quick Reply Template</p>
+                                      <p className="text-xs text-[#A1A1AA] leading-relaxed mb-3">
+                                        Dear {fb.customerName},<br /><br />
+                                        Thank you for sharing your feedback. We sincerely apologize for the inconvenience. We are actively working to improve based on your input.
+                                      </p>
+                                      <Button
+                                        size="sm"
+                                        onClick={() => copyReplyTemplate(fb.customerName)}
+                                        className="w-full h-8 bg-[#16A34A] hover:bg-[#16A34A]/90 text-white text-xs cursor-pointer"
+                                      >
+                                        {copiedTemplate ? (
+                                          <><CheckCircle2 className="w-3 h-3 mr-1" /> Copied to Clipboard</>
+                                        ) : (
+                                          <><Copy className="w-3 h-3 mr-1" /> Copy Template</>
+                                        )}
+                                      </Button>
+                                      <p className="text-[10px] text-[#A1A1AA]/50 mt-2 text-center">Paste into WhatsApp or SMS to send</p>
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </GlassPanel>
+              )}
+            </div>
 
             {feedbacks && feedbacks.length === 0 && selectedBusinessId && (
               <GlassPanel className="p-8 text-center mb-8">

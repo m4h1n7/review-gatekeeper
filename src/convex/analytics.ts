@@ -83,6 +83,7 @@ export const recentFeedbacks = query({
       message: f.message,
       rating: f.rating,
       createdAt: f.createdAt,
+      status: f.status,
     }));
   },
 });

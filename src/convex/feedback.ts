@@ -30,6 +30,7 @@ export const submit = mutation({
       message: args.message,
       rating: args.rating,
       createdAt: Date.now(),
+      status: "unresolved",
     });
     return { id };
   },
@@ -49,6 +50,18 @@ export const logRedirect = mutation({
       type: "redirect",
       createdAt: Date.now(),
     });
+    return { ok: true };
+  },
+});
+
+/** Toggle feedback status between resolved and unresolved */
+export const toggleStatus = mutation({
+  args: {
+    feedbackId: v.string(),
+    status: v.union(v.literal("unresolved"), v.literal("resolved")),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.feedbackId as any, { status: args.status });
     return { ok: true };
   },
 });

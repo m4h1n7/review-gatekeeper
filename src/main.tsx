@@ -17,6 +17,7 @@ const Dashboard = lazy(() => import("./pages/Dashboard.tsx"));
 const Admin = lazy(() => import("./pages/Admin.tsx"));
 const Review = lazy(() => import("./pages/Review.tsx"));
 const Pricing = lazy(() => import("./pages/Pricing.tsx"));
+const DemoDashboard = lazy(() => import("./pages/DemoDashboard.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 
 // Simple loading fallback for route transitions
@@ -138,6 +139,7 @@ createRoot(document.getElementById("root")!).render(
               />
               <Route path="/admin" element={<Admin />} />
               <Route path="/pricing" element={<Pricing />} />
+              <Route path="/demo" element={<DemoDashboard />} />
               <Route path="/review/:clientSlug" element={<Review />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
