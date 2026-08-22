@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useAuth } from "@/hooks/use-auth";
 import { useMutation } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { motion, AnimatePresence } from "framer-motion";
@@ -10,24 +9,25 @@ import {
   ArrowRight,
   ArrowLeft,
   Building2,
-  Phone,
   Globe,
   Link2,
   CheckCircle2,
   Loader2,
+  ExternalLink,
 } from "lucide-react";
 import { useNavigate } from "react-router";
 
 const CATEGORIES = [
-  "Restaurant",
+  "Restaurant & Cafe",
   "Salon & Spa",
   "Retail Store",
   "Hotel & Hospitality",
-  "Healthcare",
-  "Automotive",
+  "Healthcare & Dental",
+  "Automotive & Garage",
   "Real Estate",
   "Professional Services",
-  "Education",
+  "Education & Training",
+  "Fitness & Gym",
   "Other",
 ];
 
@@ -40,7 +40,6 @@ function GlassPanel({ children, className = "" }: { children: React.ReactNode; c
 }
 
 export default function Onboarding() {
-  const { user } = useAuth();
   const navigate = useNavigate();
   const completeOnboarding = useMutation(api.businesses.completeOnboarding);
 
@@ -48,12 +47,8 @@ export default function Onboarding() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Step 1: Business info
   const [businessName, setBusinessName] = useState("");
   const [category, setCategory] = useState("");
-  const [phone, setPhone] = useState("");
-
-  // Step 2: Review link
   const [reviewUrl, setReviewUrl] = useState("");
   const [customSlug, setCustomSlug] = useState("");
 
@@ -61,10 +56,10 @@ export default function Onboarding() {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await completeOnboarding({
+      await completeOnboarding({
         businessName,
         category,
-        phone,
+        phone: "",
         reviewUrl,
         slug: customSlug || undefined,
       });
@@ -75,12 +70,12 @@ export default function Onboarding() {
     }
   };
 
-  const step1Valid = businessName.trim().length > 0 && category.length > 0 && phone.trim().length > 0;
+  const step1Valid = businessName.trim().length > 0 && category.length > 0;
   const step2Valid = reviewUrl.trim().length > 0;
+  const generatedSlug = customSlug || businessName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-8">
-      {/* Background */}
       <div className="fixed inset-0 -z-10">
         <div className="absolute inset-0 bg-[#0D0D0D]" />
         <div className="absolute top-1/4 left-1/3 w-[500px] h-[500px] bg-[#16A34A]/5 rounded-full blur-3xl" />
@@ -95,8 +90,8 @@ export default function Onboarding() {
               <Star className="w-5 h-5 text-white fill-white" />
             </div>
             <div className="flex flex-col">
-              <span className="font-bold text-base text-white tracking-wide leading-tight">STAR CATCH</span>
-              <span className="text-[10px] text-[#A1A1AA] tracking-wider leading-tight">Reviews and Feedback Agency Bd</span>
+              <span className="font-bold text-base text-white tracking-wide leading-tight">EasyReview Pro</span>
+              <span className="text-[10px] text-[#A1A1AA] tracking-wider leading-tight">Smart Google Review Gateway</span>
             </div>
           </div>
         </div>
@@ -121,15 +116,8 @@ export default function Onboarding() {
 
         <GlassPanel className="p-6 sm:p-8">
           <AnimatePresence mode="wait">
-            {/* Step 1: Business Info */}
             {step === 1 && (
-              <motion.div
-                key="step1"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
-              >
+              <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }}>
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-10 h-10 rounded-xl bg-[#16A34A]/10 flex items-center justify-center">
                     <Building2 className="w-5 h-5 text-[#16A34A]" />
@@ -152,30 +140,17 @@ export default function Onboarding() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-[#A1A1AA] mb-1.5">Business Category</label>
+                    <label className="block text-xs font-medium text-[#A1A1AA] mb-1.5">Industry / Category</label>
                     <select
                       value={category}
                       onChange={(e) => setCategory(e.target.value)}
                       className="w-full h-11 rounded-lg bg-white/5 border border-white/10 text-white px-3 text-sm focus:border-[#16A34A] focus:ring-[#16A34A]/20 focus:outline-none appearance-none cursor-pointer"
                     >
-                      <option value="" className="bg-[#18181B]">Select a category</option>
+                      <option value="" className="bg-[#18181B]">Select your industry</option>
                       {CATEGORIES.map((c) => (
                         <option key={c} value={c} className="bg-[#18181B]">{c}</option>
                       ))}
                     </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-[#A1A1AA] mb-1.5">Contact Phone / WhatsApp</label>
-                    <div className="relative">
-                      <Phone className="absolute left-3 top-3 h-4 w-4 text-[#A1A1AA]" />
-                      <Input
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        placeholder="+880 1XXXXXXXXX"
-                        className="pl-9 h-11 bg-white/5 border-white/10 text-white placeholder:text-[#A1A1AA]/50 focus:border-[#16A34A] focus:ring-[#16A34A]/20"
-                      />
-                    </div>
                   </div>
                 </div>
 
@@ -192,28 +167,31 @@ export default function Onboarding() {
               </motion.div>
             )}
 
-            {/* Step 2: Review Link */}
             {step === 2 && (
-              <motion.div
-                key="step2"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
-              >
+              <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }}>
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
                     <Link2 className="w-5 h-5 text-emerald-400" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-bold text-white">Review Link</h2>
+                    <h2 className="text-lg font-bold text-white">Google Review Link</h2>
                     <p className="text-xs text-[#A1A1AA]">Where should happy customers leave reviews?</p>
                   </div>
                 </div>
 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-xs font-medium text-[#A1A1AA] mb-1.5">Google Review URL</label>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-xs font-medium text-[#A1A1AA]">Google Review URL</label>
+                      <a
+                        href="https://support.google.com/business/answer/7277859"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[10px] text-[#16A34A] hover:underline flex items-center gap-1"
+                      >
+                        Where to find this? <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
                     <div className="relative">
                       <Globe className="absolute left-3 top-3 h-4 w-4 text-[#A1A1AA]" />
                       <Input
@@ -224,7 +202,7 @@ export default function Onboarding() {
                       />
                     </div>
                     <p className="mt-1.5 text-[10px] text-[#A1A1AA]/60">
-                      Find this in your Google Business Profile dashboard
+                      Open Google Maps → Find your business → Click "Write a review" → Copy that URL
                     </p>
                   </div>
 
@@ -235,22 +213,16 @@ export default function Onboarding() {
                       <Input
                         value={customSlug}
                         onChange={(e) => setCustomSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
-                        placeholder={businessName ? businessName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") : "your-business-slug"}
+                        placeholder={generatedSlug || "your-business-slug"}
                         className="pl-[72px] h-11 bg-white/5 border-white/10 text-white placeholder:text-[#A1A1AA]/50 focus:border-[#16A34A] focus:ring-[#16A34A]/20"
                       />
                     </div>
-                    <p className="mt-1.5 text-[10px] text-[#A1A1AA]/60">
-                      Letters, numbers, and dashes only. Auto-generated from your business name if left blank.
-                    </p>
                   </div>
 
-                  {/* Preview */}
                   {businessName && (
                     <div className="p-3 rounded-lg bg-white/[0.03] border border-white/5">
                       <p className="text-[10px] text-[#A1A1AA] uppercase tracking-wider mb-1">Your review link</p>
-                      <p className="text-sm text-[#16A34A] font-mono">
-                        /review/{customSlug || businessName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}
-                      </p>
+                      <p className="text-sm text-[#16A34A] font-mono">/review/{generatedSlug}</p>
                     </div>
                   )}
                 </div>
@@ -271,11 +243,7 @@ export default function Onboarding() {
                     disabled={!step2Valid || isLoading}
                     className="flex-1 h-11 bg-[#16A34A] hover:bg-[#16A34A]/90 text-white font-semibold cursor-pointer"
                   >
-                    {isLoading ? (
-                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                    ) : (
-                      <CheckCircle2 className="w-4 h-4 mr-2" />
-                    )}
+                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
                     Complete Setup
                   </Button>
                 </div>
@@ -285,7 +253,7 @@ export default function Onboarding() {
         </GlassPanel>
 
         <p className="text-center text-xs text-[#A1A1AA]/40 mt-6">
-          You can always update these settings later from your dashboard.
+          You can always update these settings from your dashboard.
         </p>
       </div>
     </div>

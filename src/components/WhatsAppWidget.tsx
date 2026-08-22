@@ -4,7 +4,7 @@ import { MessageCircle, X } from "lucide-react";
 
 const WHATSAPP_URL =
   "https://wa.me/8801673903919?text=" +
-  encodeURIComponent("Hi Star Catch team, I need help with my review dashboard");
+  encodeURIComponent("Hi EasyReview Pro team, I need help with my review dashboard");
 
 export function WhatsAppWidget() {
   const [open, setOpen] = useState(false);
@@ -28,7 +28,7 @@ export function WhatsAppWidget() {
                   <MessageCircle className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <p className="text-white font-semibold text-sm">STAR CATCH Support</p>
+                  <p className="text-white font-semibold text-sm">EasyReview Pro Support</p>
                   <p className="text-white/70 text-xs">Typically replies in minutes</p>
                 </div>
               </div>

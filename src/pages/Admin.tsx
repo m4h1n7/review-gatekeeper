@@ -164,7 +164,7 @@ export default function Admin() {
             </div>
             <div className="flex flex-col">
               <span className="font-bold text-base text-white tracking-wide leading-tight">
-                STAR CATCH
+                EasyReview Pro
               </span>
               <span className="text-[10px] text-[#A1A1AA] tracking-wider leading-tight">
                 Reviews and Feedback Agency Bd

@@ -734,7 +734,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
           <div className="py-4 px-6 text-xs text-center text-[#A1A1AA]/60 bg-white/[0.02] border-t border-white/5 rounded-b-lg">
             Powered by{" "}
             <span className="font-semibold text-[#16A34A]">
-              STAR CATCH Reviews and Feedback Agency Bd
+              EasyReview Pro
             </span>
           </div>
         </Card>

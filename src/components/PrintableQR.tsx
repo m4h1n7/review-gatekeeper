@@ -66,7 +66,7 @@ export function PrintableQR({ slug, businessName }: PrintableQRProps) {
           <div className="flex items-center gap-1.5">
             <Star className="w-4 h-4 text-[#16A34A] fill-[#16A34A]" />
             <span className="text-[10px] font-bold text-[#18181B] tracking-wide">
-              STAR CATCH
+              EasyReview Pro
             </span>
           </div>
 

@@ -100,7 +100,7 @@ export default function AdminDashboard() {
               <Star className="w-5 h-5 text-[#16A34A] fill-[#16A34A]" />
             </div>
             <div className="flex flex-col">
-              <span className="font-bold text-base text-white tracking-wide leading-tight">STAR CATCH</span>
+              <span className="font-bold text-base text-white tracking-wide leading-tight">EasyReview Pro</span>
               <span className="text-[10px] text-[#A1A1AA] tracking-wider leading-tight">Reviews and Feedback Agency Bd</span>
             </div>
           </div>
