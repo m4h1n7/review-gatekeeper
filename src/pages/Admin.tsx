@@ -15,6 +15,7 @@ import {
   ExternalLink,
   Shield,
   Lock,
+  Star,
 } from "lucide-react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
@@ -25,7 +26,7 @@ import { PaywallModal } from "@/components/PaywallModal";
 function GlassPanel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
     <div
-      className={`rounded-2xl border border-white/60 bg-white/40 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.06)] ${className}`}
+      className={`rounded-2xl border border-white/10 bg-[#18181B]/70 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.3)] ${className}`}
     >
       {children}
     </div>
@@ -112,7 +113,7 @@ export default function Admin() {
   };
 
   const inputClass =
-    "h-12 bg-white/50 border-white/60 backdrop-blur-sm focus:bg-white/70 focus:border-blue-300 focus:ring-2 focus:ring-blue-200/50 transition-all placeholder:text-slate-400";
+    "h-12 bg-white/5 border-white/10 text-white placeholder:text-[#A1A1AA]/40 focus:border-[#16A34A] focus:ring-[#16A34A]/20 transition-all";
 
   const isPro = subscription?.plan === "pro" && subscription?.status === "active";
 
@@ -121,19 +122,19 @@ export default function Admin() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="fixed inset-0 -z-10">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50/80 to-violet-50/60" />
+          <div className="absolute inset-0 bg-[#0D0D0D]" />
         </div>
         <GlassPanel className="p-10 text-center max-w-md">
-          <Shield className="w-12 h-12 text-blue-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">
+          <Shield className="w-12 h-12 text-[#16A34A] mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-white mb-2">
             Sign in Required
           </h1>
-          <p className="text-slate-500 text-sm mb-6">
+          <p className="text-[#A1A1AA] text-sm mb-6">
             Create an account to set up your review gatekeeper.
           </p>
           <Button
             onClick={() => navigate("/auth?returnTo=/admin")}
-            className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white cursor-pointer"
+            className="bg-[#16A34A] hover:bg-[#16A34A]/90 text-white font-semibold cursor-pointer"
           >
             Sign In
           </Button>
@@ -144,15 +145,41 @@ export default function Admin() {
 
   return (
     <div className="min-h-screen">
-      {/* Animated gradient background */}
+      {/* Background */}
       <div className="fixed inset-0 -z-10">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50/80 to-violet-50/60" />
-        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-blue-200/30 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
-        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-indigo-200/25 rounded-full blur-3xl translate-y-1/3 -translate-x-1/4" />
-        <div className="absolute top-1/2 left-1/2 w-[400px] h-[400px] bg-violet-100/30 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
+        <div className="absolute inset-0 bg-[#0D0D0D]" />
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#16A34A]/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
+        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-[#16A34A]/3 rounded-full blur-3xl translate-y-1/3 -translate-x-1/4" />
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-16">
+      {/* Navbar */}
+      <nav className="relative z-20 px-4 sm:px-6 py-5 border-b border-white/5">
+        <div className="max-w-5xl mx-auto flex items-center justify-between">
+          <div
+            className="flex items-center gap-2.5 cursor-pointer"
+            onClick={() => navigate("/")}
+          >
+            <div className="w-9 h-9 rounded-xl bg-[#16A34A]/15 flex items-center justify-center">
+              <Star className="w-5 h-5 text-[#16A34A] fill-[#16A34A]" />
+            </div>
+            <span className="font-bold text-lg text-white tracking-tight">
+              STAR CATCH MEDIA
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/dashboard")}
+              className="border-white/10 bg-white/5 hover:bg-white/10 text-[#A1A1AA] cursor-pointer"
+            >
+              Dashboard
+            </Button>
+          </div>
+        </div>
+      </nav>
+
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -160,22 +187,22 @@ export default function Admin() {
           transition={{ duration: 0.6 }}
           className="text-center mb-10 sm:mb-14"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-100/60 backdrop-blur-sm border border-blue-200/50 text-blue-700 text-sm font-medium mb-6">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#16A34A]/10 border border-[#16A34A]/20 text-[#16A34A] text-sm font-medium mb-6">
             <Shield className="w-4 h-4" />
             Review Gatekeeper
             {isPro && (
-              <span className="ml-1 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+              <span className="ml-1 bg-[#16A34A] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
                 PRO
               </span>
             )}
           </div>
-          <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-slate-900">
+          <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-white">
             Configure Your{" "}
-            <span className="bg-gradient-to-r from-blue-600 via-indigo-500 to-violet-500 bg-clip-text text-transparent">
+            <span className="text-[#16A34A]">
               Review Gatekeeper
             </span>
           </h1>
-          <p className="mt-3 text-slate-500 text-base sm:text-lg max-w-xl mx-auto">
+          <p className="mt-3 text-[#A1A1AA] text-base sm:text-lg max-w-xl mx-auto">
             Create a review gatekeeper profile for your business. Satisfied
             customers are sent to Google to leave a public review, while others
             submit private feedback directly to you.
@@ -192,14 +219,14 @@ export default function Admin() {
           >
             <GlassPanel className="p-6 sm:p-8">
               <div className="flex items-center gap-3 mb-6">
-                <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-blue-500/10">
-                  <Plus className="w-5 h-5 text-blue-600" />
+                <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-[#16A34A]/10">
+                  <Plus className="w-5 h-5 text-[#16A34A]" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold text-slate-900">
+                  <h2 className="text-lg font-semibold text-white">
                     New Profile
                   </h2>
-                  <p className="text-sm text-slate-400">
+                  <p className="text-sm text-[#A1A1AA]">
                     Add your business details to generate a unique review link
                   </p>
                 </div>
@@ -207,8 +234,8 @@ export default function Admin() {
 
               <form onSubmit={handleCreate} className="space-y-5">
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2 text-slate-700 font-medium text-sm">
-                    <Store className="w-4 h-4 text-blue-500" />
+                  <Label className="flex items-center gap-2 text-[#A1A1AA] font-medium text-sm">
+                    <Store className="w-4 h-4 text-[#16A34A]" />
                     Business Name
                   </Label>
                   <Input
@@ -223,10 +250,10 @@ export default function Admin() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2 text-slate-700 font-medium text-sm">
-                    <Image className="w-4 h-4 text-blue-500" />
+                  <Label className="flex items-center gap-2 text-[#A1A1AA] font-medium text-sm">
+                    <Image className="w-4 h-4 text-[#16A34A]" />
                     Business Logo URL{" "}
-                    <span className="text-slate-400 font-normal">
+                    <span className="text-[#A1A1AA]/50 font-normal">
                       (optional)
                     </span>
                   </Label>
@@ -241,8 +268,8 @@ export default function Admin() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2 text-slate-700 font-medium text-sm">
-                    <Globe className="w-4 h-4 text-blue-500" />
+                  <Label className="flex items-center gap-2 text-[#A1A1AA] font-medium text-sm">
+                    <Globe className="w-4 h-4 text-[#16A34A]" />
                     Direct Google Review URL
                   </Label>
                   <Input
@@ -257,8 +284,8 @@ export default function Admin() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2 text-slate-700 font-medium text-sm">
-                    <Mail className="w-4 h-4 text-blue-500" />
+                  <Label className="flex items-center gap-2 text-[#A1A1AA] font-medium text-sm">
+                    <Mail className="w-4 h-4 text-[#16A34A]" />
                     Alert Email
                   </Label>
                   <Input
@@ -276,7 +303,7 @@ export default function Admin() {
                 <Button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full h-12 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-semibold text-base shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all cursor-pointer"
+                  className="w-full h-12 bg-[#16A34A] hover:bg-[#16A34A]/90 text-white font-semibold text-base shadow-lg shadow-[#16A34A]/25 hover:shadow-[#16A34A]/40 transition-all cursor-pointer"
                 >
                   {isSubmitting ? (
                     <div className="flex items-center gap-2">
@@ -299,26 +326,26 @@ export default function Admin() {
                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                    className="mt-5 p-4 rounded-xl bg-emerald-50/80 backdrop-blur-sm border border-emerald-200/60"
+                    className="mt-5 p-4 rounded-xl bg-[#16A34A]/10 border border-[#16A34A]/20"
                   >
                     <div className="flex items-start gap-3">
-                      <CheckCircle2 className="w-5 h-5 text-emerald-500 mt-0.5 shrink-0" />
+                      <CheckCircle2 className="w-5 h-5 text-[#16A34A] mt-0.5 shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-emerald-800">
+                        <p className="text-sm font-semibold text-[#16A34A]">
                           Business profile created!
                         </p>
-                        <p className="text-sm text-emerald-600 mt-1 break-all">
+                        <p className="text-sm text-[#A1A1AA] mt-1 break-all">
                           Share this link:
                         </p>
                         <div className="mt-2 flex items-center gap-2">
-                          <code className="flex-1 text-xs bg-emerald-100/80 px-3 py-1.5 rounded-lg text-emerald-700 truncate">
+                          <code className="flex-1 text-xs bg-white/5 px-3 py-1.5 rounded-lg text-[#16A34A] truncate border border-white/5">
                             {getShareableUrl(createdSlug)}
                           </code>
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => copyToClipboard(createdSlug)}
-                            className="shrink-0 border-emerald-300 hover:bg-emerald-100 text-emerald-700 cursor-pointer"
+                            className="shrink-0 border-[#16A34A]/30 hover:bg-[#16A34A]/10 text-[#16A34A] cursor-pointer"
                           >
                             <Copy className="w-3.5 h-3.5" />
                           </Button>
@@ -340,14 +367,14 @@ export default function Admin() {
           >
             <GlassPanel className="p-6 sm:p-8">
               <div className="flex items-center gap-3 mb-6">
-                <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-violet-500/10">
-                  <Link2 className="w-5 h-5 text-violet-600" />
+                <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-[#16A34A]/10">
+                  <Link2 className="w-5 h-5 text-[#16A34A]" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold text-slate-900">
+                  <h2 className="text-lg font-semibold text-white">
                     Profiles
                   </h2>
-                  <p className="text-sm text-slate-400">
+                  <p className="text-sm text-[#A1A1AA]">
                     Your active review gatekeeper links
                   </p>
                 </div>
@@ -357,8 +384,8 @@ export default function Admin() {
               {subscription && (
                 <div className={`mb-4 p-3 rounded-xl text-center text-xs font-medium ${
                   isPro
-                    ? "bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 border border-blue-200/50"
-                    : "bg-slate-50 text-slate-500 border border-slate-200/50"
+                    ? "bg-[#16A34A]/10 text-[#16A34A] border border-[#16A34A]/20"
+                    : "bg-white/5 text-[#A1A1AA] border border-white/10"
                 }`}>
                   {isPro ? (
                     <span className="flex items-center justify-center gap-1.5">
@@ -377,16 +404,16 @@ export default function Admin() {
                   {[1, 2, 3].map((i) => (
                     <div
                       key={i}
-                      className="h-20 rounded-xl bg-slate-100/60 animate-pulse"
+                      className="h-20 rounded-xl bg-white/5 animate-pulse"
                     />
                   ))}
                 </div>
               ) : businesses.length === 0 ? (
                 <div className="text-center py-12">
-                  <div className="w-16 h-16 mx-auto rounded-2xl bg-slate-100/60 flex items-center justify-center mb-4">
-                    <Store className="w-8 h-8 text-slate-300" />
+                  <div className="w-16 h-16 mx-auto rounded-2xl bg-white/5 flex items-center justify-center mb-4">
+                    <Store className="w-8 h-8 text-[#A1A1AA]/30" />
                   </div>
-                  <p className="text-slate-400 text-sm">
+                  <p className="text-[#A1A1AA] text-sm">
                     No profiles yet. Create one to get started.
                   </p>
                 </div>
@@ -398,23 +425,23 @@ export default function Admin() {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.05 }}
-                      className="p-4 rounded-xl bg-white/50 border border-white/60 hover:bg-white/70 transition-all group"
+                      className="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/[0.08] transition-all group"
                     >
                       <div className="flex items-start gap-3">
                         <img
                           src={biz.logoUrl}
                           alt={biz.name}
-                          className="w-10 h-10 rounded-lg object-cover bg-slate-100 shrink-0"
+                          className="w-10 h-10 rounded-lg object-cover bg-white/5 shrink-0"
                           onError={(e) => {
                             (e.target as HTMLImageElement).src =
-                              "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect fill='%23f1f5f9' width='40' height='40' rx='8'/%3E%3Ctext x='20' y='25' text-anchor='middle' fill='%2394a3b8' font-size='14'%3E%F0%9F%8F%BA%3C/text%3E%3C/svg%3E";
+                              "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect fill='%2318181B' width='40' height='40' rx='8'/%3E%3Ctext x='20' y='25' text-anchor='middle' fill='%23A1A1AA' font-size='14'%3E%F0%9F%8F%BA%3C/text%3E%3C/svg%3E";
                           }}
                         />
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-slate-900 text-sm truncate">
+                          <h3 className="font-semibold text-white text-sm truncate">
                             {biz.name}
                           </h3>
-                          <p className="text-xs text-slate-400 mt-0.5 truncate">
+                          <p className="text-xs text-[#A1A1AA] mt-0.5 truncate">
                             {getShareableUrl(biz.slug)}
                           </p>
                         </div>
@@ -422,11 +449,11 @@ export default function Admin() {
                           variant="ghost"
                           size="sm"
                           onClick={() => copyToClipboard(biz.slug)}
-                          className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                          className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-[#A1A1AA] hover:text-white hover:bg-white/5"
                           title="Copy link"
                         >
                           {copiedId === biz.slug ? (
-                            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                            <CheckCircle2 className="w-4 h-4 text-[#16A34A]" />
                           ) : (
                             <Copy className="w-4 h-4" />
                           )}
@@ -437,13 +464,13 @@ export default function Admin() {
                           href={`/review/${biz.slug}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors"
+                          className="inline-flex items-center gap-1 text-xs font-medium text-[#16A34A] hover:text-[#16A34A]/80 transition-colors"
                         >
                           <ExternalLink className="w-3 h-3" />
                           Preview
                         </a>
-                        <span className="text-slate-300">·</span>
-                        <span className="text-xs text-slate-400 truncate">
+                        <span className="text-white/10">·</span>
+                        <span className="text-xs text-[#A1A1AA] truncate">
                           {biz.alertEmail}
                         </span>
                       </div>

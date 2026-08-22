@@ -11,6 +11,7 @@ import {
   CreditCard,
   Copy,
   Send,
+  Star,
 } from "lucide-react";
 
 interface PaywallModalProps {
@@ -52,7 +53,7 @@ export function PaywallModal({ open, onClose, reason }: PaywallModalProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={onClose}
           />
 
@@ -62,25 +63,25 @@ export function PaywallModal({ open, onClose, reason }: PaywallModalProps) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="relative w-full max-w-md max-h-[90vh] overflow-y-auto rounded-3xl border border-white/60 bg-white/90 backdrop-blur-2xl shadow-2xl"
+            className="relative w-full max-w-md max-h-[90vh] overflow-y-auto rounded-3xl border border-white/10 bg-[#18181B]/95 backdrop-blur-2xl shadow-2xl"
           >
             {/* Close button */}
             <button
               onClick={onClose}
-              className="absolute top-4 right-4 p-1 rounded-full hover:bg-slate-100 transition-colors z-10 cursor-pointer"
+              className="absolute top-4 right-4 p-1 rounded-full hover:bg-white/10 transition-colors z-10 cursor-pointer"
             >
-              <X className="w-5 h-5 text-slate-400" />
+              <X className="w-5 h-5 text-[#A1A1AA]" />
             </button>
 
             {/* Header */}
-            <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-8 text-center">
+            <div className="bg-[#16A34A] p-8 text-center">
               <div className="w-16 h-16 mx-auto rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center mb-4">
                 <Lock className="w-8 h-8 text-white" />
               </div>
               <h2 className="text-2xl font-bold text-white mb-2">
                 Upgrade to Pro
               </h2>
-              <p className="text-blue-100 text-sm">{reason}</p>
+              <p className="text-white/70 text-sm">{reason}</p>
             </div>
 
             <div className="p-6 sm:p-8">
@@ -91,20 +92,20 @@ export function PaywallModal({ open, onClose, reason }: PaywallModalProps) {
                   animate={{ opacity: 1, scale: 1 }}
                   className="text-center py-4"
                 >
-                  <div className="w-16 h-16 mx-auto rounded-2xl bg-emerald-50 flex items-center justify-center mb-5">
-                    <CheckCircle2 className="w-8 h-8 text-emerald-500" />
+                  <div className="w-16 h-16 mx-auto rounded-2xl bg-[#16A34A]/10 flex items-center justify-center mb-5">
+                    <CheckCircle2 className="w-8 h-8 text-[#16A34A]" />
                   </div>
-                  <h3 className="text-xl font-bold text-slate-900 mb-2">
+                  <h3 className="text-xl font-bold text-white mb-2">
                     Payment Submitted
                   </h3>
-                  <p className="text-slate-500 text-sm leading-relaxed mb-6">
+                  <p className="text-[#A1A1AA] text-sm leading-relaxed mb-6">
                     We have received your transaction details. Our team will
                     verify your payment and activate your Pro subscription
                     within 24 hours.
                   </p>
                   <Button
                     variant="outline"
-                    className="w-full h-11 border-slate-200 text-slate-600 font-medium cursor-pointer"
+                    className="w-full h-11 border-white/10 bg-white/5 text-white font-medium cursor-pointer hover:bg-white/10"
                     onClick={onClose}
                   >
                     Close
@@ -113,7 +114,7 @@ export function PaywallModal({ open, onClose, reason }: PaywallModalProps) {
               ) : (
                 <>
                   {/* Pro features */}
-                  <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4">
+                  <h3 className="text-sm font-semibold text-[#A1A1AA] uppercase tracking-wider mb-4">
                     What you get with Pro
                   </h3>
                   <div className="space-y-2.5 mb-6">
@@ -124,8 +125,8 @@ export function PaywallModal({ open, onClose, reason }: PaywallModalProps) {
                       "Priority support",
                     ].map((feature) => (
                       <div key={feature} className="flex items-center gap-3">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                        <span className="text-sm text-slate-700">
+                        <CheckCircle2 className="w-4 h-4 text-[#16A34A] shrink-0" />
+                        <span className="text-sm text-white">
                           {feature}
                         </span>
                       </div>
@@ -133,16 +134,16 @@ export function PaywallModal({ open, onClose, reason }: PaywallModalProps) {
                   </div>
 
                   {/* bKash Account Details */}
-                  <div className="bg-gradient-to-br from-pink-50 to-rose-50 rounded-2xl p-5 mb-6 border border-pink-100/80">
+                  <div className="bg-gradient-to-br from-[#16A34A]/5 to-[#16A34A]/10 rounded-2xl p-5 mb-6 border border-[#16A34A]/15">
                     <div className="flex items-center gap-2 mb-4">
-                      <div className="w-8 h-8 rounded-lg bg-pink-500 flex items-center justify-center">
+                      <div className="w-8 h-8 rounded-lg bg-[#16A34A] flex items-center justify-center">
                         <Smartphone className="w-4 h-4 text-white" />
                       </div>
                       <div>
-                        <h4 className="font-semibold text-slate-900 text-sm">
+                        <h4 className="font-semibold text-white text-sm">
                           bKash Payment
                         </h4>
-                        <p className="text-xs text-slate-500">
+                        <p className="text-xs text-[#A1A1AA]">
                           Personal Account
                         </p>
                       </div>
@@ -150,39 +151,39 @@ export function PaywallModal({ open, onClose, reason }: PaywallModalProps) {
 
                     <div className="space-y-2.5 text-sm">
                       <div className="flex items-center justify-between">
-                        <span className="text-slate-500">Account Type</span>
-                        <span className="font-medium text-slate-900">
+                        <span className="text-[#A1A1AA]">Account Type</span>
+                        <span className="font-medium text-white">
                           Personal
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-slate-500">bKash Number</span>
+                        <span className="text-[#A1A1AA]">bKash Number</span>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium text-slate-900 font-mono">
+                          <span className="font-medium text-white font-mono">
                             01673903919
                           </span>
                           <button
                             type="button"
                             onClick={handleCopyNumber}
-                            className="p-1 rounded-md hover:bg-pink-100 transition-colors cursor-pointer"
+                            className="p-1 rounded-md hover:bg-white/10 transition-colors cursor-pointer"
                             title="Copy number"
                           >
-                            <Copy className="w-3.5 h-3.5 text-pink-500" />
+                            <Copy className="w-3.5 h-3.5 text-[#16A34A]" />
                           </button>
                         </div>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-slate-500">Account Name</span>
-                        <span className="font-medium text-slate-900">
+                        <span className="text-[#A1A1AA]">Account Name</span>
+                        <span className="font-medium text-white">
                           ahanf tazwar alif
                         </span>
                       </div>
-                      <div className="h-px bg-pink-200/60 my-1" />
+                      <div className="h-px bg-white/10 my-1" />
                       <div className="flex items-center justify-between">
-                        <span className="text-slate-500">Amount</span>
-                        <span className="font-bold text-lg text-slate-900">
+                        <span className="text-[#A1A1AA]">Amount</span>
+                        <span className="font-bold text-lg text-white">
                           ৳1,000
-                          <span className="text-xs font-normal text-slate-500 ml-1">
+                          <span className="text-xs font-normal text-[#A1A1AA] ml-1">
                             /month
                           </span>
                         </span>
@@ -192,11 +193,11 @@ export function PaywallModal({ open, onClose, reason }: PaywallModalProps) {
 
                   {/* Instructions */}
                   <div className="mb-6">
-                    <h4 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
-                      <CreditCard className="w-4 h-4 text-indigo-400" />
+                    <h4 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                      <CreditCard className="w-4 h-4 text-[#16A34A]" />
                       How to Pay
                     </h4>
-                    <ol className="space-y-2.5 text-sm text-slate-600">
+                    <ol className="space-y-2.5 text-sm text-[#A1A1AA]">
                       {[
                         'Open your bKash App and select "Send Money".',
                         "Enter Number: 01673903919 (ahanf tazwar alif).",
@@ -205,7 +206,7 @@ export function PaywallModal({ open, onClose, reason }: PaywallModalProps) {
                         "Paste the TrxID and your sender phone number below to request verification.",
                       ].map((step, i) => (
                         <li key={i} className="flex gap-3">
-                          <span className="flex-none w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 text-xs font-bold flex items-center justify-center">
+                          <span className="flex-none w-6 h-6 rounded-full bg-[#16A34A]/15 text-[#16A34A] text-xs font-bold flex items-center justify-center">
                             {i + 1}
                           </span>
                           <span className="leading-relaxed pt-0.5">
@@ -219,27 +220,27 @@ export function PaywallModal({ open, onClose, reason }: PaywallModalProps) {
                   {/* Verification Form */}
                   <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-1.5">
-                      <Label className="text-slate-700 font-medium text-sm">
+                      <Label className="text-[#A1A1AA] font-medium text-sm">
                         Sender bKash Number
                       </Label>
                       <Input
                         placeholder="e.g. 01XXXXXXXXX"
                         value={senderNumber}
                         onChange={(e) => setSenderNumber(e.target.value)}
-                        className="h-11 bg-white/60 border-white/60 focus:bg-white focus:border-indigo-300 focus:ring-2 focus:ring-indigo-200/50 transition-all"
+                        className="h-11 bg-white/5 border-white/10 text-white placeholder:text-[#A1A1AA]/40 focus:border-[#16A34A] focus:ring-[#16A34A]/20 transition-all"
                         required
                       />
                     </div>
 
                     <div className="space-y-1.5">
-                      <Label className="text-slate-700 font-medium text-sm">
+                      <Label className="text-[#A1A1AA] font-medium text-sm">
                         Transaction ID (TrxID)
                       </Label>
                       <Input
                         placeholder="10-character TrxID"
                         value={trxId}
                         onChange={(e) => setTrxId(e.target.value)}
-                        className="h-11 bg-white/60 border-white/60 focus:bg-white focus:border-indigo-300 focus:ring-2 focus:ring-indigo-200/50 transition-all font-mono"
+                        className="h-11 bg-white/5 border-white/10 text-white placeholder:text-[#A1A1AA]/40 focus:border-[#16A34A] focus:ring-[#16A34A]/20 transition-all font-mono"
                         maxLength={10}
                         required
                       />
@@ -248,7 +249,7 @@ export function PaywallModal({ open, onClose, reason }: PaywallModalProps) {
                     <Button
                       type="submit"
                       disabled={submitting || !senderNumber || !trxId}
-                      className="w-full h-12 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white font-semibold shadow-lg shadow-pink-500/25 hover:shadow-pink-500/40 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full h-12 bg-[#16A34A] hover:bg-[#16A34A]/90 text-white font-semibold shadow-lg shadow-[#16A34A]/25 hover:shadow-[#16A34A]/40 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {submitting ? (
                         <div className="flex items-center gap-2">
@@ -266,7 +267,7 @@ export function PaywallModal({ open, onClose, reason }: PaywallModalProps) {
 
                   <Button
                     variant="ghost"
-                    className="w-full text-slate-400 mt-2 cursor-pointer"
+                    className="w-full text-[#A1A1AA] mt-2 cursor-pointer hover:text-white hover:bg-white/5"
                     onClick={onClose}
                   >
                     Maybe later

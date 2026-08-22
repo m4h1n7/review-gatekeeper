@@ -15,8 +15,7 @@ import {
 } from "@/components/ui/input-otp";
 
 import { useAuth } from "@/hooks/use-auth";
-import logo from "@/assets/logo.svg";
-import { ArrowRight, Loader2, Mail, UserX } from "lucide-react";
+import { ArrowRight, Loader2, Mail, UserX, Star } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 
@@ -144,27 +143,27 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
 
   return (
     <div className="min-h-screen flex flex-col">
+      {/* Background */}
+      <div className="fixed inset-0 -z-10">
+        <div className="absolute inset-0 bg-[#0D0D0D]" />
+        <div className="absolute top-1/4 left-1/3 w-[500px] h-[500px] bg-[#16A34A]/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-[#16A34A]/3 rounded-full blur-3xl" />
+      </div>
 
-      
       {/* Auth Content */}
       <div className="flex-1 flex items-center justify-center">
         <div className="flex items-center justify-center h-full flex-col">
-        <Card className="min-w-[350px] pb-0 border shadow-md">
+        <Card className="min-w-[350px] pb-0 border-white/10 bg-[#18181B]/80 backdrop-blur-xl shadow-2xl shadow-black/40">
           {step === "signIn" ? (
             <>
               <CardHeader className="text-center">
               <div className="flex justify-center">
-                    <img
-                      src={logo}
-                      alt="Lock Icon"
-                      width={64}
-                      height={64}
-                      className="rounded-lg mb-4 mt-4 cursor-pointer"
-                      onClick={() => navigate("/")}
-                    />
+                    <div className="w-16 h-16 rounded-xl bg-[#16A34A]/15 flex items-center justify-center mb-2 mt-2 cursor-pointer" onClick={() => navigate("/")}>
+                      <Star className="w-8 h-8 text-[#16A34A] fill-[#16A34A]" />
+                    </div>
                   </div>
-                <CardTitle className="text-xl">Get Started</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-xl text-white">Get Started</CardTitle>
+                <CardDescription className="text-[#A1A1AA]">
                   Sign in to manage your review gatekeeper
                 </CardDescription>
               </CardHeader>
@@ -174,7 +173,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                   <Button
                     type="button"
                     variant="outline"
-                    className="w-full h-11 mb-4 border-slate-200 bg-white hover:bg-slate-50 font-medium cursor-pointer"
+                    className="w-full h-11 mb-4 border-white/10 bg-white/5 hover:bg-white/10 text-white font-medium cursor-pointer"
                     onClick={handleGoogleLogin}
                     disabled={isLoading}
                   >
@@ -188,10 +187,10 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
 
                   <div className="relative mb-4">
                     <div className="absolute inset-0 flex items-center">
-                      <span className="w-full border-t" />
+                      <span className="w-full border-t border-white/10" />
                     </div>
                     <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-card px-2 text-muted-foreground">
+                      <span className="bg-[#18181B] px-2 text-[#A1A1AA]">
                         Or use email
                       </span>
                     </div>
@@ -199,12 +198,12 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                   
                   <div className="relative flex items-center gap-2">
                     <div className="relative flex-1">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Mail className="absolute left-3 top-3 h-4 w-4 text-[#A1A1AA]" />
                       <Input
                         name="email"
                         placeholder="name@example.com"
                         type="email"
-                        className="pl-9"
+                        className="pl-9 h-11 bg-white/5 border-white/10 text-white placeholder:text-[#A1A1AA]/50 focus:border-[#16A34A] focus:ring-[#16A34A]/20"
                         disabled={isLoading}
                         required
                       />
@@ -213,6 +212,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                       type="submit"
                       variant="outline"
                       size="icon"
+                      className="h-11 w-11 border-white/10 bg-white/5 hover:bg-[#16A34A] hover:border-[#16A34A] hover:text-white text-[#A1A1AA] cursor-pointer transition-all"
                       disabled={isLoading}
                     >
                       {isLoading ? (
@@ -223,16 +223,16 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                     </Button>
                   </div>
                   {error && (
-                    <p className="mt-2 text-sm text-red-500">{error}</p>
+                    <p className="mt-2 text-sm text-red-400">{error}</p>
                   )}
                   
                   <div className="mt-4">
                     <div className="relative">
                       <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t" />
+                        <span className="w-full border-t border-white/10" />
                       </div>
                       <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-card px-2 text-muted-foreground">
+                        <span className="bg-[#18181B] px-2 text-[#A1A1AA]">
                           Or
                         </span>
                       </div>
@@ -241,7 +241,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                     <Button
                       type="button"
                       variant="outline"
-                      className="w-full mt-4"
+                      className="w-full mt-4 border-white/10 bg-white/5 hover:bg-white/10 text-[#A1A1AA] cursor-pointer"
                       onClick={handleGuestLogin}
                       disabled={isLoading}
                     >
@@ -255,8 +255,8 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
           ) : (
             <>
               <CardHeader className="text-center mt-4">
-                <CardTitle>Check your email</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-white">Check your email</CardTitle>
+                <CardDescription className="text-[#A1A1AA]">
                   We've sent a code to {step.email}
                 </CardDescription>
               </CardHeader>
@@ -282,21 +282,21 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                     >
                       <InputOTPGroup>
                         {Array.from({ length: 6 }).map((_, index) => (
-                          <InputOTPSlot key={index} index={index} />
+                          <InputOTPSlot key={index} index={index} className="border-white/10 bg-white/5 text-white" />
                         ))}
                       </InputOTPGroup>
                     </InputOTP>
                   </div>
                   {error && (
-                    <p className="mt-2 text-sm text-red-500 text-center">
+                    <p className="mt-2 text-sm text-red-400 text-center">
                       {error}
                     </p>
                   )}
-                  <p className="text-sm text-muted-foreground text-center mt-4">
+                  <p className="text-sm text-[#A1A1AA] text-center mt-4">
                     Didn't receive a code?{" "}
                     <Button
                       variant="link"
-                      className="p-0 h-auto"
+                      className="p-0 h-auto text-[#16A34A] hover:text-[#16A34A]/80"
                       onClick={() => setStep("signIn")}
                     >
                       Try again
@@ -306,7 +306,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                 <CardFooter className="flex-col gap-2">
                   <Button
                     type="submit"
-                    className="w-full"
+                    className="w-full h-11 bg-[#16A34A] hover:bg-[#16A34A]/90 text-white font-semibold cursor-pointer"
                     disabled={isLoading || otp.length !== 6}
                   >
                     {isLoading ? (
@@ -326,7 +326,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                     variant="ghost"
                     onClick={() => setStep("signIn")}
                     disabled={isLoading}
-                    className="w-full"
+                    className="w-full text-[#A1A1AA] hover:text-white hover:bg-white/5"
                   >
                     Use different email
                   </Button>
@@ -335,16 +335,11 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
             </>
           )}
 
-          <div className="py-4 px-6 text-xs text-center text-muted-foreground bg-muted border-t rounded-b-lg">
-            Secured by{" "}
-            <a
-              href="https://freebuff.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline hover:text-primary transition-colors"
-            >
-              freebuff.com
-            </a>
+          <div className="py-4 px-6 text-xs text-center text-[#A1A1AA]/60 bg-white/[0.02] border-t border-white/5 rounded-b-lg">
+            Powered by{" "}
+            <span className="font-semibold text-[#16A34A]">
+              Star Catch Media
+            </span>
           </div>
         </Card>
         </div>
