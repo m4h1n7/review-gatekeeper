@@ -11,9 +11,9 @@ import {
   Plus,
   Link2,
   CheckCircle2,
-  Sparkles,
   Copy,
   ExternalLink,
+  Shield,
 } from "lucide-react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
@@ -99,19 +99,19 @@ export default function Admin() {
           className="text-center mb-10 sm:mb-14"
         >
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-100/60 backdrop-blur-sm border border-blue-200/50 text-blue-700 text-sm font-medium mb-6">
-            <Sparkles className="w-4 h-4" />
+            <Shield className="w-4 h-4" />
             Review Gatekeeper
           </div>
           <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-slate-900">
-            Set Up Your{" "}
+            Configure Your{" "}
             <span className="bg-gradient-to-r from-blue-600 via-indigo-500 to-violet-500 bg-clip-text text-transparent">
               Review Gatekeeper
             </span>
           </h1>
           <p className="mt-3 text-slate-500 text-base sm:text-lg max-w-xl mx-auto">
-            Configure your business profile to gate Google reviews. Happy
-            customers get redirected to Google; unhappy ones submit private
-            feedback.
+            Create a review gatekeeper profile for your business. Satisfied
+            customers are sent to Google to leave a public review, while others
+            submit private feedback directly to you.
           </p>
         </motion.div>
 
@@ -130,10 +130,10 @@ export default function Admin() {
                 </div>
                 <div>
                   <h2 className="text-lg font-semibold text-slate-900">
-                    New Business Profile
+                    New Profile
                   </h2>
                   <p className="text-sm text-slate-400">
-                    Fill in the details to generate a unique review link
+                    Add your business details to generate a unique review link
                   </p>
                 </div>
               </div>
@@ -192,7 +192,7 @@ export default function Admin() {
                 <div className="space-y-2">
                   <Label className="flex items-center gap-2 text-slate-700 font-medium text-sm">
                     <Mail className="w-4 h-4 text-blue-500" />
-                    Negative Feedback Alert Email
+                    Alert Email
                   </Label>
                   <Input
                     placeholder="alerts@yourbusiness.com"
@@ -278,10 +278,10 @@ export default function Admin() {
                 </div>
                 <div>
                   <h2 className="text-lg font-semibold text-slate-900">
-                    Your Profiles
+                    Profiles
                   </h2>
                   <p className="text-sm text-slate-400">
-                    Active review gatekeeper links
+                    Your active review gatekeeper links
                   </p>
                 </div>
               </div>
@@ -301,7 +301,7 @@ export default function Admin() {
                     <Store className="w-8 h-8 text-slate-300" />
                   </div>
                   <p className="text-slate-400 text-sm">
-                    No profiles yet. Create your first one to get started.
+                    No profiles yet. Create one to get started.
                   </p>
                 </div>
               ) : (
@@ -357,8 +357,8 @@ export default function Admin() {
                           Preview
                         </a>
                         <span className="text-slate-300">·</span>
-                        <span className="text-xs text-slate-400">
-                          Alert: {biz.alertEmail}
+                        <span className="text-xs text-slate-400 truncate">
+                          {biz.alertEmail}
                         </span>
                       </div>
                     </motion.div>

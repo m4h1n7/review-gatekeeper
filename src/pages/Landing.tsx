@@ -5,11 +5,12 @@ import {
   Star,
   Shield,
   ArrowRight,
-  TrendingUp,
   MessageSquare,
-  Zap,
   ChevronRight,
-  Quote,
+  ShieldCheck,
+  Eye,
+  Bell,
+  Smartphone,
 } from "lucide-react";
 
 function GlassPanel({
@@ -24,20 +25,6 @@ function GlassPanel({
       className={`rounded-3xl border border-white/60 bg-white/45 backdrop-blur-2xl shadow-[0_8px_40px_rgba(0,0,0,0.06)] ${className}`}
     >
       {children}
-    </div>
-  );
-}
-
-function StarRow() {
-  return (
-    <div className="flex items-center gap-0.5">
-      {[1, 2, 3, 4, 5].map((s) => (
-        <Star
-          key={s}
-          className="w-5 h-5 fill-amber-400 text-amber-400"
-          strokeWidth={1.5}
-        />
-      ))}
     </div>
   );
 }
@@ -63,7 +50,7 @@ export default function Landing() {
               <Shield className="w-5 h-5 text-white" />
             </div>
             <span className="font-bold text-lg text-slate-900">
-              ReviewGuard
+              Review Gatekeeper
             </span>
           </div>
           <div className="flex items-center gap-3">
@@ -94,7 +81,7 @@ export default function Landing() {
             transition={{ duration: 0.6 }}
           >
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-100/60 backdrop-blur-sm border border-blue-200/50 text-blue-700 text-sm font-medium mb-8">
-              <Zap className="w-4 h-4" />
+              <Shield className="w-4 h-4" />
               Protect your Google rating
             </div>
           </motion.div>
@@ -105,13 +92,11 @@ export default function Landing() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-slate-900 leading-[1.1]"
           >
-            Turn Every
+            Shield Your
             <br />
             <span className="bg-gradient-to-r from-blue-600 via-indigo-500 to-violet-500 bg-clip-text text-transparent">
-              Review Into
+              Google Rating
             </span>
-            <br />
-            An Opportunity
           </motion.h1>
 
           <motion.p
@@ -120,9 +105,9 @@ export default function Landing() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="mt-6 sm:mt-8 text-lg sm:text-xl text-slate-500 max-w-2xl mx-auto leading-relaxed"
           >
-            Gate your Google reviews. Happy customers get redirected to leave
-            public praise. Unhappy ones are given a private channel to share
-            feedback — before it ever hits your public profile.
+            A review gatekeeper for local businesses. Satisfied customers are
+            redirected to leave a public Google review. Others are guided to a
+            private feedback form — keeping your public rating protected.
           </motion.p>
 
           <motion.div
@@ -136,7 +121,7 @@ export default function Landing() {
               onClick={() => navigate("/admin")}
               className="h-14 px-8 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-bold text-base shadow-xl shadow-blue-500/25 hover:shadow-blue-500/40 transition-all cursor-pointer"
             >
-              Create Your Review Link
+              Get Started
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
             <Button
@@ -149,39 +134,11 @@ export default function Landing() {
               }}
               className="h-14 px-8 bg-white/50 backdrop-blur-sm border-white/60 text-slate-700 font-semibold hover:bg-white/70 cursor-pointer"
             >
-              See How It Works
+              Learn More
             </Button>
           </motion.div>
 
-          {/* Social proof preview */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.5 }}
-            className="mt-16 sm:mt-20 max-w-3xl mx-auto"
-          >
-            <GlassPanel className="p-5 sm:p-6">
-              <div className="flex items-center gap-4 sm:gap-5">
-                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/20 shrink-0">
-                  <TrendingUp className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
-                </div>
-                <div className="text-left">
-                  <div className="flex items-center gap-3 mb-1">
-                    <span className="text-2xl sm:text-3xl font-bold text-slate-900">
-                      4.9
-                    </span>
-                    <StarRow />
-                  </div>
-                  <p className="text-sm text-slate-500">
-                    Average rating maintained by ReviewGuard users ·{" "}
-                    <span className="font-semibold text-slate-700">
-                      93% negative feedback intercepted
-                    </span>
-                  </p>
-                </div>
-              </div>
-            </GlassPanel>
-          </motion.div>
+
         </div>
       </section>
 
@@ -199,7 +156,7 @@ export default function Landing() {
               How It Works
             </p>
             <h2 className="text-3xl sm:text-4xl font-bold text-slate-900">
-              Three simple steps
+              How it works
             </h2>
           </motion.div>
 
@@ -209,7 +166,7 @@ export default function Landing() {
                 step: "01",
                 icon: <MessageSquare className="w-6 h-6" />,
                 title: "Set Up Your Profile",
-                desc: "Enter your business details, logo, and Google Review URL in under a minute.",
+                desc: "Add your business name, logo, and Google Review URL. It takes less than a minute.",
                 color: "from-blue-500 to-blue-600",
                 bgColor: "bg-blue-50/80",
               },
@@ -217,15 +174,15 @@ export default function Landing() {
                 step: "02",
                 icon: <Star className="w-6 h-6" />,
                 title: "Share Your Link",
-                desc: "Send customers to your unique review gatekeeper page. Works on any device.",
+                desc: "Send customers your unique review URL. It works seamlessly on any device.",
                 color: "from-indigo-500 to-violet-500",
                 bgColor: "bg-indigo-50/80",
               },
               {
                 step: "03",
                 icon: <Shield className="w-6 h-6" />,
-                title: "Guard Your Rating",
-                desc: "Happy customers go to Google. Unhappy ones submit private feedback instead.",
+                title: "Protect Your Rating",
+                desc: "Satisfied customers are directed to Google. Others submit private feedback to you.",
                 color: "from-violet-500 to-purple-500",
                 bgColor: "bg-violet-50/80",
               },
@@ -273,7 +230,7 @@ export default function Landing() {
               Features
             </p>
             <h2 className="text-3xl sm:text-4xl font-bold text-slate-900">
-              Everything you need
+              Built for local businesses
             </h2>
           </motion.div>
 
@@ -281,33 +238,33 @@ export default function Landing() {
             {[
               {
                 icon: <Star className="w-5 h-5" />,
-                title: "Star-Based Routing",
-                desc: "4-5 stars redirect to Google. 1-3 stars open a private feedback form.",
+                title: "Smart Star Routing",
+                desc: "Customers who rate 4–5 stars are sent to Google. Those who rate 1–3 are given a private channel.",
               },
               {
-                icon: <Shield className="w-5 h-5" />,
-                title: "Private Feedback",
-                desc: "Collect negative feedback privately before it reaches your public profile.",
+                icon: <ShieldCheck className="w-5 h-5" />,
+                title: "Private Feedback Collection",
+                desc: "Capture dissatisfied customer feedback before it reaches your public profile.",
               },
               {
-                icon: <TrendingUp className="w-5 h-5" />,
-                title: "Rating Protection",
-                desc: "Shield your Google Business rating from negative public reviews.",
-              },
-              {
-                icon: <Zap className="w-5 h-5" />,
-                title: "Instant Setup",
-                desc: "Create a review link in under a minute. No coding required.",
+                icon: <Eye className="w-5 h-5" />,
+                title: "Rating Visibility Control",
+                desc: "Keep your Google Business rating accurate by filtering reviews at the source.",
               },
               {
                 icon: <MessageSquare className="w-5 h-5" />,
-                title: "Email Alerts",
-                desc: "Get notified instantly when someone submits private negative feedback.",
+                title: "Direct Message Channel",
+                desc: "Customers can share detailed feedback, and your team is notified immediately.",
               },
               {
-                icon: <ArrowRight className="w-5 h-5" />,
-                title: "Mobile-First Design",
-                desc: "Optimized for tap interactions on any device, from phones to desktops.",
+                icon: <Bell className="w-5 h-5" />,
+                title: "Instant Alerts",
+                desc: "Receive email notifications the moment someone submits private feedback.",
+              },
+              {
+                icon: <Smartphone className="w-5 h-5" />,
+                title: "Mobile-Optimized",
+                desc: "Large tap targets and fluid layouts designed for customers on any device.",
               },
             ].map((feature, i) => (
               <motion.div
@@ -334,9 +291,9 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Testimonial / CTA Section */}
+      {/* CTA Section */}
       <section className="relative z-10 px-4 sm:px-6 py-16 sm:py-24">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-3xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -344,31 +301,19 @@ export default function Landing() {
             transition={{ duration: 0.6 }}
           >
             <GlassPanel className="p-8 sm:p-12 text-center">
-              <Quote className="w-10 h-10 text-blue-300 mx-auto mb-6" />
-              <p className="text-xl sm:text-2xl font-semibold text-slate-800 leading-relaxed mb-6">
-                "Our Google rating went from 4.1 to 4.8 in just three months
-                after using ReviewGuard. The private feedback channel has
-                been invaluable."
+              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-3">
+                Protect your reputation today
+              </h2>
+              <p className="text-slate-500 text-base max-w-lg mx-auto mb-8">
+                Set up your Review Gatekeeper in under a minute and start
+                capturing feedback before it impacts your public rating.
               </p>
-              <div className="flex items-center justify-center gap-3 mb-8">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-indigo-400 flex items-center justify-center text-white text-sm font-bold">
-                  JC
-                </div>
-                <div className="text-left">
-                  <p className="text-sm font-semibold text-slate-900">
-                    James Chen
-                  </p>
-                  <p className="text-xs text-slate-400">
-                    Owner, Sunrise Café
-                  </p>
-                </div>
-              </div>
               <Button
                 size="lg"
                 onClick={() => navigate("/admin")}
                 className="h-14 px-10 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-bold text-base shadow-xl shadow-blue-500/25 hover:shadow-blue-500/40 transition-all cursor-pointer"
               >
-                Start Protecting Your Rating
+                Create Your Review Link
                 <ChevronRight className="w-5 h-5 ml-1" />
               </Button>
             </GlassPanel>
@@ -384,11 +329,11 @@ export default function Landing() {
               <Shield className="w-4 h-4 text-white" />
             </div>
             <span className="font-bold text-sm text-slate-700">
-              ReviewGuard
+              Review Gatekeeper
             </span>
           </div>
           <p className="text-xs text-slate-400">
-            © {new Date().getFullYear()} ReviewGuard. Protect your reputation.
+            © {new Date().getFullYear()} Review Gatekeeper. Protect your reputation.
           </p>
         </div>
       </footer>

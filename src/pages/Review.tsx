@@ -181,7 +181,7 @@ export default function Review() {
             <CheckCircle2 className="w-16 h-16 text-emerald-400 mx-auto mb-5" />
           </motion.div>
           <h2 className="text-2xl font-bold text-slate-900 mb-2">
-            Thanks for the kind words! 🎉
+            Thank you for your kind rating.
           </h2>
           <p className="text-slate-500 text-sm">
             Redirecting you to Google Reviews...
@@ -218,10 +218,10 @@ export default function Review() {
             </div>
           </motion.div>
           <h2 className="text-2xl font-bold text-slate-900 mb-3">
-            Thank you for your feedback!
+            Thank you for your feedback.
           </h2>
           <p className="text-slate-500 text-sm leading-relaxed">
-            Our management team will reach out directly. We truly appreciate
+            Our management team will reach out to you directly. We appreciate
             you taking the time to help us improve.
           </p>
           <div className="mt-6 flex items-center justify-center gap-2 text-xs text-slate-400">
@@ -278,7 +278,7 @@ export default function Review() {
                   ?
                 </h1>
                 <p className="text-slate-400 text-sm mb-8">
-                  Tap a star to rate us
+                  Select a rating to continue
                 </p>
 
                 {/* Stars */}
@@ -297,8 +297,8 @@ export default function Review() {
                 </div>
 
                 <p className="mt-6 text-xs text-slate-400">
-                  4–5 stars → Google review &nbsp;·&nbsp; 1–3 stars → Private
-                  feedback
+                  4–5 stars: redirected to Google &nbsp;·&nbsp; 1–3 stars:
+                  private feedback
                 </p>
               </GlassPanel>
             </motion.div>
@@ -333,7 +333,7 @@ export default function Review() {
                     We're sorry to hear that.
                   </h2>
                   <p className="text-slate-500 text-sm">
-                    How can we make it right?
+                    Please share your experience so we can make it right.
                   </p>
                 </div>
 
@@ -394,7 +394,7 @@ export default function Review() {
                       Feedback
                     </Label>
                     <Textarea
-                      placeholder="Tell us what happened and how we can improve..."
+                      placeholder="Describe your experience and how we can improve..."
                       value={form.message}
                       onChange={(e) =>
                         setForm({ ...form, message: e.target.value })
