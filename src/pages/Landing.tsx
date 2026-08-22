@@ -34,11 +34,11 @@ function Logo({ size = "normal" }: { size?: "normal" | "small" }) {
       </div>
       <div className="flex flex-col">
         <span className={`font-bold ${size === "small" ? "text-sm" : "text-base"} text-white tracking-wide leading-tight`}>
-          EasyReview Pro
+          STAR CATCH
         </span>
         {size !== "small" && (
           <span className="text-[10px] text-[#A1A1AA] tracking-wider leading-tight">
-            Smart Google Review Gateway
+            Reviews and Feedback Agency Bd
           </span>
         )}
       </div>
@@ -167,7 +167,7 @@ function InteractiveWidget() {
 
         {/* Footer */}
         <div className="px-5 py-3 border-t border-white/5 text-center">
-          <p className="text-[10px] text-[#A1A1AA]/50">Powered by EasyReview Pro</p>
+          <p className="text-[10px] text-[#A1A1AA]/50">Powered by STAR CATCH Reviews and Feedback Agency Bd</p>
         </div>
       </div>
     </div>
@@ -534,7 +534,7 @@ export default function Landing() {
                 Ready to boost your Google reviews?
               </h2>
               <p className="text-[#A1A1AA] text-base max-w-lg mx-auto mb-6">
-                Join businesses using EasyReview Pro to automatically filter happy customers to Google and capture private feedback from the rest.
+                Join businesses using STAR CATCH to automatically filter happy customers to Google and capture private feedback from the rest.
               </p>
               <Button
                 size="lg"
@@ -555,7 +555,7 @@ export default function Landing() {
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <Logo size="small" />
           <p className="text-xs text-zinc-500">
-            © {new Date().getFullYear()} EasyReview Pro. All rights reserved.
+            © {new Date().getFullYear()} STAR CATCH Reviews and Feedback Agency Bd. All rights reserved.
           </p>
         </div>
       </footer>

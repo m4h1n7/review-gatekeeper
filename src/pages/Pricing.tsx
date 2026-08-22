@@ -55,7 +55,7 @@ export default function Pricing() {
             </div>
             <div className="flex flex-col">
               <span className="font-bold text-base text-white tracking-wide leading-tight">
-                EasyReview Pro
+                STAR CATCH
               </span>
               <span className="text-[10px] text-[#A1A1AA] tracking-wider leading-tight">
                 Reviews and Feedback Agency Bd
@@ -275,7 +275,7 @@ export default function Pricing() {
             </div>
             <div className="flex flex-col">
               <span className="font-bold text-sm text-white tracking-wide leading-tight">
-                EasyReview Pro
+                STAR CATCH
               </span>
               <span className="text-[9px] text-[#A1A1AA]/60 tracking-wider leading-tight">
                 Reviews and Feedback Agency Bd
@@ -283,7 +283,7 @@ export default function Pricing() {
             </div>
           </div>
           <p className="text-xs text-[#A1A1AA]/60">
-            © {new Date().getFullYear()} EasyReview Pro. Protect your reputation.
+            © {new Date().getFullYear()} STAR CATCH Reviews and Feedback Agency Bd. Protect your reputation.
           </p>
         </div>
       </footer>

@@ -180,7 +180,7 @@ export default function Dashboard() {
             <div className="w-8 h-8 rounded-lg bg-[#16A34A] flex items-center justify-center shadow-lg shadow-[#16A34A]/25">
               <Star className="w-4 h-4 text-white fill-white" />
             </div>
-            <span className="font-bold text-sm text-white tracking-wide">EasyReview Pro</span>
+            <span className="font-bold text-sm text-white tracking-wide">STAR CATCH</span>
           </div>
           <div className="flex items-center gap-2">
             {isSuperAdmin(user?.email) && (
@@ -262,7 +262,7 @@ export default function Dashboard() {
             <div className="w-16 h-16 mx-auto rounded-2xl bg-white/5 flex items-center justify-center mb-4">
               <LayoutDashboard className="w-8 h-8 text-[#A1A1AA]/30" />
             </div>
-            <h2 className="text-lg font-semibold text-white mb-2">Welcome to EasyReview Pro!</h2>
+            <h2 className="text-lg font-semibold text-white mb-2">Welcome to STAR CATCH!</h2>
             <p className="text-sm text-[#A1A1AA] mb-6">Set up your first business profile to start collecting reviews.</p>
             <Button onClick={() => navigate("/onboarding")} className="bg-[#16A34A] hover:bg-[#16A34A]/90 text-white cursor-pointer font-semibold">
               Set Up Your Business <ExternalLink className="w-4 h-4 ml-1.5" />

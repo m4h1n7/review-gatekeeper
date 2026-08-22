@@ -110,7 +110,7 @@ export default function DemoDashboard() {
   };
 
   const copyReplyTemplate = (customerName: string) => {
-    const template = `Dear ${customerName},\n\nThank you for sharing your feedback with us. We sincerely apologize for the inconvenience you experienced. Your input is invaluable, and we are actively working to improve.\n\nWe would love the opportunity to make things right. Please feel free to reach out to us directly so we can assist you further.\n\nWarm regards,\nEasyReview Pro`;
+    const template = `Dear ${customerName},\n\nThank you for sharing your feedback with us. We sincerely apologize for the inconvenience you experienced. Your input is invaluable, and we are actively working to improve.\n\nWe would love the opportunity to make things right. Please feel free to reach out to us directly so we can assist you further.\n\nWarm regards,\nSTAR CATCH`;
     navigator.clipboard.writeText(template);
     setCopiedTemplate(true);
     setTimeout(() => setCopiedTemplate(false), 2000);
@@ -155,7 +155,7 @@ export default function DemoDashboard() {
               <Star className="w-5 h-5 text-[#16A34A] fill-[#16A34A]" />
             </div>
             <div className="flex flex-col">
-              <span className="font-bold text-base text-white tracking-wide leading-tight">EasyReview Pro</span>
+              <span className="font-bold text-base text-white tracking-wide leading-tight">STAR CATCH</span>
               <span className="text-[10px] text-[#A1A1AA] tracking-wider leading-tight">Reviews and Feedback Agency Bd</span>
             </div>
           </div>
@@ -241,7 +241,7 @@ export default function DemoDashboard() {
               <div className="flex flex-col items-center gap-2">
                 <div className="flex items-center gap-1">
                   <Star className="w-3 h-3 text-[#16A34A] fill-[#16A34A]" />
-                  <span className="text-[9px] font-bold text-[#18181B] tracking-wide">EasyReview Pro</span>
+                  <span className="text-[9px] font-bold text-[#18181B] tracking-wide">STAR CATCH</span>
                 </div>
                 <div className="relative">
                   <QRCodeSVG value={`${window.location.origin}/review/demo-slug`} size={140} level="H" bgColor="#FFFFFF" fgColor="#18181B" />
