@@ -20,6 +20,7 @@ const Review = lazy(() => import("./pages/Review.tsx"));
 const Pricing = lazy(() => import("./pages/Pricing.tsx"));
 const DemoDashboard = lazy(() => import("./pages/DemoDashboard.tsx"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard.tsx"));
+const AccountSettings = lazy(() => import("./pages/AccountSettings.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 
 // Simple loading fallback for route transitions
@@ -141,6 +142,14 @@ createRoot(document.getElementById("root")!).render(
               />
               <Route path="/admin" element={<SuperAdminGuard><AdminDashboard /></SuperAdminGuard>} />
               <Route path="/manage" element={<Admin />} />
+              <Route
+                path="/settings"
+                element={
+                  <RequireAuth>
+                    <AccountSettings />
+                  </RequireAuth>
+                }
+              />
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/demo" element={<DemoDashboard />} />
               <Route path="/review/:clientSlug" element={<Review />} />

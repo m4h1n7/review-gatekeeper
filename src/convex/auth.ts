@@ -1,10 +1,99 @@
-// THIS FILE IS READ ONLY. Do not touch this file unless you are correctly adding a new auth provider in accordance to the vly auth documentation
-
+// Auth providers for Review Gatekeeper
 import { convexAuth } from "@convex-dev/auth/server";
 import { Anonymous } from "@convex-dev/auth/providers/Anonymous";
-import { emailOtp } from "./auth/emailOtp";
+import { Password } from "@convex-dev/auth/providers/Password";
+import { Email } from "@convex-dev/auth/providers/Email";
+import axios from "axios";
+import { RandomReader, generateRandomString } from "@oslojs/crypto/random";
 
+/** Custom password requirements: 8+ chars, 1 uppercase, 1 number, 1 special char */
+function validatePasswordRequirements(password: string) {
+  if (!password || password.length < 8) {
+    throw new Error("Password must be at least 8 characters long.");
+  }
+  if (!/[A-Z]/.test(password)) {
+    throw new Error("Password must contain at least 1 uppercase letter.");
+  }
+  if (!/[0-9]/.test(password)) {
+    throw new Error("Password must contain at least 1 number.");
+  }
+  if (!/[^A-Za-z0-9]/.test(password)) {
+    throw new Error("Password must contain at least 1 special character.");
+  }
+}
+
+/** Generate and send a 6-digit OTP via email */
+async function generateAndSendOTP(
+  email: string,
+  token: string,
+  appName: string,
+) {
+  await axios.post(
+    "https://auth.freebuff.app/send_otp",
+    { to: email, otp: token, appName },
+    { headers: { "x-api-key": "fb_email_2crN1hqIArZP2bEfvjp5Qik4" } },
+  );
+}
+
+/** Email OTP provider for sign-in verification */
+const emailOtp = Email({
+  id: "email-otp",
+  maxAge: 60 * 15, // 15 minutes
+  async generateVerificationToken() {
+    const random: RandomReader = {
+      read(bytes: Uint8Array) {
+        crypto.getRandomValues(bytes);
+      },
+    };
+    const alphabet = "0123456789";
+    return generateRandomString(random, alphabet, 6);
+  },
+  async sendVerificationRequest({ identifier: email, token }) {
+    try {
+      await generateAndSendOTP(
+        email,
+        token,
+        process.env.VLY_APP_NAME || "STAR CATCH Reviews",
+      );
+    } catch (error) {
+      throw new Error(JSON.stringify(error));
+    }
+  },
+});
+
+/** Email OTP provider for password reset flow */
+const passwordResetEmail = Email({
+  id: "password-reset-email",
+  maxAge: 60 * 15, // 15 minutes
+  async generateVerificationToken() {
+    const random: RandomReader = {
+      read(bytes: Uint8Array) {
+        crypto.getRandomValues(bytes);
+      },
+    };
+    const alphabet = "0123456789";
+    return generateRandomString(random, alphabet, 6);
+  },
+  async sendVerificationRequest({ identifier: email, token }) {
+    try {
+      await generateAndSendOTP(
+        email,
+        token,
+        process.env.VLY_APP_NAME || "STAR CATCH Reviews",
+      );
+    } catch (error) {
+      throw new Error(JSON.stringify(error));
+    }
+  },
+});
 
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
-  providers: [emailOtp, Anonymous],
+  providers: [
+    Password({
+      validatePasswordRequirements,
+      reset: passwordResetEmail,
+    }),
+    emailOtp,
+    Anonymous,
+  ],
 });

@@ -24,6 +24,7 @@ import {
   CheckCircle2,
   Copy,
   Printer,
+  Settings,
 } from "lucide-react";
 import { useNavigate } from "react-router";
 
@@ -216,6 +217,15 @@ export default function Dashboard() {
             >
               <Shield className="w-4 h-4 mr-1.5" />
               Manage Profiles
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/settings")}
+              className="border-white/10 bg-white/5 hover:bg-white/10 text-[#A1A1AA] cursor-pointer"
+              title="Account Settings"
+            >
+              <Settings className="w-4 h-4" />
             </Button>
             <Button
               variant="outline"
