@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Shield, CheckCircle2, Zap, BarChart3, Bell, Star } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { PaywallModal } from "@/components/PaywallModal";
 
 function GlassPanel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
@@ -18,9 +20,15 @@ export default function Pricing() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
 
+  const [showPaywall, setShowPaywall] = useState(false);
+
   const handleGetStarted = (plan: string) => {
+    if (plan === "pro") {
+      setShowPaywall(true);
+      return;
+    }
     if (isAuthenticated) {
-      navigate(plan === "pro" ? "/pricing" : "/admin");
+      navigate("/admin");
     } else {
       navigate("/auth?returnTo=/admin");
     }
@@ -212,6 +220,12 @@ export default function Pricing() {
           </motion.div>
         </div>
       </section>
+
+      <PaywallModal
+        open={showPaywall}
+        onClose={() => setShowPaywall(false)}
+        reason="Unlock unlimited profiles, analytics, and automated email alerts with the Pro plan."
+      />
 
       {/* Feature comparison */}
       <section className="relative z-10 px-4 sm:px-6 pb-20">
