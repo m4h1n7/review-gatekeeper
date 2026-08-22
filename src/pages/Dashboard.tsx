@@ -14,6 +14,11 @@ import {
   ArrowUpRight,
   Shield,
   ExternalLink,
+  Download,
+  Link2,
+  TestTube,
+  Share2,
+  CheckCircle2,
 } from "lucide-react";
 import { useNavigate } from "react-router";
 
@@ -103,6 +108,30 @@ export default function Dashboard() {
     navigate("/");
   };
 
+  const handleDownloadCSV = () => {
+    if (!feedbacks || feedbacks.length === 0) return;
+    const headers = ["Customer Name", "Phone", "Email", "Rating", "Feedback", "Timestamp"];
+    const rows = feedbacks.map((fb) => [
+      fb.customerName,
+      fb.phone,
+      fb.email,
+      fb.rating,
+      `"${fb.message.replace(/"/g, '""')}"`,
+      new Date(fb.createdAt).toISOString(),
+    ]);
+    const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `star-catch-feedback-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Show checklist for new users (fewer than 3 interactions)
+  const showChecklist = overview && overview.totalVisits < 3;
+
   const displayStats = selectedBusinessId && stats ? stats : overview ? {
     totalVisits: overview.totalVisits,
     redirectCount: overview.totalRedirects,
@@ -171,6 +200,71 @@ export default function Dashboard() {
             Welcome back{user?.name ? `, ${user.name}` : ""}
           </h1>
         </div>
+
+        {/* Getting Started Checklist */}
+        {showChecklist && (
+          <GlassPanel className="p-6 mb-8">
+            <h3 className="text-sm font-semibold text-white mb-4">
+              Getting Started
+            </h3>
+            <div className="space-y-3">
+              {[
+                {
+                  icon: <Link2 className="w-4 h-4" />,
+                  label: "Connect Your Google Review Link",
+                  desc: "Add your business and set up your Google Review URL",
+                  done: overview.profileCount > 0,
+                  action: () => navigate("/admin"),
+                },
+                {
+                  icon: <TestTube className="w-4 h-4" />,
+                  label: "Test Your Review Page",
+                  desc: "Open your review link and verify the star rating flow works",
+                  done: overview.totalVisits > 0,
+                  action: () => overview.businesses[0] && window.open(`/review/${overview.businesses[0].slug}`, "_blank"),
+                },
+                {
+                  icon: <Share2 className="w-4 h-4" />,
+                  label: "Share with Customers",
+                  desc: "Send your review link via SMS, email, or QR code",
+                  done: overview.totalVisits >= 3,
+                  action: () => navigate("/admin"),
+                },
+              ].map((step, i) => (
+                <div
+                  key={i}
+                  onClick={step.done ? undefined : step.action}
+                  className={`flex items-center gap-4 p-3 rounded-xl transition-all ${
+                    step.done
+                      ? "bg-[#16A34A]/5 border border-[#16A34A]/15"
+                      : "bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] cursor-pointer"
+                  }`}
+                >
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                    step.done ? "bg-[#16A34A]/15 text-[#16A34A]" : "bg-white/5 text-[#A1A1AA]"
+                  }`}>
+                    {step.done ? <CheckCircle2 className="w-4 h-4" /> : step.icon}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-medium ${step.done ? "text-[#16A34A]" : "text-white"}`}>
+                      {step.label}
+                    </p>
+                    <p className="text-xs text-[#A1A1AA] mt-0.5">{step.desc}</p>
+                  </div>
+                  {step.done ? (
+                    <span className="text-[10px] font-semibold text-[#16A34A] bg-[#16A34A]/10 px-2 py-0.5 rounded-full">
+                      Done
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-semibold text-[#A1A1AA] bg-white/5 px-2 py-0.5 rounded-full">
+                      Step {i + 1}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </GlassPanel>
+        )}
 
         {/* Filter controls */}
         <div className="flex flex-wrap items-center gap-2 mb-6">
@@ -319,13 +413,24 @@ export default function Dashboard() {
             {/* Recent Feedback Table */}
             {feedbacks && feedbacks.length > 0 && (
               <GlassPanel className="overflow-hidden mb-8">
-                <div className="p-6 pb-4">
-                  <h3 className="text-sm font-semibold text-white">
-                    Recent Private Feedback
-                  </h3>
-                  <p className="text-xs text-[#A1A1AA] mt-0.5">
-                    Latest submissions from dissatisfied customers
-                  </p>
+                <div className="p-6 pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div>
+                    <h3 className="text-sm font-semibold text-white">
+                      Recent Private Feedback
+                    </h3>
+                    <p className="text-xs text-[#A1A1AA] mt-0.5">
+                      Latest submissions from dissatisfied customers
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDownloadCSV}
+                    className="border-white/10 bg-white/5 hover:bg-white/10 text-[#A1A1AA] hover:text-white cursor-pointer shrink-0"
+                  >
+                    <Download className="w-4 h-4 mr-1.5" />
+                    Download CSV
+                  </Button>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full">

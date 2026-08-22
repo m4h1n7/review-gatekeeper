@@ -25,6 +25,7 @@ export function PaywallModal({ open, onClose, reason }: PaywallModalProps) {
   const [trxId, setTrxId] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,6 +38,8 @@ export function PaywallModal({ open, onClose, reason }: PaywallModalProps) {
 
   const handleCopyNumber = () => {
     navigator.clipboard.writeText("01673903919");
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
@@ -165,10 +168,26 @@ export function PaywallModal({ open, onClose, reason }: PaywallModalProps) {
                           <button
                             type="button"
                             onClick={handleCopyNumber}
-                            className="p-1 rounded-md hover:bg-white/10 transition-colors cursor-pointer"
-                            title="Copy number"
+                            className="relative p-1 rounded-md hover:bg-white/10 transition-colors cursor-pointer group"
                           >
                             <Copy className="w-3.5 h-3.5 text-[#16A34A]" />
+                            {/* Tooltip */}
+                            <AnimatePresence>
+                              {copied ? (
+                                <motion.span
+                                  initial={{ opacity: 0, y: 4 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  exit={{ opacity: 0, y: 4 }}
+                                  className="absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap bg-[#16A34A] text-white text-[10px] font-semibold px-2 py-1 rounded-md shadow-lg"
+                                >
+                                  Copied!
+                                </motion.span>
+                              ) : (
+                                <span className="absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap bg-white/10 text-[#A1A1AA] text-[10px] px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                  Copy
+                                </span>
+                              )}
+                            </AnimatePresence>
                           </button>
                         </div>
                       </div>
