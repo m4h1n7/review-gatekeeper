@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { PrintableQR } from "@/components/PrintableQR";
+import { isSuperAdmin } from "@/components/SuperAdminGuard";
 import { motion } from "framer-motion";
 import {
   LayoutDashboard,
@@ -196,6 +197,17 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            {isSuperAdmin(user?.email) && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("/admin")}
+                className="border-[#16A34A]/30 bg-[#16A34A]/10 hover:bg-[#16A34A]/20 text-[#16A34A] cursor-pointer font-semibold"
+              >
+                <Shield className="w-4 h-4 mr-1.5" />
+                Admin Panel
+              </Button>
+            )}
             <Button
               variant="outline"
               size="sm"

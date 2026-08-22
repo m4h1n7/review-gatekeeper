@@ -7,21 +7,25 @@ import { Shield, Star } from "lucide-react";
 
 const SUPER_ADMIN_EMAIL = "mahinhosen870@gmail.com";
 
+export function isSuperAdmin(email?: string | null): boolean {
+  return email?.toLowerCase() === SUPER_ADMIN_EMAIL;
+}
+
 export function SuperAdminGuard({ children }: { children: React.ReactNode }) {
   const { isLoading: authLoading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const user = useQuery(api.users.currentUser);
 
   const isLoading = authLoading || user === undefined;
-  const isSuperAdmin = user?.email === SUPER_ADMIN_EMAIL;
+  const admin = isSuperAdmin(user?.email);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       navigate("/auth?returnTo=/admin");
-    } else if (!isLoading && isAuthenticated && user !== undefined && !isSuperAdmin) {
+    } else if (!isLoading && isAuthenticated && user !== undefined && !admin) {
       navigate("/dashboard");
     }
-  }, [isLoading, isAuthenticated, isSuperAdmin, user, navigate]);
+  }, [isLoading, isAuthenticated, admin, user, navigate]);
 
   if (isLoading) {
     return (
@@ -34,7 +38,7 @@ export function SuperAdminGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!isSuperAdmin) {
+  if (!admin) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#0D0D0D]">
         <div className="text-center">
