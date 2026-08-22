@@ -142,6 +142,25 @@ export default function Review() {
         console.error("Email notification failed:", e);
       });
 
+      // Send feedback to Google Apps Script webhook
+      fetch(
+        "https://script.google.com/macros/s/AKfycbxGo4rMxugPJAbCJHCgrh6GC625zDZeKbcDOJcdPAKNqCltiVxVzxeF9-D6iZ6wGU_OkQ/exec",
+        {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            clientEmail: business.alertEmail,
+            customerName: form.name,
+            customerPhone: form.phone,
+            feedbackMessage: form.message,
+            businessName: business.name,
+          }),
+        },
+      ).catch((e: unknown) => {
+        console.error("Webhook notification failed:", e);
+      });
+
       setSubmitted(true);
     } catch (err) {
       console.error("Failed to submit feedback:", err);
@@ -247,8 +266,8 @@ export default function Review() {
             Thank you for your feedback.
           </h2>
           <p className="text-slate-500 text-sm leading-relaxed">
-            Our management team will reach out to you directly. We appreciate
-            you taking the time to help us improve.
+            Thank you for your feedback! The management team has been notified.
+            We appreciate you taking the time to help us improve.
           </p>
           <div className="mt-6 flex items-center justify-center gap-2 text-xs text-slate-400">
             <ShieldCheck className="w-4 h-4" />
