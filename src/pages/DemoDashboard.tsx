@@ -340,10 +340,10 @@ export default function DemoDashboard() {
         {/* CTA */}
         <GlassPanel className="p-8 text-center">
           <h3 className="text-lg font-bold text-white mb-2">Ready to protect your Google rating?</h3>
-          <p className="text-sm text-[#A1A1AA] mb-6">Sign up free and set up your first review gatekeeper in under a minute.</p>
+          <p className="text-sm text-[#A1A1AA] mb-6">Get started now and set up your first review gatekeeper in under a minute.</p>
           <Button onClick={() => navigate("/auth?returnTo=/dashboard")} className="bg-[#16A34A] hover:bg-[#16A34A]/90 text-white font-semibold cursor-pointer">
             <Star className="w-4 h-4 mr-2 fill-white" />
-            Get Started Free
+            Get Started Now
             <ArrowUpRight className="w-4 h-4 ml-1" />
           </Button>
         </GlassPanel>

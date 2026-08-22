@@ -34,6 +34,11 @@ export const canCreateProfile = query({
       return { allowed: true, reason: "Pro plan" };
     }
 
+    // Pending or no subscription: not allowed
+    if (sub && sub.status === "pending") {
+      return { allowed: false, reason: "Pending payment", currentCount: 0, maxCount: 0 };
+    }
+
     // Free tier: count existing businesses
     const businesses = await ctx.db
       .query("businesses")
@@ -67,6 +72,11 @@ export const canReceiveFeedback = query({
 
     if (sub && sub.plan === "pro" && sub.status === "active") {
       return { allowed: true, plan: "pro" };
+    }
+
+    // Pending: not allowed
+    if (sub && sub.status === "pending") {
+      return { allowed: false, reason: "Pending payment", currentCount: 0, maxCount: 0 };
     }
 
     // Free tier: max 15 total feedbacks across all profiles

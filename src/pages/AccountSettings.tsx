@@ -151,8 +151,8 @@ export default function AccountSettings() {
     setPwLoading(false);
   };
 
-  const planLabel = subscription?.plan === "pro" ? "Pro" : "Free Trial";
-  const planColor = subscription?.plan === "pro" ? "text-[#16A34A]" : "text-[#A1A1AA]";
+  const planLabel = subscription?.plan === "pro" && subscription?.status === "active" ? "Pro" : subscription?.status === "pending" ? "Pending Payment" : "Pro";
+  const planColor = subscription?.plan === "pro" && subscription?.status === "active" ? "text-[#16A34A]" : subscription?.status === "pending" ? "text-amber-400" : "text-[#16A34A]";
 
   const passwordButtonText = hasPassword === undefined
     ? "Loading..."
@@ -402,18 +402,22 @@ export default function AccountSettings() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 rounded-xl bg-white/[0.03] border border-white/5">
               <div className="flex items-center gap-4">
                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                  subscription?.plan === "pro"
+                  subscription?.plan === "pro" && subscription?.status === "active"
                     ? "bg-[#16A34A]/15"
-                    : "bg-white/5"
+                    : subscription?.status === "pending"
+                      ? "bg-amber-500/10"
+                      : "bg-white/5"
                 }`}>
                   <Shield className={`w-6 h-6 ${planColor}`} />
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-white">{planLabel} Plan</p>
                   <p className="text-xs text-[#A1A1AA] mt-0.5">
-                    {subscription?.plan === "pro"
-                      ? `Active · Expires ${subscription.expiresAt ? new Date(subscription.expiresAt).toLocaleDateString() : "—"}`
-                      : "1 profile · 15 feedbacks max"}
+                    {subscription?.plan === "pro" && subscription?.status === "active"
+                      ? `Active · Expires ${subscription.proExpiresAt ? new Date(subscription.proExpiresAt).toLocaleDateString() : subscription.expiresAt ? new Date(subscription.expiresAt).toLocaleDateString() : "—"}`
+                      : subscription?.status === "pending"
+                        ? "Complete payment to unlock full access"
+                        : "Subscribe to unlock all features"}
                   </p>
                 </div>
               </div>
@@ -423,7 +427,7 @@ export default function AccountSettings() {
                 size="sm"
                 className="border-[#16A34A]/30 bg-[#16A34A]/10 hover:bg-[#16A34A]/20 text-[#16A34A] cursor-pointer font-semibold"
               >
-                {subscription?.plan === "pro" ? "Manage Plan" : "Upgrade to Pro"}
+                {subscription?.plan === "pro" && subscription?.status === "active" ? "Manage Plan" : "Choose Plan"}
               </Button>
             </div>
           </GlassPanel>

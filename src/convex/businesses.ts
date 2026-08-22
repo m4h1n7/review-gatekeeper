@@ -65,7 +65,7 @@ export const completeOnboarding = mutation({
       await ctx.db.insert("subscriptions", {
         userId,
         plan: "free",
-        status: "active",
+        status: "pending",
         createdAt: Date.now(),
       });
     }

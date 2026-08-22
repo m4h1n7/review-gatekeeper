@@ -89,11 +89,11 @@ const schema = defineSchema(
       .index("by_status", ["status"])
       .index("by_userId", ["userId"]),
 
-    // Subscription plans: free trial or pro
+    // Subscription plans: pending payment or active pro
     subscriptions: defineTable({
       userId: v.string(),
       plan: v.union(v.literal("free"), v.literal("pro")),
-      status: v.union(v.literal("active"), v.literal("cancelled")),
+      status: v.union(v.literal("active"), v.literal("pending"), v.literal("cancelled")),
       createdAt: v.number(),
       expiresAt: v.optional(v.number()),
       proExpiresAt: v.optional(v.number()),

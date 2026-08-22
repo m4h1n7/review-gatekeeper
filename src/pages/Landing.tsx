@@ -220,7 +220,7 @@ export default function Landing() {
                 onClick={() => navigate("/auth")}
                 className="bg-[#16A34A] hover:bg-[#15803D] text-white font-semibold shadow-lg shadow-[#16A34A]/25 cursor-pointer"
               >
-                Start Free Trial
+                Get Started
                 <ArrowRight className="w-4 h-4 ml-1" />
               </Button>
             )}
@@ -238,10 +238,9 @@ export default function Landing() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
-              >
-                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#16A34A]/10 backdrop-blur-sm border border-[#16A34A]/20 text-[#16A34A] text-sm font-medium mb-6">
+              >                  <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#16A34A]/10 backdrop-blur-sm border border-[#16A34A]/20 text-[#16A34A] text-sm font-medium mb-6">
                   <TrendingUp className="w-4 h-4" />
-                  Boost your Google rating on autopilot
+                  Join hundreds of businesses protecting their reputation
                 </div>
               </motion.div>
 
@@ -281,7 +280,7 @@ export default function Landing() {
                   className="h-13 px-7 bg-[#16A34A] hover:bg-[#15803D] text-white font-bold text-base shadow-xl shadow-[#16A34A]/25 cursor-pointer"
                 >
                   <Star className="w-5 h-5 mr-2 fill-white" />
-                  Start Free Trial
+                  Get Started Now
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
                 <Button
@@ -302,15 +301,11 @@ export default function Landing() {
               >
                 <div className="flex items-center gap-1.5">
                   <CheckCircle2 className="w-3.5 h-3.5 text-[#16A34A]" />
-                  Free to start
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#16A34A]" />
-                  No credit card required
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#16A34A]" />
                   Setup in 2 minutes
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#16A34A]" />
+                  Pay only when ready to launch
                 </div>
               </motion.div>
             </div>
@@ -449,58 +444,27 @@ export default function Landing() {
             <h2 className="text-3xl sm:text-4xl font-bold text-white">Simple, transparent pricing</h2>
           </motion.div>
 
-          <div className="grid sm:grid-cols-2 gap-6">
-            {/* Free Plan */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-            >
-              <div className="rounded-3xl border border-white/[0.08] bg-white/[0.04] backdrop-blur-2xl p-8 h-full flex flex-col">
-                <h3 className="text-lg font-bold text-white mb-1">Free Trial</h3>
-                <p className="text-sm text-[#A1A1AA] mb-4">Get started at no cost</p>
-                <div className="mb-6">
-                  <span className="text-4xl font-extrabold text-white">$0</span>
-                  <span className="text-sm text-[#A1A1AA] ml-1">/month</span>
-                </div>
-                <ul className="space-y-3 mb-8 flex-1">
-                  {["1 Business Profile", "Up to 15 Reviews/Feedbacks", "Basic Analytics", "QR Code Generation"].map((f) => (
-                    <li key={f} className="flex items-center gap-2 text-sm text-[#A1A1AA]">
-                      <CheckCircle2 className="w-4 h-4 text-[#16A34A] shrink-0" />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                <Button
-                  onClick={() => navigate(isAuthenticated ? "/dashboard" : "/auth")}
-                  className="w-full h-11 bg-white/5 border border-white/10 hover:bg-white/10 text-white font-semibold cursor-pointer"
-                >
-                  Get Started Free
-                </Button>
-              </div>
-            </motion.div>
-
+          <div className="max-w-md mx-auto">
             {/* Pro Plan */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 0.5, delay: 0.2 }}
+              transition={{ duration: 0.5 }}
             >
               <div className="rounded-3xl border border-[#16A34A]/30 bg-white/[0.04] backdrop-blur-2xl p-8 h-full flex flex-col relative overflow-hidden">
                 <div className="absolute top-0 right-0 px-3 py-1 bg-[#16A34A] text-white text-[10px] font-bold uppercase tracking-wider rounded-bl-lg">
-                  Popular
+                  ★ Pro Plan
                 </div>
                 <h3 className="text-lg font-bold text-white mb-1">Pro Plan</h3>
-                <p className="text-sm text-[#A1A1AA] mb-4">For growing businesses</p>
+                <p className="text-sm text-[#A1A1AA] mb-4">Everything you need to protect and grow your reputation</p>
                 <div className="mb-2">
-                  <span className="text-4xl font-extrabold text-white">$10</span>
+                  <span className="text-4xl font-extrabold text-white">৳1,000</span>
                   <span className="text-sm text-[#A1A1AA] ml-1">/month</span>
                 </div>
-                <p className="text-xs text-[#16A34A] mb-6">Also available: ৳1,000/month via bKash or Nagad</p>
+                <p className="text-xs text-[#16A34A] mb-6">Also available: $10/month via Card</p>
                 <ul className="space-y-3 mb-8 flex-1">
-                  {["Unlimited Business Profiles", "Unlimited Reviews & Feedback", "Advanced Analytics Dashboard", "Automated Email Alerts", "Priority Support", "Custom Branding"].map((f) => (
+                  {["Unlimited Business Profiles", "Unlimited Reviews & Feedback", "Advanced Analytics Dashboard", "Automated Email Alerts", "QR Code Generator", "Priority Support"].map((f) => (
                     <li key={f} className="flex items-center gap-2 text-sm text-[#A1A1AA]">
                       <CheckCircle2 className="w-4 h-4 text-[#16A34A] shrink-0" />
                       {f}
@@ -512,7 +476,7 @@ export default function Landing() {
                   className="w-full h-11 bg-[#16A34A] hover:bg-[#15803D] text-white font-semibold cursor-pointer shadow-lg shadow-[#16A34A]/25"
                 >
                   <Zap className="w-4 h-4 mr-2" />
-                  Upgrade to Pro
+                  Choose Plan
                 </Button>
               </div>
             </motion.div>
@@ -542,7 +506,7 @@ export default function Landing() {
                 className="h-14 px-10 bg-[#16A34A] hover:bg-[#15803D] text-white font-bold text-base shadow-xl shadow-[#16A34A]/25 cursor-pointer"
               >
                 <Star className="w-5 h-5 mr-2 fill-white" />
-                {isAuthenticated ? "Go to Dashboard" : "Start Free Today"}
+                {isAuthenticated ? "Go to Dashboard" : "Get Started Now"}
                 <ChevronRight className="w-5 h-5 ml-1" />
               </Button>
             </div>

@@ -91,10 +91,10 @@ export default function Pricing() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.1]"
           >
-            Start free,
+            Protect your reputation
             <br />
             <span className="text-[#16A34A]">
-              scale when ready
+              with a single plan
             </span>
           </motion.h1>
 
@@ -104,72 +104,21 @@ export default function Pricing() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="mt-6 text-lg text-[#A1A1AA] max-w-xl mx-auto"
           >
-            Try Review Gatekeeper free with 1 profile and 15 feedbacks.
-            Upgrade to Pro when you need more.
+            One plan. Everything included. Pay monthly via bKash, Nagad, or card.
           </motion.p>
         </div>
       </section>
 
       {/* Pricing Cards */}
       <section className="relative z-10 px-4 sm:px-6 pb-20 sm:pb-28">
-        <div className="max-w-4xl mx-auto grid sm:grid-cols-2 gap-6 lg:gap-8">
-          {/* Free Tier */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-          >
-            <GlassPanel className="p-8 h-full flex flex-col">
-              <div className="mb-6">
-                <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mb-4">
-                  <Star className="w-6 h-6 text-[#A1A1AA]" />
-                </div>
-                <h3 className="text-xl font-bold text-white mb-1">
-                  Free Trial
-                </h3>
-                <p className="text-sm text-[#A1A1AA]">
-                  Try it out with no commitment
-                </p>
-              </div>
-
-              <div className="mb-6">
-                <span className="text-4xl font-extrabold text-white">
-                  $0
-                </span>
-                <span className="text-[#A1A1AA] text-sm ml-1">forever</span>
-              </div>
-
-              <div className="space-y-3 mb-8 flex-1">
-                {[
-                  "1 active review profile",
-                  "Up to 15 feedbacks total",
-                  "Smart star routing",
-                  "Private feedback collection",
-                ].map((feature) => (
-                  <div key={feature} className="flex items-center gap-3">
-                    <CheckCircle2 className="w-4 h-4 text-[#A1A1AA]/40 shrink-0" />
-                    <span className="text-sm text-[#A1A1AA]">{feature}</span>
-                  </div>
-                ))}
-              </div>
-
-              <Button
-                variant="outline"
-                className="w-full h-12 border-white/10 bg-white/5 text-white font-semibold hover:bg-white/10 cursor-pointer"
-                onClick={() => handleGetStarted("free")}
-              >
-                Get Started Free
-              </Button>
-            </GlassPanel>
-          </motion.div>
-
+        <div className="max-w-md mx-auto">
           {/* Pro Tier */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
           >
-            <GlassPanel className="p-8 h-full flex flex-col relative ring-2 ring-[#16A34A]/40 shadow-[0_8px_40px_rgba(22,163,74,0.1)]">
+            <GlassPanel className="p-8 h-full flex flex-col relative ring-2 ring-[#16A34A]/40 shadow-[0_8px_40px_rgba(22,163,74,0.1)] rounded-3xl">
               {/* Popular badge */}
               <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                 <span className="bg-[#16A34A] text-white text-xs font-bold px-4 py-1 rounded-full shadow-lg shadow-[#16A34A]/25 flex items-center gap-1">
@@ -192,10 +141,10 @@ export default function Pricing() {
 
               <div className="mb-6">
                 <span className="text-4xl font-extrabold text-white">
-                  $10
+                  ৳1,000
                 </span>
                 <span className="text-[#A1A1AA] text-sm ml-1">/month</span>
-                <p className="text-xs text-[#A1A1AA]/50 mt-1">৳1,000/month (BDT)</p>
+                <p className="text-xs text-[#16A34A] mt-1">Also $10/month via card</p>
               </div>
 
               <div className="space-y-3 mb-8 flex-1">
@@ -220,7 +169,7 @@ export default function Pricing() {
                 onClick={() => handleGetStarted("pro")}
               >
                 <Star className="w-5 h-5 mr-2 fill-white" />
-                Upgrade to Pro
+                Choose Plan
               </Button>
             </GlassPanel>
           </motion.div>
@@ -238,7 +187,7 @@ export default function Pricing() {
         <div className="max-w-3xl mx-auto">
           <GlassPanel className="p-8 sm:p-12">
             <h2 className="text-xl font-bold text-white mb-6 text-center">
-              What's included in both plans
+              Everything included in your plan
             </h2>
             <div className="grid sm:grid-cols-2 gap-6">
               {[

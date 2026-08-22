@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { PrintableQR } from "@/components/PrintableQR";
+import { PaywallModal } from "@/components/PaywallModal";
 import { isSuperAdmin } from "@/components/SuperAdminGuard";
 import { motion } from "framer-motion";
 import {
@@ -94,8 +95,10 @@ export default function Dashboard() {
   const [chartDays, setChartDays] = useState(7);
   const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null);
 
+  const subscription = useQuery(api.subscriptions.getCurrent);
   const overview = useQuery(api.analytics.dashboardOverview, { filter });
   const trend = useQuery(api.analytics.ratingTrend, { days: chartDays });
+  const [showPaywall, setShowPaywall] = useState(subscription?.status === "pending");
   const stats = useQuery(api.analytics.businessStats, selectedBusinessId ? { businessId: selectedBusinessId, filter } : "skip");
   const feedbacks = useQuery(api.analytics.recentFeedbacks, selectedBusinessId ? { businessId: selectedBusinessId, limit: 20 } : "skip");
 
@@ -113,7 +116,7 @@ export default function Dashboard() {
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a"); a.href = url;
-    a.download = `easyreview-feedback-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `starcatch-feedback-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click(); URL.revokeObjectURL(url);
   };
 
@@ -167,6 +170,12 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen">
+      <PaywallModal
+        open={showPaywall}
+        onClose={() => setShowPaywall(false)}
+        reason="Complete your Pro subscription to unlock full dashboard access. Pay via bKash, Nagad, or card."
+      />
+
       <div className="fixed inset-0 -z-10">
         <div className="absolute inset-0 bg-[#0D0D0D]" />
         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#16A34A]/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
