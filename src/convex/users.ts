@@ -116,3 +116,22 @@ export const isSuperAdminUser = query({
     return user.email?.toLowerCase() === SUPER_ADMIN_EMAIL || user.role === "admin";
   },
 });
+
+/**
+ * Check if the current user has completed onboarding.
+ */
+export const hasCompletedOnboarding = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return false;
+
+    const user = await ctx.db.get(userId);
+    if (!user) return false;
+
+    // Super admin skips onboarding
+    if (user.email?.toLowerCase() === SUPER_ADMIN_EMAIL) return true;
+
+    return user.onboardingCompleted === true;
+  },
+});

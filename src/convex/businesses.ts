@@ -10,6 +10,73 @@ function slugify(name: string): string {
     .replace(/^-|-$/g, "");
 }
 
+/** Complete onboarding: create first business + mark user as onboarded */
+export const completeOnboarding = mutation({
+  args: {
+    businessName: v.string(),
+    category: v.string(),
+    phone: v.string(),
+    reviewUrl: v.string(),
+    slug: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Must be signed in");
+
+    const user = await ctx.db.get(userId);
+    if (!user) throw new Error("User not found");
+
+    // Generate slug
+    const slug = args.slug || slugify(args.businessName);
+
+    // Ensure slug is unique
+    let finalSlug = slug;
+    let attempt = 0;
+    while (true) {
+      const existing = await ctx.db
+        .query("businesses")
+        .withIndex("by_slug", (q) => q.eq("slug", finalSlug))
+        .first();
+      if (!existing) break;
+      attempt++;
+      finalSlug = `${slug}-${attempt}`;
+    }
+
+    // Create the business profile
+    const businessId = await ctx.db.insert("businesses", {
+      name: args.businessName,
+      slug: finalSlug,
+      logoUrl: "",
+      reviewUrl: args.reviewUrl,
+      alertEmail: user.email || "",
+      category: args.category,
+      phone: args.phone,
+      createdAt: Date.now(),
+      userId,
+    });
+
+    // Create default free subscription if none exists
+    const existingSub = await ctx.db
+      .query("subscriptions")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .first();
+
+    if (!existingSub) {
+      await ctx.db.insert("subscriptions", {
+        userId,
+        plan: "free",
+        status: "active",
+        createdAt: Date.now(),
+      });
+    }
+
+    // Mark onboarding as completed
+    await ctx.db.patch(userId, { onboardingCompleted: true });
+
+    return { businessId, slug: finalSlug };
+  },
+});
+
 export const create = mutation({
   args: {
     name: v.string(),

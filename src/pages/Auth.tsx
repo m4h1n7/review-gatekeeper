@@ -69,7 +69,11 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const { isLoading: authLoading, isAuthenticated, signIn } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const redirect = resolveRedirectAfterAuth(searchParams.get("returnTo"), redirectAfterAuth);
+  const returnTo = searchParams.get("returnTo");
+  // If there's an explicit returnTo, use it. Otherwise check onboarding.
+  const redirect = returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//")
+    ? returnTo
+    : (redirectAfterAuth || "/dashboard");
 
   const [view, setView] = useState<AuthView>("signIn");
   const [isLoading, setIsLoading] = useState(false);

@@ -7,6 +7,17 @@ import { PrintableQR } from "@/components/PrintableQR";
 import { isSuperAdmin } from "@/components/SuperAdminGuard";
 import { motion } from "framer-motion";
 import {
+  LineChart,
+  Line,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import {
   LayoutDashboard,
   LogOut,
   Eye,
@@ -23,18 +34,17 @@ import {
   Share2,
   CheckCircle2,
   Copy,
-  Printer,
   Settings,
 } from "lucide-react";
 import { useNavigate } from "react-router";
 
 type FilterRange = "today" | "week" | "month" | "all";
 
-const FILTER_OPTIONS: { value: FilterRange; label: string }[] = [
-  { value: "today", label: "Today" },
-  { value: "week", label: "Last 7 Days" },
-  { value: "month", label: "This Month" },
-  { value: "all", label: "All Time" },
+const FILTER_OPTIONS: { value: FilterRange; label: string; days: number }[] = [
+  { value: "today", label: "Today", days: 1 },
+  { value: "week", label: "7 Days", days: 7 },
+  { value: "month", label: "30 Days", days: 30 },
+  { value: "all", label: "All Time", days: 90 },
 ];
 
 function GlassPanel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
@@ -80,22 +90,33 @@ function StatCard({
   );
 }
 
-function formatTime(timestamp: number) {
-  return new Date(timestamp).toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+function CustomTooltip({ active, payload, label }: any) {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-[#18181B]/95 backdrop-blur-xl border border-white/10 rounded-lg px-3 py-2 shadow-xl">
+        <p className="text-xs text-[#A1A1AA] mb-1">{label}</p>
+        <p className="text-sm font-bold text-white">Score: {payload[0].value}</p>
+        {payload[0].payload?.positive !== undefined && (
+          <div className="flex gap-3 mt-1">
+            <span className="text-[10px] text-[#16A34A]">+{payload[0].payload.positive} positive</span>
+            <span className="text-[10px] text-amber-400">-{payload[0].payload.negative} feedback</span>
+          </div>
+        )}
+      </div>
+    );
+  }
+  return null;
 }
 
 export default function Dashboard() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const [filter, setFilter] = useState<FilterRange>("all");
+  const [filter, setFilter] = useState<FilterRange>("week");
+  const [chartDays, setChartDays] = useState(7);
   const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null);
 
   const overview = useQuery(api.analytics.dashboardOverview, { filter });
+  const trend = useQuery(api.analytics.ratingTrend, { days: chartDays });
   const stats = useQuery(
     api.analytics.businessStats,
     selectedBusinessId
@@ -135,7 +156,6 @@ export default function Dashboard() {
     URL.revokeObjectURL(url);
   };
 
-  // Show checklist for new users (fewer than 3 interactions)
   const showChecklist = overview && overview.totalVisits < 3;
 
   const toggleFeedbackStatus = useMutation(api.feedback.toggleStatus);
@@ -169,6 +189,8 @@ export default function Dashboard() {
     feedbackPercentage: overview.feedbackPercentage,
   } : null;
 
+  const businessName = overview?.businesses[0]?.name || user?.name || "your business";
+
   return (
     <div className="min-h-screen">
       {/* Background */}
@@ -185,8 +207,8 @@ export default function Dashboard() {
             className="flex items-center gap-2.5 cursor-pointer"
             onClick={() => navigate("/")}
           >
-            <div className="w-9 h-9 rounded-xl bg-[#16A34A]/15 flex items-center justify-center">
-              <Star className="w-5 h-5 text-[#16A34A] fill-[#16A34A]" />
+            <div className="w-9 h-9 rounded-xl bg-[#16A34A] flex items-center justify-center shadow-lg shadow-[#16A34A]/25">
+              <Star className="w-5 h-5 text-white fill-white" />
             </div>
             <div className="flex flex-col">
               <span className="font-bold text-base text-white tracking-wide leading-tight">
@@ -206,7 +228,7 @@ export default function Dashboard() {
                 className="border-[#16A34A]/30 bg-[#16A34A]/10 hover:bg-[#16A34A]/20 text-[#16A34A] cursor-pointer font-semibold"
               >
                 <Shield className="w-4 h-4 mr-1.5" />
-                Admin Panel
+                Admin
               </Button>
             )}
             <Button
@@ -215,15 +237,13 @@ export default function Dashboard() {
               onClick={() => navigate("/manage")}
               className="border-white/10 bg-white/5 hover:bg-white/10 text-[#A1A1AA] cursor-pointer"
             >
-              <Shield className="w-4 h-4 mr-1.5" />
-              Manage Profiles
+              Manage
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={() => navigate("/settings")}
               className="border-white/10 bg-white/5 hover:bg-white/10 text-[#A1A1AA] cursor-pointer"
-              title="Account Settings"
             >
               <Settings className="w-4 h-4" />
             </Button>
@@ -240,14 +260,25 @@ export default function Dashboard() {
       </nav>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
-        {/* Header */}
+        {/* Personalized Header */}
         <div className="mb-8">
-          <p className="text-sm font-medium text-[#16A34A]">
-            Analytics Dashboard
-          </p>
-          <h1 className="mt-1 text-2xl sm:text-3xl font-bold tracking-tight text-white">
-            Welcome back{user?.name ? `, ${user.name}` : ""}
-          </h1>
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-[#16A34A]/15 flex items-center justify-center">
+              {overview?.businesses[0] ? (
+                <span className="text-lg font-bold text-[#16A34A]">{businessName.charAt(0).toUpperCase()}</span>
+              ) : (
+                <Star className="w-6 h-6 text-[#16A34A] fill-[#16A34A]" />
+              )}
+            </div>
+            <div>
+              <p className="text-sm font-medium text-[#16A34A]">
+                Analytics Dashboard
+              </p>
+              <h1 className="mt-0.5 text-2xl sm:text-3xl font-bold tracking-tight text-white">
+                Welcome back, {businessName}!
+              </h1>
+            </div>
+          </div>
         </div>
 
         {/* Getting Started Checklist */}
@@ -315,13 +346,13 @@ export default function Dashboard() {
           </GlassPanel>
         )}
 
-        {/* Filter controls */}
+        {/* Filter + Business Selector */}
         <div className="flex flex-wrap items-center gap-2 mb-6">
           <Calendar className="w-4 h-4 text-[#A1A1AA] mr-1" />
           {FILTER_OPTIONS.map((opt) => (
             <button
               key={opt.value}
-              onClick={() => setFilter(opt.value)}
+              onClick={() => { setFilter(opt.value); setChartDays(opt.days); }}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-all cursor-pointer ${
                 filter === opt.value
                   ? "bg-[#16A34A] text-white shadow-md shadow-[#16A34A]/25"
@@ -423,6 +454,61 @@ export default function Dashboard() {
                 color="bg-[#16A34A]/10"
               />
             </div>
+
+            {/* Rating Trend Chart */}
+            <GlassPanel className="p-6 mb-8">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-white">
+                    Rating Performance Trend
+                  </h3>
+                  <p className="text-xs text-[#A1A1AA] mt-0.5">
+                    Score trends up with positive redirects, down with private feedback
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 text-[10px]">
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 rounded-full bg-[#16A34A]" />
+                    <span className="text-[#A1A1AA]">Score</span>
+                  </div>
+                </div>
+              </div>
+              <div className="h-[250px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={trend || []}>
+                    <defs>
+                      <linearGradient id="scoreGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#16A34A" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#16A34A" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                    <XAxis
+                      dataKey="day"
+                      stroke="#A1A1AA"
+                      fontSize={10}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis
+                      stroke="#A1A1AA"
+                      fontSize={10}
+                      tickLine={false}
+                      axisLine={false}
+                      domain={[0, 100]}
+                    />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Area
+                      type="monotone"
+                      dataKey="score"
+                      stroke="#16A34A"
+                      strokeWidth={2}
+                      fill="url(#scoreGradient)"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </GlassPanel>
 
             {/* Ratio bar */}
             <GlassPanel className="p-6 mb-8">

@@ -30,6 +30,7 @@ const schema = defineSchema(
       isAnonymous: v.optional(v.boolean()), // is the user anonymous. do not remove
 
       role: v.optional(roleValidator), // role of the user. do not remove
+      onboardingCompleted: v.optional(v.boolean()),
     }).index("email", ["email"]), // index for the email. do not remove or modify
 
     businesses: defineTable({
@@ -38,6 +39,8 @@ const schema = defineSchema(
       logoUrl: v.string(),
       reviewUrl: v.string(),
       alertEmail: v.string(),
+      category: v.optional(v.string()),
+      phone: v.optional(v.string()),
       createdAt: v.number(),
       userId: v.string(), // owner of this business profile
     })

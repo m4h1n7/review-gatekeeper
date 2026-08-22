@@ -88,6 +88,86 @@ export const recentFeedbacks = query({
   },
 });
 
+/** Daily rating trend for chart display */
+export const ratingTrend = query({
+  args: {
+    businessId: v.optional(v.string()),
+    days: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+
+    const since = Date.now() - args.days * 24 * 60 * 60 * 1000;
+
+    let businessIds: string[] = [];
+
+    if (args.businessId) {
+      businessIds = [args.businessId];
+    } else {
+      const businesses = await ctx.db
+        .query("businesses")
+        .withIndex("by_userId", (q) => q.eq("userId", userId))
+        .collect();
+      businessIds = businesses.map((b) => b._id);
+    }
+
+    // Collect all interactions since the start
+    const allInteractions: { rating: number; type: string; createdAt: number }[] = [];
+    for (const bid of businessIds) {
+      const interactions = await ctx.db
+        .query("interactions")
+        .withIndex("by_businessId", (q) =>
+          q.eq("businessId", bid).gte("createdAt", since),
+        )
+        .collect();
+      allInteractions.push(...interactions.map((i) => ({ rating: i.rating, type: i.type, createdAt: i.createdAt })));
+    }
+
+    // Group by day
+    const dayMap: Record<string, { rating: number; type: string; score: number }[]> = {};
+    const now = new Date();
+
+    for (let d = args.days - 1; d >= 0; d--) {
+      const date = new Date(now);
+      date.setDate(date.getDate() - d);
+      const key = date.toISOString().slice(0, 10);
+      dayMap[key] = [];
+    }
+
+    for (const interaction of allInteractions) {
+      const date = new Date(interaction.createdAt).toISOString().slice(0, 10);
+      if (dayMap[date]) {
+        dayMap[date].push({
+          rating: interaction.rating,
+          type: interaction.type,
+          score: interaction.rating >= 4 ? 1 : -0.5,
+        });
+      }
+    }
+
+    // Calculate running score
+    let runningScore = 50; // start at neutral
+    const trend = Object.entries(dayMap).map(([date, items]) => {
+      const positive = items.filter((i) => i.type === "redirect").length;
+      const negative = items.filter((i) => i.type === "feedback_submitted").length;
+      const dayDelta = items.reduce((sum, i) => sum + i.score, 0);
+      runningScore = Math.max(0, Math.min(100, runningScore + dayDelta * 2));
+
+      return {
+        date,
+        day: new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+        score: Math.round(runningScore),
+        positive,
+        negative,
+        total: items.length,
+      };
+    });
+
+    return trend;
+  },
+});
+
 /** Aggregate stats across all user's business profiles */
 export const dashboardOverview = query({
   args: {

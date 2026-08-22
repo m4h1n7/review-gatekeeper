@@ -14,7 +14,7 @@ import {
   Smartphone,
   Zap,
   BarChart3,
-  LayoutDashboard,
+  CheckCircle2,
 } from "lucide-react";
 
 function GlassPanel({
@@ -74,17 +74,24 @@ export default function Landing() {
           <div className="flex items-center gap-3">
             <Button
               variant="ghost"
-              onClick={() => navigate("/pricing")}
+              onClick={() => document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })}
               className="text-zinc-400 hover:text-white cursor-pointer hidden sm:flex"
             >
-              Pricing
+              Features
             </Button>
             <Button
               variant="ghost"
-              onClick={() => navigate("/manage")}
+              onClick={() => document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" })}
               className="text-zinc-400 hover:text-white cursor-pointer hidden sm:flex"
             >
-              Admin
+              How It Works
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" })}
+              className="text-zinc-400 hover:text-white cursor-pointer hidden sm:flex"
+            >
+              Pricing
             </Button>
             {isAuthenticated ? (
               <Button
@@ -99,7 +106,7 @@ export default function Landing() {
                 onClick={() => navigate("/auth")}
                 className="bg-[#16A34A] hover:bg-[#15803D] text-white font-semibold shadow-lg shadow-[#16A34A]/25 hover:shadow-[#16A34A]/40 transition-all cursor-pointer"
               >
-                Sign In
+                Sign Up Free
                 <ArrowRight className="w-4 h-4 ml-1" />
               </Button>
             )}
@@ -167,7 +174,7 @@ export default function Landing() {
               className="h-14 px-8 bg-white/[0.04] backdrop-blur-sm border-white/[0.08] text-zinc-300 font-semibold hover:bg-white/[0.08] cursor-pointer"
             >
               <Eye className="w-5 h-5 mr-2" />
-              Try Demo Dashboard
+              Try Demo
             </Button>
           </motion.div>
         </div>
@@ -248,7 +255,7 @@ export default function Landing() {
       </section>
 
       {/* Features Grid */}
-      <section className="relative z-10 px-4 sm:px-6 py-16 sm:py-24">
+      <section id="features" className="relative z-10 px-4 sm:px-6 py-16 sm:py-24">
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -323,6 +330,98 @@ export default function Landing() {
       </section>
 
       {/* Pricing Preview */}
+      <section id="pricing" className="relative z-10 px-4 sm:px-6 py-16 sm:py-24">
+        <div className="max-w-4xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.5 }}
+            className="text-center mb-12"
+          >
+            <p className="text-sm font-semibold text-[#16A34A] uppercase tracking-widest mb-3">
+              Pricing
+            </p>
+            <h2 className="text-3xl sm:text-4xl font-bold text-white">
+              Simple, transparent pricing
+            </h2>
+          </motion.div>
+
+          <div className="grid sm:grid-cols-2 gap-6">
+            {/* Free Plan */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+            >
+              <GlassPanel className="p-8 h-full flex flex-col">
+                <div className="mb-6">
+                  <h3 className="text-lg font-bold text-white mb-1">Free Trial</h3>
+                  <p className="text-sm text-[#A1A1AA]">Get started at no cost</p>
+                </div>
+                <div className="mb-6">
+                  <span className="text-4xl font-extrabold text-white">$0</span>
+                  <span className="text-sm text-[#A1A1AA] ml-1">/month</span>
+                </div>
+                <ul className="space-y-3 mb-8 flex-1">
+                  {["1 Business Profile", "Up to 15 Reviews/Feedbacks", "Basic Analytics", "QR Code Generation"].map((f) => (
+                    <li key={f} className="flex items-center gap-2 text-sm text-[#A1A1AA]">
+                      <CheckCircle2 className="w-4 h-4 text-[#16A34A] shrink-0" />
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+                <Button
+                  onClick={() => navigate(isAuthenticated ? "/dashboard" : "/auth")}
+                  className="w-full h-11 bg-white/5 border border-white/10 hover:bg-white/10 text-white font-semibold cursor-pointer"
+                >
+                  Get Started
+                </Button>
+              </GlassPanel>
+            </motion.div>
+
+            {/* Pro Plan */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
+              <GlassPanel className="p-8 h-full flex flex-col border-[#16A34A]/30 relative overflow-hidden">
+                <div className="absolute top-0 right-0 px-3 py-1 bg-[#16A34A] text-white text-[10px] font-bold uppercase tracking-wider rounded-bl-lg">
+                  Popular
+                </div>
+                <div className="mb-6">
+                  <h3 className="text-lg font-bold text-white mb-1">Pro Plan</h3>
+                  <p className="text-sm text-[#A1A1AA]">For growing businesses</p>
+                </div>
+                <div className="mb-6">
+                  <span className="text-4xl font-extrabold text-white">$10</span>
+                  <span className="text-sm text-[#A1A1AA] ml-1">/month</span>
+                </div>
+                <ul className="space-y-3 mb-8 flex-1">
+                  {["Unlimited Business Profiles", "Unlimited Reviews & Feedback", "Advanced Analytics Dashboard", "Automated Email Alerts", "Priority Support", "Custom Branding"].map((f) => (
+                    <li key={f} className="flex items-center gap-2 text-sm text-[#A1A1AA]">
+                      <CheckCircle2 className="w-4 h-4 text-[#16A34A] shrink-0" />
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+                <Button
+                  onClick={() => navigate(isAuthenticated ? "/pricing" : "/auth")}
+                  className="w-full h-11 bg-[#16A34A] hover:bg-[#15803D] text-white font-semibold cursor-pointer shadow-lg shadow-[#16A34A]/25"
+                >
+                  <Zap className="w-4 h-4 mr-2" />
+                  Upgrade to Pro
+                </Button>
+              </GlassPanel>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
       <section className="relative z-10 px-4 sm:px-6 py-16 sm:py-24">
         <div className="max-w-3xl mx-auto">
           <motion.div
@@ -332,28 +431,21 @@ export default function Landing() {
             transition={{ duration: 0.6 }}
           >
             <GlassPanel className="p-8 sm:p-12 text-center">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#16A34A]/10 backdrop-blur-sm border border-[#16A34A]/20 text-[#16A34A] text-sm font-medium mb-6">
-                <Zap className="w-4 h-4" />
-                Start free, upgrade anytime
-              </div>
               <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">
-                Simple, transparent pricing
+                Ready to protect your reputation?
               </h2>
-              <p className="text-[#A1A1AA] text-base max-w-lg mx-auto mb-4">
-                Free trial with 1 profile and 15 feedbacks. Pro plan at $10/month
-                for unlimited profiles, analytics, and automated email alerts.
+              <p className="text-[#A1A1AA] text-base max-w-lg mx-auto mb-6">
+                Join local businesses using STAR CATCH to keep their Google ratings accurate and collect private feedback from unhappy customers.
               </p>
-              <div className="flex items-center justify-center gap-3">
-                <Button
-                  size="lg"
-                  onClick={() => navigate("/pricing")}
-                  className="h-14 px-10 bg-[#16A34A] hover:bg-[#15803D] text-white font-bold text-base shadow-xl shadow-[#16A34A]/25 hover:shadow-[#16A34A]/40 transition-all cursor-pointer"
-                >
-                  <Star className="w-5 h-5 mr-2 fill-white" />
-                  View Pricing
-                  <ChevronRight className="w-5 h-5 ml-1" />
-                </Button>
-              </div>
+              <Button
+                size="lg"
+                onClick={() => navigate(isAuthenticated ? "/dashboard" : "/auth")}
+                className="h-14 px-10 bg-[#16A34A] hover:bg-[#15803D] text-white font-bold text-base shadow-xl shadow-[#16A34A]/25 hover:shadow-[#16A34A]/40 transition-all cursor-pointer"
+              >
+                <Star className="w-5 h-5 mr-2 fill-white" />
+                {isAuthenticated ? "Go to Dashboard" : "Start Free Today"}
+                <ChevronRight className="w-5 h-5 ml-1" />
+              </Button>
             </GlassPanel>
           </motion.div>
         </div>
