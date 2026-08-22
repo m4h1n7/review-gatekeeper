@@ -1,20 +1,23 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { motion } from "framer-motion";
 import { useNavigate } from "react-router";
 import {
-  LayoutDashboard,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import {
   Eye,
   Star,
   MessageSquare,
   TrendingUp,
-  Calendar,
   ArrowUpRight,
-  Shield,
   Download,
-  Link2,
-  TestTube,
-  Share2,
+  Inbox,
   CheckCircle2,
   Copy,
   Printer,
@@ -23,34 +26,35 @@ import {
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 
-type FilterRange = "today" | "week" | "month" | "all";
-
-const FILTER_OPTIONS: { value: FilterRange; label: string }[] = [
-  { value: "today", label: "Today" },
-  { value: "week", label: "Last 7 Days" },
-  { value: "month", label: "This Month" },
-  { value: "all", label: "All Time" },
-];
-
-const DEMO_BUSINESSES = [
-  { id: "demo-1", name: "GreenLeaf Coffee House", slug: "greenleaf-coffee" },
-  { id: "demo-2", name: "Urban Cuts Salon", slug: "urban-cuts-salon" },
-];
+const DEMO_BUSINESS = {
+  name: "Cafforia Cafe",
+  slug: "cafforia-cafe",
+};
 
 const DEMO_FEEDBACKS = [
-  { id: "fb-1", customerName: "Sarah Ahmed", phone: "+880 1712-345678", email: "sarah.a@gmail.com", message: "The coffee was excellent but the waiting time was too long during peak hours. Would appreciate faster service.", rating: 2, createdAt: Date.now() - 3600000, status: "resolved" as const },
-  { id: "fb-2", customerName: "Rahul Khan", phone: "+880 1834-567890", email: "rahul.k@yahoo.com", message: "Great ambiance and friendly staff. The pastry selection could be better though.", rating: 3, createdAt: Date.now() - 7200000, status: "unresolved" as const },
-  { id: "fb-3", customerName: "Nadia Rahman", phone: "+880 1912-112233", email: "nadia.r@outlook.com", message: "Parking is very difficult. Need dedicated parking for customers.", rating: 2, createdAt: Date.now() - 14400000, status: "unresolved" as const },
-  { id: "fb-4", customerName: "Tanvir Hasan", phone: "+880 1678-998877", email: "tanvir.h@gmail.com", message: "Music was too loud for a coffee shop. Please consider lowering the volume.", rating: 3, createdAt: Date.now() - 28800000, status: "resolved" as const },
-  { id: "fb-5", customerName: "Fatima Begum", phone: "+880 1534-223344", email: "fatima.b@hotmail.com", message: "The Wi-Fi kept disconnecting. unreliable internet for remote work.", rating: 1, createdAt: Date.now() - 43200000, status: "unresolved" as const },
+  { id: "fb-1", customerName: "Sarah Ahmed", phone: "+880 1712-345678", message: "The coffee was excellent but the waiting time was too long during peak hours. Would appreciate faster service.", rating: 2, createdAt: Date.now() - 3600000, status: "resolved" as const },
+  { id: "fb-2", customerName: "Rahul Khan", phone: "+880 1834-567890", message: "Great ambiance and friendly staff. The pastry selection could be better though.", rating: 3, createdAt: Date.now() - 7200000, status: "unresolved" as const },
+  { id: "fb-3", customerName: "Nadia Rahman", phone: "+880 1912-112233", message: "Parking is very difficult. Need dedicated parking for customers.", rating: 2, createdAt: Date.now() - 14400000, status: "unresolved" as const },
+  { id: "fb-4", customerName: "Tanvir Hasan", phone: "+880 1678-998877", message: "Music was too loud for a coffee shop. Please consider lowering the volume.", rating: 3, createdAt: Date.now() - 28800000, status: "resolved" as const },
+  { id: "fb-5", customerName: "Fatima Begum", phone: "+880 1534-223344", message: "The Wi-Fi kept disconnecting. Unreliable internet for remote work.", rating: 1, createdAt: Date.now() - 43200000, status: "unresolved" as const },
+];
+
+const TREND_DATA = [
+  { day: "Mon", score: 62 },
+  { day: "Tue", score: 65 },
+  { day: "Wed", score: 68 },
+  { day: "Thu", score: 70 },
+  { day: "Fri", score: 74 },
+  { day: "Sat", score: 78 },
+  { day: "Sun", score: 82 },
 ];
 
 const DEMO_STATS = {
-  totalVisits: 342,
-  redirectCount: 247,
-  feedbackCount: 95,
-  redirectPercentage: 72,
-  feedbackPercentage: 28,
+  totalVisits: 142,
+  redirectCount: 128,
+  feedbackCount: 14,
+  redirectPercentage: 90,
+  feedbackPercentage: 10,
 };
 
 function GlassPanel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
@@ -76,25 +80,29 @@ function StatCard({ icon, label, value, sub, color }: { icon: React.ReactNode; l
   );
 }
 
+function ChartTooltip({ active, payload, label }: any) {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-[#18181B]/95 backdrop-blur-xl border border-white/10 rounded-lg px-3 py-2 shadow-xl">
+        <p className="text-xs text-[#A1A1AA] mb-1">{label}</p>
+        <p className="text-sm font-bold text-white">Score: {payload[0].value}</p>
+      </div>
+    );
+  }
+  return null;
+}
+
 function formatTime(timestamp: number) {
   return new Date(timestamp).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
 export default function DemoDashboard() {
   const navigate = useNavigate();
-  const [filter, setFilter] = useState<FilterRange>("all");
-  const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
   const [feedbackStatuses, setFeedbackStatuses] = useState<Record<string, "resolved" | "unresolved">>(
     Object.fromEntries(DEMO_FEEDBACKS.map((f) => [f.id, f.status]))
   );
   const [showQuickReply, setShowQuickReply] = useState<string | null>(null);
   const [copiedTemplate, setCopiedTemplate] = useState(false);
-
-  const selectedBiz = selectedBusinessId ? DEMO_BUSINESSES.find((b) => b.id === selectedBusinessId) : null;
-  const displayFeedbacks = selectedBiz
-    ? DEMO_FEEDBACKS.filter((_, i) => i < 3)
-    : DEMO_FEEDBACKS;
 
   const toggleStatus = (id: string) => {
     setFeedbackStatuses((prev) => ({
@@ -103,14 +111,8 @@ export default function DemoDashboard() {
     }));
   };
 
-  const copyToClipboard = (slug: string) => {
-    navigator.clipboard.writeText(`${window.location.origin}/review/${slug}`);
-    setCopiedId(slug);
-    setTimeout(() => setCopiedId(null), 2000);
-  };
-
   const copyReplyTemplate = (customerName: string) => {
-    const template = `Dear ${customerName},\n\nThank you for sharing your feedback with us. We sincerely apologize for the inconvenience you experienced. Your input is invaluable, and we are actively working to improve.\n\nWe would love the opportunity to make things right. Please feel free to reach out to us directly so we can assist you further.\n\nWarm regards,\nSTAR CATCH`;
+    const template = `Dear ${customerName},\n\nThank you for sharing your feedback with us. We sincerely apologize for the inconvenience you experienced. Your input is invaluable, and we are actively working to improve.\n\nWe would love the opportunity to make things right. Please feel free to reach out to us directly so we can assist you further.\n\nWarm regards,\nCafforia Cafe`;
     navigator.clipboard.writeText(template);
     setCopiedTemplate(true);
     setTimeout(() => setCopiedTemplate(false), 2000);
@@ -125,24 +127,25 @@ export default function DemoDashboard() {
         <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-[#16A34A]/3 rounded-full blur-3xl translate-y-1/3 -translate-x-1/4" />
       </div>
 
-      {/* Demo banner */}
-      <div className="relative z-20 bg-[#16A34A]/10 border-b border-[#16A34A]/20 px-4 py-3">
+      {/* Sticky Demo Banner */}
+      <div className="sticky top-0 z-30 bg-[#16A34A]/10 border-b border-[#16A34A]/20 px-4 py-3 backdrop-blur-xl">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-6 h-6 rounded-full bg-[#16A34A] flex items-center justify-center">
               <Eye className="w-3.5 h-3.5 text-white" />
             </div>
             <p className="text-sm text-[#16A34A] font-medium">
-              Demo Mode — This is a preview of the analytics dashboard
+              You are viewing a live demo
             </p>
           </div>
           <Button
             size="sm"
-            onClick={() => navigate("/auth?returnTo=/dashboard")}
-            className="bg-[#16A34A] hover:bg-[#16A34A]/90 text-white cursor-pointer text-xs font-semibold"
+            onClick={() => navigate("/pricing")}
+            className="bg-[#16A34A] hover:bg-[#16A34A]/90 text-white cursor-pointer text-xs font-semibold shadow-lg shadow-[#16A34A]/25"
           >
-            Sign Up Free
-            <ArrowRight className="w-3.5 h-3.5 ml-1" />
+            <Star className="w-3.5 h-3.5 mr-1 fill-white" />
+            Upgrade to Pro Now
+            <ArrowUpRight className="w-3.5 h-3.5 ml-1" />
           </Button>
         </div>
       </div>
@@ -172,38 +175,39 @@ export default function DemoDashboard() {
         {/* Header */}
         <div className="mb-8">
           <p className="text-sm font-medium text-[#16A34A]">Analytics Dashboard</p>
-          <h1 className="mt-1 text-2xl sm:text-3xl font-bold tracking-tight text-white">Welcome back, Demo User</h1>
-        </div>
-
-        {/* Filter controls */}
-        <div className="flex flex-wrap items-center gap-2 mb-6">
-          <Calendar className="w-4 h-4 text-[#A1A1AA] mr-1" />
-          {FILTER_OPTIONS.map((opt) => (
-            <button key={opt.value} onClick={() => setFilter(opt.value)} className={`px-4 py-2 rounded-full text-sm font-medium transition-all cursor-pointer ${filter === opt.value ? "bg-[#16A34A] text-white shadow-md shadow-[#16A34A]/25" : "bg-white/5 border border-white/10 text-[#A1A1AA] hover:bg-white/10"}`}>
-              {opt.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Business profile selector */}
-        <div className="flex flex-wrap gap-2 mb-6">
-          <button onClick={() => setSelectedBusinessId(null)} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${!selectedBusinessId ? "bg-[#16A34A] text-white" : "bg-white/5 text-[#A1A1AA] hover:bg-white/10 border border-white/10"}`}>
-            All Profiles
-          </button>
-          {DEMO_BUSINESSES.map((biz) => (
-            <button key={biz.id} onClick={() => setSelectedBusinessId(biz.id)} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${selectedBusinessId === biz.id ? "bg-[#16A34A] text-white" : "bg-white/5 text-[#A1A1AA] hover:bg-white/10 border border-white/10"}`}>
-              {biz.name}
-            </button>
-          ))}
+          <h1 className="mt-1 text-2xl sm:text-3xl font-bold tracking-tight text-white">Welcome back, {DEMO_BUSINESS.name}!</h1>
+          <p className="text-sm text-[#A1A1AA] mt-1">Here's how your review gateway is performing.</p>
         </div>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <StatCard icon={<Eye className="w-5 h-5 text-[#16A34A]" />} label="Total Visits" value={DEMO_STATS.totalVisits} sub={`Across ${DEMO_BUSINESSES.length} profile(s)`} color="bg-[#16A34A]/10" />
+          <StatCard icon={<Eye className="w-5 h-5 text-[#16A34A]" />} label="Total Taps" value={DEMO_STATS.totalVisits} sub="Across 1 profile" color="bg-[#16A34A]/10" />
           <StatCard icon={<Star className="w-5 h-5 text-emerald-400" />} label="Google Redirects" value={DEMO_STATS.redirectCount} sub={`${DEMO_STATS.redirectPercentage}% of total`} color="bg-emerald-500/10" />
           <StatCard icon={<MessageSquare className="w-5 h-5 text-amber-400" />} label="Private Feedback" value={DEMO_STATS.feedbackCount} sub={`${DEMO_STATS.feedbackPercentage}% of total`} color="bg-amber-500/10" />
           <StatCard icon={<TrendingUp className="w-5 h-5 text-[#16A34A]" />} label="Protection Rate" value={`${DEMO_STATS.redirectPercentage}%`} sub="Reviews redirected to Google" color="bg-[#16A34A]/10" />
         </div>
+
+        {/* Rating Trend Chart */}
+        <GlassPanel className="p-6 mb-8">
+          <h3 className="text-sm font-semibold text-white mb-4">Rating Performance Trend</h3>
+          <div className="h-[220px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={TREND_DATA}>
+                <defs>
+                  <linearGradient id="demoGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#16A34A" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#16A34A" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                <XAxis dataKey="day" stroke="#A1A1AA" fontSize={10} tickLine={false} axisLine={false} />
+                <YAxis stroke="#A1A1AA" fontSize={10} tickLine={false} axisLine={false} domain={[0, 100]} />
+                <Tooltip content={<ChartTooltip />} />
+                <Area type="monotone" dataKey="score" stroke="#16A34A" strokeWidth={2} fill="url(#demoGradient)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </GlassPanel>
 
         {/* Rating Breakdown */}
         <GlassPanel className="p-6 mb-8">
@@ -224,7 +228,7 @@ export default function DemoDashboard() {
           </div>
         </GlassPanel>
 
-        {/* QR Code + Recent Feedback side by side */}
+        {/* QR Code + Feedback Inbox side by side */}
         <div className="grid lg:grid-cols-3 gap-6 mb-8">
           {/* QR Code Card */}
           <GlassPanel className="p-6">
@@ -244,7 +248,7 @@ export default function DemoDashboard() {
                   <span className="text-[9px] font-bold text-[#18181B] tracking-wide">STAR CATCH</span>
                 </div>
                 <div className="relative">
-                  <QRCodeSVG value={`${window.location.origin}/review/demo-slug`} size={140} level="H" bgColor="#FFFFFF" fgColor="#18181B" />
+                  <QRCodeSVG value={`${window.location.origin}/review/${DEMO_BUSINESS.slug}`} size={140} level="H" bgColor="#FFFFFF" fgColor="#18181B" />
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                     <div className="w-8 h-8 rounded-md bg-[#16A34A] flex items-center justify-center shadow-md">
                       <Star className="w-4 h-4 text-white fill-white" />
@@ -264,11 +268,17 @@ export default function DemoDashboard() {
             </div>
           </GlassPanel>
 
-          {/* Recent Feedback Table */}
+          {/* Private Inbox Table */}
           <GlassPanel className="lg:col-span-2 overflow-hidden">
-            <div className="p-6 pb-4">
-              <h3 className="text-sm font-semibold text-white">Recent Private Feedback</h3>
-              <p className="text-xs text-[#A1A1AA] mt-0.5">Latest submissions from customers</p>
+            <div className="p-6 pb-4 flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-semibold text-white">Private Feedback Inbox</h3>
+                <p className="text-xs text-[#A1A1AA] mt-0.5">Customer feedback from 1–3 star ratings</p>
+              </div>
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#16A34A]/10 border border-[#16A34A]/20">
+                <Inbox className="w-3 h-3 text-[#16A34A]" />
+                <span className="text-[10px] font-semibold text-[#16A34A]">{DEMO_FEEDBACKS.length} items</span>
+              </div>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -282,12 +292,15 @@ export default function DemoDashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
-                  {displayFeedbacks.map((fb) => {
+                  {DEMO_FEEDBACKS.map((fb) => {
                     const status = feedbackStatuses[fb.id] ?? fb.status;
                     return (
                       <tr key={fb.id} className="hover:bg-white/[0.03] transition-colors">
                         <td className="px-4 py-3">
-                          <span className="text-sm font-medium text-white">{fb.customerName}</span>
+                          <div>
+                            <span className="text-sm font-medium text-white">{fb.customerName}</span>
+                            <p className="text-[10px] text-[#A1A1AA]/50 mt-0.5">{fb.phone}</p>
+                          </div>
                         </td>
                         <td className="px-4 py-3">
                           <span className="text-amber-400 text-sm">{"★".repeat(fb.rating)}{"☆".repeat(5 - fb.rating)}</span>
@@ -296,12 +309,14 @@ export default function DemoDashboard() {
                           <p className="text-sm text-[#A1A1AA] truncate">{fb.message}</p>
                         </td>
                         <td className="px-4 py-3">
-                          <button onClick={() => toggleStatus(fb.id)} className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors cursor-pointer ${status === "resolved" ? "bg-[#16A34A]" : "bg-red-500/80"}`}>
-                            <span className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${status === "resolved" ? "translate-x-[18px]" : "translate-x-[3px]"}`} />
-                          </button>
-                          <span className={`ml-2 text-[10px] font-semibold ${status === "resolved" ? "text-[#16A34A]" : "text-red-400"}`}>
-                            {status === "resolved" ? "Resolved" : "Unresolved"}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <button onClick={() => toggleStatus(fb.id)} className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors cursor-pointer ${status === "resolved" ? "bg-[#16A34A]" : "bg-red-500/80"}`}>
+                              <span className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${status === "resolved" ? "translate-x-[18px]" : "translate-x-[3px]"}`} />
+                            </button>
+                            <span className={`text-[10px] font-semibold ${status === "resolved" ? "text-[#16A34A]" : "text-red-400"}`}>
+                              {status === "resolved" ? "Resolved" : "Unresolved"}
+                            </span>
+                          </div>
                         </td>
                         <td className="px-4 py-3 text-right">
                           <div className="relative inline-block">
@@ -341,21 +356,13 @@ export default function DemoDashboard() {
         <GlassPanel className="p-8 text-center">
           <h3 className="text-lg font-bold text-white mb-2">Ready to protect your Google rating?</h3>
           <p className="text-sm text-[#A1A1AA] mb-6">Get started now and set up your first review gatekeeper in under a minute.</p>
-          <Button onClick={() => navigate("/auth?returnTo=/dashboard")} className="bg-[#16A34A] hover:bg-[#16A34A]/90 text-white font-semibold cursor-pointer">
+          <Button onClick={() => navigate("/pricing")} className="bg-[#16A34A] hover:bg-[#16A34A]/90 text-white font-semibold cursor-pointer shadow-lg shadow-[#16A34A]/25">
             <Star className="w-4 h-4 mr-2 fill-white" />
-            Get Started Now
+            Choose Plan
             <ArrowUpRight className="w-4 h-4 ml-1" />
           </Button>
         </GlassPanel>
       </div>
     </div>
-  );
-}
-
-function ArrowRight(props: { className?: string }) {
-  return (
-    <svg className={props.className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M5 12h14" /><path d="m12 5 7 7-7 7" />
-    </svg>
   );
 }

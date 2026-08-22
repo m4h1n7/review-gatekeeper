@@ -291,6 +291,15 @@ export default function Landing() {
                 >
                   See How It Works
                 </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  onClick={() => navigate("/demo")}
+                  className="h-13 px-7 bg-white/[0.04] backdrop-blur-sm border-[#16A34A]/20 text-[#16A34A] font-semibold hover:bg-[#16A34A]/10 cursor-pointer"
+                >
+                  <Eye className="w-5 h-5 mr-2" />
+                  View Live Demo
+                </Button>
               </motion.div>
 
               <motion.div
