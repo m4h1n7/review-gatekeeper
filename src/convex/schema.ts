@@ -72,6 +72,20 @@ const schema = defineSchema(
       .index("by_businessSlug", ["businessSlug", "createdAt"])
       .index("by_createdAt", ["createdAt"]),
 
+    // Manual payment submissions (bKash/Nagad)
+    payments: defineTable({
+      userId: v.string(),
+      clientEmail: v.string(),
+      gateway: v.union(v.literal("bkash"), v.literal("nagad")),
+      senderPhone: v.string(),
+      trxId: v.string(),
+      status: v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected")),
+      submittedAt: v.number(),
+      reviewedAt: v.optional(v.number()),
+    })
+      .index("by_status", ["status"])
+      .index("by_userId", ["userId"]),
+
     // Subscription plans: free trial or pro
     subscriptions: defineTable({
       userId: v.string(),

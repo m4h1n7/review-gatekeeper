@@ -199,7 +199,7 @@ export default function Dashboard() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => navigate("/admin")}
+              onClick={() => navigate("/manage")}
               className="border-white/10 bg-white/5 hover:bg-white/10 text-[#A1A1AA] cursor-pointer"
             >
               <Shield className="w-4 h-4 mr-1.5" />
@@ -241,7 +241,7 @@ export default function Dashboard() {
                   label: "Connect Your Google Review Link",
                   desc: "Add your business and set up your Google Review URL",
                   done: overview.profileCount > 0,
-                  action: () => navigate("/admin"),
+                  action: () => navigate("/manage"),
                 },
                 {
                   icon: <TestTube className="w-4 h-4" />,
@@ -255,7 +255,7 @@ export default function Dashboard() {
                   label: "Share with Customers",
                   desc: "Send your review link via SMS, email, or QR code",
                   done: overview.totalVisits >= 3,
-                  action: () => navigate("/admin"),
+                  action: () => navigate("/manage"),
                 },
               ].map((step, i) => (
                 <div
@@ -352,7 +352,7 @@ export default function Dashboard() {
               Create a review profile to start tracking ratings and feedback.
             </p>
             <Button
-              onClick={() => navigate("/admin")}
+              onClick={() => navigate("/manage")}
               className="bg-[#16A34A] hover:bg-[#16A34A]/90 text-white cursor-pointer font-semibold"
             >
               Create Your First Profile

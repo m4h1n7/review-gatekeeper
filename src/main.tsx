@@ -1,6 +1,7 @@
 import '@vly-ai/integrations';
 import { Toaster } from "@/components/ui/sonner";
 import { RequireAuth } from "@/components/RequireAuth";
+import { SuperAdminGuard } from "@/components/SuperAdminGuard";
 import { VlyToolbar } from "../vly-toolbar-readonly.tsx";
 import { ConvexAuthProvider } from "@convex-dev/auth/react";
 import { ConvexReactClient } from "convex/react";
@@ -18,6 +19,7 @@ const Admin = lazy(() => import("./pages/Admin.tsx"));
 const Review = lazy(() => import("./pages/Review.tsx"));
 const Pricing = lazy(() => import("./pages/Pricing.tsx"));
 const DemoDashboard = lazy(() => import("./pages/DemoDashboard.tsx"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 
 // Simple loading fallback for route transitions
@@ -137,7 +139,8 @@ createRoot(document.getElementById("root")!).render(
                   </RequireAuth>
                 }
               />
-              <Route path="/admin" element={<Admin />} />
+              <Route path="/admin" element={<SuperAdminGuard><AdminDashboard /></SuperAdminGuard>} />
+              <Route path="/manage" element={<Admin />} />
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/demo" element={<DemoDashboard />} />
               <Route path="/review/:clientSlug" element={<Review />} />

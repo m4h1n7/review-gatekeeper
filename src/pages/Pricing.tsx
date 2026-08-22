@@ -28,7 +28,7 @@ export default function Pricing() {
       return;
     }
     if (isAuthenticated) {
-      navigate("/admin");
+      navigate("/manage");
     } else {
       navigate("/auth?returnTo=/admin");
     }

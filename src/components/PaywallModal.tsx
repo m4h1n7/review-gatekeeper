@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useMutation } from "convex/react";
+import { api } from "../convex/_generated/api";
 import {
   X,
   Lock,
@@ -27,13 +29,24 @@ export function PaywallModal({ open, onClose, reason }: PaywallModalProps) {
   const [submitting, setSubmitting] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  const submitPayment = useMutation(api.payments.submit);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
-    // Simulate submission — in production this would POST to a backend
-    await new Promise((r) => setTimeout(r, 1200));
-    setSubmitting(false);
-    setSubmitted(true);
+    try {
+      await submitPayment({
+        gateway: "bkash",
+        senderPhone: senderNumber,
+        trxId: trxId,
+      });
+      setSubmitted(true);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to submit payment";
+      alert(msg);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleCopyNumber = () => {

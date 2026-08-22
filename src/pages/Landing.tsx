@@ -81,7 +81,7 @@ export default function Landing() {
             </Button>
             <Button
               variant="ghost"
-              onClick={() => navigate("/admin")}
+              onClick={() => navigate("/manage")}
               className="text-zinc-400 hover:text-white cursor-pointer hidden sm:flex"
             >
               Admin
