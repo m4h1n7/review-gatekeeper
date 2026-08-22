@@ -162,9 +162,14 @@ export default function Admin() {
             <div className="w-9 h-9 rounded-xl bg-[#16A34A]/15 flex items-center justify-center">
               <Star className="w-5 h-5 text-[#16A34A] fill-[#16A34A]" />
             </div>
-            <span className="font-bold text-lg text-white tracking-tight">
-              STAR CATCH MEDIA
-            </span>
+            <div className="flex flex-col">
+              <span className="font-bold text-base text-white tracking-wide leading-tight">
+                STAR CATCH
+              </span>
+              <span className="text-[10px] text-[#A1A1AA] tracking-wider leading-tight">
+                Reviews and Feedback Agency Bd
+              </span>
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <Button

@@ -33,16 +33,21 @@ function GlassPanel({
 }
 
 function StarCatchLogo({ size = "normal" }: { size?: "normal" | "small" }) {
-  const iconSize = size === "small" ? "w-4 h-4" : "w-5 h-5";
-  const boxSize = size === "small" ? "w-7 h-7" : "w-9 h-9";
+  const iconSize = size === "small" ? "w-3.5 h-3.5" : "w-5 h-5";
+  const boxSize = size === "small" ? "w-6 h-6" : "w-9 h-9";
   return (
     <div className="flex items-center gap-2.5">
       <div className={`${boxSize} rounded-xl bg-[#16A34A] flex items-center justify-center shadow-lg shadow-[#16A34A]/25`}>
         <Star className={`${iconSize} text-white fill-white`} />
       </div>
-      <span className="font-bold text-lg text-white tracking-wide">
-        STAR CATCH MEDIA
-      </span>
+      <div className="flex flex-col">
+        <span className="font-bold text-base text-white tracking-wide leading-tight">
+          STAR CATCH
+        </span>
+        <span className="text-[10px] text-[#A1A1AA] tracking-wider leading-tight">
+          Reviews and Feedback Agency Bd
+        </span>
+      </div>
     </div>
   );
 }
@@ -361,7 +366,7 @@ export default function Landing() {
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <StarCatchLogo size="small" />
           <p className="text-xs text-zinc-500">
-            © {new Date().getFullYear()} Star Catch Media. Protect your
+            © {new Date().getFullYear()} STAR CATCH Reviews and Feedback Agency Bd. Protect your
             reputation.
           </p>
         </div>

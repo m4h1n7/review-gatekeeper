@@ -53,9 +53,14 @@ export default function Pricing() {
             <div className="w-9 h-9 rounded-xl bg-[#16A34A]/15 flex items-center justify-center">
               <Star className="w-5 h-5 text-[#16A34A] fill-[#16A34A]" />
             </div>
-            <span className="font-bold text-lg text-white tracking-tight">
-              STAR CATCH MEDIA
-            </span>
+            <div className="flex flex-col">
+              <span className="font-bold text-base text-white tracking-wide leading-tight">
+                STAR CATCH
+              </span>
+              <span className="text-[10px] text-[#A1A1AA] tracking-wider leading-tight">
+                Reviews and Feedback Agency Bd
+              </span>
+            </div>
           </div>
           <Button
             onClick={() => navigate(isAuthenticated ? "/dashboard" : "/auth")}
@@ -268,12 +273,17 @@ export default function Pricing() {
             <div className="w-7 h-7 rounded-lg bg-[#16A34A]/15 flex items-center justify-center">
               <Star className="w-4 h-4 text-[#16A34A] fill-[#16A34A]" />
             </div>
-            <span className="font-bold text-sm text-white tracking-tight">
-              STAR CATCH MEDIA
-            </span>
+            <div className="flex flex-col">
+              <span className="font-bold text-sm text-white tracking-wide leading-tight">
+                STAR CATCH
+              </span>
+              <span className="text-[9px] text-[#A1A1AA]/60 tracking-wider leading-tight">
+                Reviews and Feedback Agency Bd
+              </span>
+            </div>
           </div>
           <p className="text-xs text-[#A1A1AA]/60">
-            © {new Date().getFullYear()} Star Catch Media. Protect your reputation.
+            © {new Date().getFullYear()} STAR CATCH Reviews and Feedback Agency Bd. Protect your reputation.
           </p>
         </div>
       </footer>
