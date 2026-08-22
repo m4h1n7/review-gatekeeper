@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -24,6 +24,8 @@ import {
   Eye,
   EyeOff,
   CreditCard,
+  KeyRound,
+  AlertTriangle,
 } from "lucide-react";
 import { useNavigate } from "react-router";
 
@@ -57,6 +59,7 @@ export default function AccountSettings() {
   const navigate = useNavigate();
   const subscription = useQuery(api.subscriptions.getCurrent);
   const updateProfile = useMutation(api.users.updateProfile);
+  const hasPassword = useQuery(api.users.hasPasswordAccount);
 
   // Profile form state
   const [name, setName] = useState(user?.name ?? "");
@@ -72,6 +75,14 @@ export default function AccountSettings() {
   const [pwLoading, setPwLoading] = useState(false);
   const [pwSaved, setPwSaved] = useState(false);
   const [pwError, setPwError] = useState<string | null>(null);
+
+  // Sync form state with user data
+  useEffect(() => {
+    if (user) {
+      setName(user.name ?? "");
+      setEmail(user.email ?? "");
+    }
+  }, [user?.name, user?.email]);
 
   const handleSaveProfile = async () => {
     setProfileLoading(true);
@@ -89,7 +100,7 @@ export default function AccountSettings() {
     setProfileLoading(false);
   };
 
-  const handleChangePassword = async () => {
+  const handleSetOrChangePassword = async () => {
     setPwLoading(true);
     setPwError(null);
     setPwSaved(false);
@@ -108,26 +119,46 @@ export default function AccountSettings() {
     }
 
     try {
-      // Use the password reset-verification flow to change password
-      // The user is already authenticated, so this updates their credentials
-      await signIn("password", {
-        flow: "reset-verification",
-        email: user?.email ?? "",
-        code: "direct-change",
-        newPassword,
-      });
-      setPwSaved(true);
-      setNewPassword("");
-      setConfirmPassword("");
-      setTimeout(() => setPwSaved(false), 3000);
+      if (hasPassword) {
+        // User already has a password — use reset flow to change it
+        // First trigger the reset to send an OTP
+        await signIn("password", {
+          flow: "reset",
+          email: user?.email ?? "",
+        });
+        // For simplicity, we show a message that a reset code was sent
+        setPwError(null);
+        setPwSaved(false);
+        setPwError(
+          "A password reset code has been sent to your email. Please use the Sign In page → Forgot Password to complete the change.",
+        );
+      } else {
+        // User signed up via Google/OAuth and has no password yet — create one
+        await signIn("password", {
+          flow: "signUp",
+          email: user?.email ?? "",
+          password: newPassword,
+          name: user?.name ?? "",
+        });
+        setPwSaved(true);
+        setNewPassword("");
+        setConfirmPassword("");
+        setTimeout(() => setPwSaved(false), 3000);
+      }
     } catch (err) {
-      setPwError(err instanceof Error ? err.message : "Failed to change password.");
+      setPwError(err instanceof Error ? err.message : "Failed to update password.");
     }
     setPwLoading(false);
   };
 
   const planLabel = subscription?.plan === "pro" ? "Pro" : "Free Trial";
   const planColor = subscription?.plan === "pro" ? "text-[#16A34A]" : "text-[#A1A1AA]";
+
+  const passwordButtonText = hasPassword === undefined
+    ? "Loading..."
+    : hasPassword
+      ? pwLoading ? "Sending Reset Code..." : "Send Reset Code"
+      : pwLoading ? "Setting Password..." : "Set Password";
 
   return (
     <div className="min-h-screen">
@@ -174,7 +205,7 @@ export default function AccountSettings() {
             Manage Your Account
           </h1>
           <p className="mt-2 text-sm text-[#A1A1AA]">
-            Update your profile, change your password, and view your subscription.
+            Update your profile, manage your password, and view your subscription.
           </p>
         </div>
 
@@ -253,23 +284,50 @@ export default function AccountSettings() {
             <GlassPanel className="p-6">
               <div className="flex items-center gap-3 mb-5">
                 <div className="w-9 h-9 rounded-xl bg-amber-500/10 flex items-center justify-center">
-                  <Lock className="w-5 h-5 text-amber-400" />
+                  {hasPassword ? (
+                    <Lock className="w-5 h-5 text-amber-400" />
+                  ) : (
+                    <KeyRound className="w-5 h-5 text-amber-400" />
+                  )}
                 </div>
                 <div>
-                  <h2 className="text-base font-semibold text-white">Password</h2>
-                  <p className="text-xs text-[#A1A1AA]">Change your password</p>
+                  <h2 className="text-base font-semibold text-white">
+                    {hasPassword ? "Change Password" : "Set Password"}
+                  </h2>
+                  <p className="text-xs text-[#A1A1AA]">
+                    {hasPassword
+                      ? "Update your existing password"
+                      : "Add a password so you can also log in with email"}
+                  </p>
                 </div>
               </div>
 
+              {/* Status badge */}
+              {hasPassword !== undefined && (
+                <div className={`flex items-center gap-2 mb-4 px-3 py-2 rounded-lg text-xs ${
+                  hasPassword
+                    ? "bg-[#16A34A]/10 border border-[#16A34A]/20 text-[#16A34A]"
+                    : "bg-amber-500/10 border border-amber-500/20 text-amber-400"
+                }`}>
+                  {hasPassword ? (
+                    <><CheckCircle2 className="w-3.5 h-3.5" /> Password configured — you can sign in with email and password</>
+                  ) : (
+                    <><AlertTriangle className="w-3.5 h-3.5" /> No password set — you signed up via Google. Set a password for email login.</>
+                  )}
+                </div>
+              )}
+
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-medium text-[#A1A1AA] mb-1.5">New Password</label>
+                  <label className="block text-xs font-medium text-[#A1A1AA] mb-1.5">
+                    {hasPassword ? "New Password" : "Choose a Password"}
+                  </label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-2.5 h-4 w-4 text-[#A1A1AA]" />
                     <Input
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
-                      placeholder="Enter new password"
+                      placeholder={hasPassword ? "Enter new password" : "Create a strong password"}
                       type={showNewPw ? "text" : "password"}
                       className="pl-9 pr-10 h-10 bg-white/5 border-white/10 text-white placeholder:text-[#A1A1AA]/50 focus:border-[#16A34A] focus:ring-[#16A34A]/20"
                     />
@@ -278,7 +336,7 @@ export default function AccountSettings() {
                       onClick={() => setShowNewPw(!showNewPw)}
                       className="absolute right-3 top-2.5 text-[#A1A1AA] hover:text-white transition-colors"
                     >
-                      {showNewPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      {showNewPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 h-4" />}
                     </button>
                   </div>
                   <p className="mt-1.5 text-[10px] text-[#A1A1AA]/60">
@@ -293,28 +351,30 @@ export default function AccountSettings() {
                     <Input
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="Confirm new password"
+                      placeholder="Confirm password"
                       type={showNewPw ? "text" : "password"}
                       className="pl-9 h-10 bg-white/5 border-white/10 text-white placeholder:text-[#A1A1AA]/50 focus:border-[#16A34A] focus:ring-[#16A34A]/20"
                     />
                   </div>
                 </div>
 
-                {pwError && <p className="text-sm text-red-400">{pwError}</p>}
+                {pwError && <p className="text-sm text-amber-400">{pwError}</p>}
 
                 {pwSaved && (
                   <div className="flex items-center gap-2 text-sm text-[#16A34A]">
                     <CheckCircle2 className="w-4 h-4" />
-                    Password updated successfully.
+                    {hasPassword
+                      ? "A reset code has been sent to your email."
+                      : "Password set successfully! You can now sign in with email and password."}
                   </div>
                 )}
 
                 <Button
-                  onClick={handleChangePassword}
+                  onClick={handleSetOrChangePassword}
                   disabled={pwLoading || !newPassword || !confirmPassword}
                   className="w-full h-10 bg-amber-500/80 hover:bg-amber-500 text-white font-semibold cursor-pointer"
                 >
-                  {pwLoading ? "Updating..." : "Change Password"}
+                  {passwordButtonText}
                 </Button>
               </div>
             </GlassPanel>

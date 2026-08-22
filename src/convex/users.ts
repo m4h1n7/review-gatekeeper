@@ -2,6 +2,8 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 import { mutation, query, QueryCtx } from "./_generated/server";
 import { v } from "convex/values";
 
+const SUPER_ADMIN_EMAIL = "mahinhosen870@gmail.com";
+
 /**
  * Get the current signed in user. Returns null if the user is not signed in.
  * Usage: const signedInUser = await ctx.runQuery(api.authHelpers.currentUser);
@@ -49,5 +51,68 @@ export const updateProfile = mutation({
 
     await ctx.db.patch(userId, updates);
     return { ok: true };
+  },
+});
+
+/**
+ * Auto-assign super_admin role to mahinhosen870@gmail.com.
+ * Called after sign-in to ensure the role persists in the database.
+ */
+export const ensureSuperAdminRole = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Must be signed in");
+
+    const user = await ctx.db.get(userId);
+    if (!user) throw new Error("User not found");
+
+    const email = user.email?.toLowerCase();
+    if (email === SUPER_ADMIN_EMAIL && user.role !== "admin") {
+      await ctx.db.patch(userId, { role: "admin" });
+      return { assigned: true };
+    }
+
+    return { assigned: false };
+  },
+});
+
+/**
+ * Check if the current user has a password account (for "Set Password" vs "Change Password" UI).
+ */
+export const hasPasswordAccount = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return false;
+
+    // Query authAccounts for a password provider entry linked to this user
+    const account = await ctx.db
+      .query("authAccounts")
+      .filter((q) =>
+        q.and(
+          q.eq(q.field("userId"), userId),
+          q.eq(q.field("provider"), "password"),
+        ),
+      )
+      .first();
+
+    return account !== null;
+  },
+});
+
+/**
+ * Check if the current user is a super admin (role-based, persistent).
+ */
+export const isSuperAdminUser = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return false;
+
+    const user = await ctx.db.get(userId);
+    if (!user) return false;
+
+    return user.email?.toLowerCase() === SUPER_ADMIN_EMAIL || user.role === "admin";
   },
 });

@@ -15,9 +15,13 @@ export function SuperAdminGuard({ children }: { children: React.ReactNode }) {
   const { isLoading: authLoading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const user = useQuery(api.users.currentUser);
+  const isAdmin = useQuery(api.users.isSuperAdminUser);
 
-  const isLoading = authLoading || user === undefined;
-  const admin = isSuperAdmin(user?.email);
+  const isLoading = authLoading || user === undefined || isAdmin === undefined;
+  // Check both email (client-side, instant) and role (database, persistent)
+  const admin =
+    isSuperAdmin(user?.email) ||
+    (isAdmin === true);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
