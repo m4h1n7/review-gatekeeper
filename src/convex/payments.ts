@@ -70,10 +70,10 @@ export const listPending = query({
       results.push({
         id: p._id,
         userId: p.userId,
-        clientEmail: p.clientEmail,
+        clientEmail: p.clientEmail ?? "unknown",
         gateway: p.gateway,
-        senderPhone: p.senderPhone,
-        trxId: p.trxId,
+        senderPhone: p.senderPhone ?? "—",
+        trxId: p.trxId ?? "—",
         status: p.status,
         submittedAt: p.submittedAt,
         currentPlan: sub?.plan ?? "free",
@@ -103,10 +103,10 @@ export const listAll = query({
     return payments.map((p) => ({
       id: p._id,
       userId: p.userId,
-      clientEmail: p.clientEmail,
+      clientEmail: p.clientEmail ?? "unknown",
       gateway: p.gateway,
-      senderPhone: p.senderPhone,
-      trxId: p.trxId,
+      senderPhone: p.senderPhone ?? "—",
+      trxId: p.trxId ?? "—",
       status: p.status,
       submittedAt: p.submittedAt,
       reviewedAt: p.reviewedAt,
@@ -126,12 +126,10 @@ export const approve = mutation({
       throw new Error("Unauthorized: only super admin can approve payments");
     }
 
-    // Query payment by ID to get proper typing
     const paymentDoc = await ctx.db.get(args.paymentId as any);
     if (!paymentDoc || !("status" in paymentDoc)) throw new Error("Payment not found");
     const payment = paymentDoc as {
-      _id: any; userId: string; clientEmail: string; gateway: string;
-      senderPhone: string; trxId: string; status: string; submittedAt: number;
+      _id: any; userId: string; status: string;
     };
     if (payment.status !== "pending") throw new Error("Payment already reviewed");
 
@@ -147,11 +145,14 @@ export const approve = mutation({
       .withIndex("by_userId", (q) => q.eq("userId", payment.userId))
       .first();
 
+    const expiresAt = Date.now() + 30 * 24 * 60 * 60 * 1000; // 30 days
+
     if (existingSub) {
       await ctx.db.patch(existingSub._id, {
         plan: "pro",
         status: "active",
-        expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
+        expiresAt,
+        proExpiresAt: expiresAt,
       });
     } else {
       await ctx.db.insert("subscriptions", {
@@ -159,7 +160,8 @@ export const approve = mutation({
         plan: "pro",
         status: "active",
         createdAt: Date.now(),
-        expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
+        expiresAt,
+        proExpiresAt: expiresAt,
       });
     }
 

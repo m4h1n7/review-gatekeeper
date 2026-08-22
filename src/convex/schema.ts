@@ -75,10 +75,10 @@ const schema = defineSchema(
     // Manual payment submissions (bKash/Nagad)
     payments: defineTable({
       userId: v.string(),
-      clientEmail: v.string(),
+      clientEmail: v.optional(v.string()),
       gateway: v.union(v.literal("bkash"), v.literal("nagad")),
-      senderPhone: v.string(),
-      trxId: v.string(),
+      senderPhone: v.optional(v.string()),
+      trxId: v.optional(v.string()),
       status: v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected")),
       submittedAt: v.number(),
       reviewedAt: v.optional(v.number()),
@@ -93,6 +93,7 @@ const schema = defineSchema(
       status: v.union(v.literal("active"), v.literal("cancelled")),
       createdAt: v.number(),
       expiresAt: v.optional(v.number()),
+      proExpiresAt: v.optional(v.number()),
     })
       .index("by_userId", ["userId"]),
   },
