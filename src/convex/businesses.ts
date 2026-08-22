@@ -1,5 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { getAuthUserId } from "@convex-dev/auth/server";
 
 /** Generate a URL-friendly slug from a business name */
 function slugify(name: string): string {
@@ -17,6 +18,9 @@ export const create = mutation({
     alertEmail: v.string(),
   },
   handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Must be signed in to create a business");
+
     const now = Date.now();
     let slug = slugify(args.name);
 
@@ -32,6 +36,25 @@ export const create = mutation({
       slug = `${slugify(args.name)}-${attempt}`;
     }
 
+    // Check subscription limits
+    const userSub = await ctx.db
+      .query("subscriptions")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .first();
+
+    if (!userSub || userSub.plan === "free") {
+      // Free tier: max 1 business profile
+      const existingBusinesses = await ctx.db
+        .query("businesses")
+        .withIndex("by_userId", (q) => q.eq("userId", userId))
+        .collect();
+      if (existingBusinesses.length >= 1) {
+        throw new Error(
+          "Free plan limited to 1 profile. Upgrade to Pro for unlimited.",
+        );
+      }
+    }
+
     const id = await ctx.db.insert("businesses", {
       name: args.name,
       slug,
@@ -39,6 +62,7 @@ export const create = mutation({
       reviewUrl: args.reviewUrl,
       alertEmail: args.alertEmail,
       createdAt: now,
+      userId,
     });
 
     return { id, slug };
@@ -59,10 +83,34 @@ export const getBySlug = query({
       slug: business.slug,
       logoUrl: business.logoUrl,
       reviewUrl: business.reviewUrl,
+      alertEmail: business.alertEmail,
     };
   },
 });
 
+export const listByUser = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+
+    const businesses = await ctx.db
+      .query("businesses")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .collect();
+    return businesses.map((b) => ({
+      id: b._id,
+      name: b.name,
+      slug: b.slug,
+      logoUrl: b.logoUrl,
+      reviewUrl: b.reviewUrl,
+      alertEmail: b.alertEmail,
+      createdAt: b.createdAt,
+    }));
+  },
+});
+
+// Keep old list for backward compatibility
 export const list = query({
   handler: async (ctx) => {
     const businesses = await ctx.db

@@ -39,9 +39,11 @@ const schema = defineSchema(
       reviewUrl: v.string(),
       alertEmail: v.string(),
       createdAt: v.number(),
+      userId: v.string(), // owner of this business profile
     })
       .index("by_slug", ["slug"])
-      .index("by_createdAt", ["createdAt"]),
+      .index("by_createdAt", ["createdAt"])
+      .index("by_userId", ["userId"]),
 
     feedback: defineTable({
       businessId: v.string(),
@@ -55,6 +57,29 @@ const schema = defineSchema(
     })
       .index("by_businessId", ["businessId"])
       .index("by_businessSlug", ["businessSlug"])
+      .index("by_createdAt", ["createdAt"]),
+
+    // Tracks every star click (both positive redirects and negative feedback)
+    interactions: defineTable({
+      businessId: v.string(),
+      businessSlug: v.string(),
+      rating: v.number(),
+      type: v.union(v.literal("redirect"), v.literal("feedback_submitted")),
+      createdAt: v.number(),
+    })
+      .index("by_businessId", ["businessId", "createdAt"])
+      .index("by_businessSlug", ["businessSlug", "createdAt"])
+      .index("by_createdAt", ["createdAt"]),
+
+    // Subscription plans: free trial or pro
+    subscriptions: defineTable({
+      userId: v.string(),
+      plan: v.union(v.literal("free"), v.literal("pro")),
+      status: v.union(v.literal("active"), v.literal("cancelled")),
+      createdAt: v.number(),
+      expiresAt: v.optional(v.number()),
+    })
+      .index("by_userId", ["userId"]),
   },
   {
     schemaValidation: false,

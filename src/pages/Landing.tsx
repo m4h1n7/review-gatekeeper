@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/use-auth";
 import {
   Star,
   Shield,
@@ -11,6 +12,8 @@ import {
   Eye,
   Bell,
   Smartphone,
+  Zap,
+  BarChart3,
 } from "lucide-react";
 
 function GlassPanel({
@@ -31,6 +34,7 @@ function GlassPanel({
 
 export default function Landing() {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
   return (
     <div className="min-h-screen overflow-hidden">
@@ -56,18 +60,35 @@ export default function Landing() {
           <div className="flex items-center gap-3">
             <Button
               variant="ghost"
+              onClick={() => navigate("/pricing")}
+              className="text-slate-600 hover:text-slate-900 cursor-pointer hidden sm:flex"
+            >
+              Pricing
+            </Button>
+            <Button
+              variant="ghost"
               onClick={() => navigate("/admin")}
               className="text-slate-600 hover:text-slate-900 cursor-pointer hidden sm:flex"
             >
               Admin
             </Button>
-            <Button
-              onClick={() => navigate("/admin")}
-              className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-semibold shadow-lg shadow-blue-500/25 cursor-pointer"
-            >
-              Get Started
-              <ArrowRight className="w-4 h-4 ml-1" />
-            </Button>
+            {isAuthenticated ? (
+              <Button
+                onClick={() => navigate("/dashboard")}
+                className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-semibold shadow-lg shadow-blue-500/25 cursor-pointer"
+              >
+                Dashboard
+                <ArrowRight className="w-4 h-4 ml-1" />
+              </Button>
+            ) : (
+              <Button
+                onClick={() => navigate("/auth")}
+                className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-semibold shadow-lg shadow-blue-500/25 cursor-pointer"
+              >
+                Sign In
+                <ArrowRight className="w-4 h-4 ml-1" />
+              </Button>
+            )}
           </div>
         </div>
       </nav>
@@ -118,10 +139,10 @@ export default function Landing() {
           >
             <Button
               size="lg"
-              onClick={() => navigate("/admin")}
+              onClick={() => navigate(isAuthenticated ? "/dashboard" : "/auth")}
               className="h-14 px-8 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-bold text-base shadow-xl shadow-blue-500/25 hover:shadow-blue-500/40 transition-all cursor-pointer"
             >
-              Get Started
+              {isAuthenticated ? "Go to Dashboard" : "Get Started Free"}
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
             <Button
@@ -137,13 +158,14 @@ export default function Landing() {
               Learn More
             </Button>
           </motion.div>
-
-
         </div>
       </section>
 
       {/* How It Works */}
-      <section id="how-it-works" className="relative z-10 px-4 sm:px-6 py-16 sm:py-24">
+      <section
+        id="how-it-works"
+        className="relative z-10 px-4 sm:px-6 py-16 sm:py-24"
+      >
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -156,7 +178,7 @@ export default function Landing() {
               How It Works
             </p>
             <h2 className="text-3xl sm:text-4xl font-bold text-slate-900">
-              How it works
+              Three simple steps
             </h2>
           </motion.div>
 
@@ -252,18 +274,18 @@ export default function Landing() {
                 desc: "Keep your Google Business rating accurate by filtering reviews at the source.",
               },
               {
-                icon: <MessageSquare className="w-5 h-5" />,
-                title: "Direct Message Channel",
-                desc: "Customers can share detailed feedback, and your team is notified immediately.",
+                icon: <BarChart3 className="w-5 h-5" />,
+                title: "Analytics Dashboard",
+                desc: "Track visits, redirects, and feedback trends across all your business profiles.",
               },
               {
                 icon: <Bell className="w-5 h-5" />,
-                title: "Instant Alerts",
+                title: "Instant Email Alerts",
                 desc: "Receive email notifications the moment someone submits private feedback.",
               },
               {
                 icon: <Smartphone className="w-5 h-5" />,
-                title: "Mobile-Optimized",
+                title: "Mobile Optimized",
                 desc: "Large tap targets and fluid layouts designed for customers on any device.",
               },
             ].map((feature, i) => (
@@ -291,7 +313,7 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* CTA Section */}
+      {/* Pricing Preview */}
       <section className="relative z-10 px-4 sm:px-6 py-16 sm:py-24">
         <div className="max-w-3xl mx-auto">
           <motion.div
@@ -301,21 +323,27 @@ export default function Landing() {
             transition={{ duration: 0.6 }}
           >
             <GlassPanel className="p-8 sm:p-12 text-center">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-100/60 backdrop-blur-sm border border-emerald-200/50 text-emerald-700 text-sm font-medium mb-6">
+                <Zap className="w-4 h-4" />
+                Start free, upgrade anytime
+              </div>
               <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-3">
-                Protect your reputation today
+                Simple, transparent pricing
               </h2>
-              <p className="text-slate-500 text-base max-w-lg mx-auto mb-8">
-                Set up your Review Gatekeeper in under a minute and start
-                capturing feedback before it impacts your public rating.
+              <p className="text-slate-500 text-base max-w-lg mx-auto mb-4">
+                Free trial with 1 profile and 15 feedbacks. Pro plan at $10/month
+                for unlimited profiles, analytics, and automated email alerts.
               </p>
-              <Button
-                size="lg"
-                onClick={() => navigate("/admin")}
-                className="h-14 px-10 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-bold text-base shadow-xl shadow-blue-500/25 hover:shadow-blue-500/40 transition-all cursor-pointer"
-              >
-                Create Your Review Link
-                <ChevronRight className="w-5 h-5 ml-1" />
-              </Button>
+              <div className="flex items-center justify-center gap-3">
+                <Button
+                  size="lg"
+                  onClick={() => navigate("/pricing")}
+                  className="h-14 px-10 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-bold text-base shadow-xl shadow-blue-500/25 hover:shadow-blue-500/40 transition-all cursor-pointer"
+                >
+                  View Pricing
+                  <ChevronRight className="w-5 h-5 ml-1" />
+                </Button>
+              </div>
             </GlassPanel>
           </motion.div>
         </div>
@@ -333,7 +361,8 @@ export default function Landing() {
             </span>
           </div>
           <p className="text-xs text-slate-400">
-            © {new Date().getFullYear()} Review Gatekeeper. Protect your reputation.
+            © {new Date().getFullYear()} Review Gatekeeper. Protect your
+            reputation.
           </p>
         </div>
       </footer>

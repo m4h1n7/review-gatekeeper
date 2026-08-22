@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { useParams } from "react-router";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation, useAction, useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -74,6 +74,8 @@ export default function Review() {
     clientSlug ? { slug: clientSlug } : "skip",
   );
   const submitFeedback = useMutation(api.feedback.submit);
+  const logRedirect = useMutation(api.feedback.logRedirect);
+  const sendEmail = useAction(api.notifications.sendNegativeFeedbackEmail);
 
   const [hoveredStar, setHoveredStar] = useState<number | null>(null);
   const [selectedRating, setSelectedRating] = useState<number | null>(null);
@@ -88,9 +90,21 @@ export default function Review() {
   const [redirectToGoogle, setRedirectToGoogle] = useState(false);
 
   const handleStarClick = useCallback(
-    (rating: number) => {
+    async (rating: number) => {
       setSelectedRating(rating);
       if (rating >= 4) {
+        // Log the positive redirect interaction
+        if (business) {
+          try {
+            await logRedirect({
+              businessId: business.id,
+              businessSlug: business.slug,
+              rating,
+            });
+          } catch (e) {
+            console.error("Failed to log redirect:", e);
+          }
+        }
         setRedirectToGoogle(true);
         setTimeout(() => {
           if (business?.reviewUrl) {
@@ -99,7 +113,7 @@ export default function Review() {
         }, 800);
       }
     },
-    [business?.reviewUrl],
+    [business?.reviewUrl, business?.id, business?.slug, logRedirect],
   );
 
   const handleFeedbackSubmit = async (e: React.FormEvent) => {
@@ -116,6 +130,18 @@ export default function Review() {
         message: form.message,
         rating: selectedRating ?? 0,
       });
+
+      // Fire-and-forget email notification (action runs async)
+      sendEmail({
+        alertEmail: business.alertEmail,
+        businessName: business.name,
+        customerName: form.name,
+        rating: selectedRating ?? 0,
+        message: form.message,
+      }).catch((e: unknown) => {
+        console.error("Email notification failed:", e);
+      });
+
       setSubmitted(true);
     } catch (err) {
       console.error("Failed to submit feedback:", err);

@@ -14,9 +14,13 @@ import {
   Copy,
   ExternalLink,
   Shield,
+  Lock,
 } from "lucide-react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
+import { useAuth } from "@/hooks/use-auth";
+import { useNavigate } from "react-router";
+import { PaywallModal } from "@/components/PaywallModal";
 
 function GlassPanel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
@@ -29,8 +33,21 @@ function GlassPanel({ children, className = "" }: { children: React.ReactNode; c
 }
 
 export default function Admin() {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const createBusiness = useMutation(api.businesses.create);
-  const businesses = useQuery(api.businesses.list);
+  const businesses = useQuery(
+    api.businesses.listByUser,
+    isAuthenticated ? {} : "skip",
+  );
+  const profileCheck = useQuery(
+    api.subscriptions.canCreateProfile,
+    isAuthenticated ? {} : "skip",
+  );
+  const subscription = useQuery(
+    api.subscriptions.getCurrent,
+    isAuthenticated ? {} : "skip",
+  );
 
   const [form, setForm] = useState({
     name: "",
@@ -42,9 +59,20 @@ export default function Admin() {
   const [createdSlug, setCreatedSlug] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
+  const [paywallReason, setPaywallReason] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isAuthenticated) {
+      navigate("/auth?returnTo=/admin");
+      return;
+    }
+    if (profileCheck && !profileCheck.allowed) {
+      setPaywallReason(profileCheck.reason);
+      setShowPaywall(true);
+      return;
+    }
     setIsSubmitting(true);
     try {
       const result = await createBusiness({
@@ -60,8 +88,14 @@ export default function Admin() {
         setShowSuccess(false);
         setCreatedSlug(null);
       }, 6000);
-    } catch (err) {
-      console.error("Failed to create business:", err);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      if (message.includes("Free plan limited")) {
+        setPaywallReason(message);
+        setShowPaywall(true);
+      } else {
+        console.error("Failed to create business:", err);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -79,6 +113,34 @@ export default function Admin() {
 
   const inputClass =
     "h-12 bg-white/50 border-white/60 backdrop-blur-sm focus:bg-white/70 focus:border-blue-300 focus:ring-2 focus:ring-blue-200/50 transition-all placeholder:text-slate-400";
+
+  const isPro = subscription?.plan === "pro" && subscription?.status === "active";
+
+  // Not signed in state
+  if (!authLoading && !isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="fixed inset-0 -z-10">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50/80 to-violet-50/60" />
+        </div>
+        <GlassPanel className="p-10 text-center max-w-md">
+          <Shield className="w-12 h-12 text-blue-500 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-slate-900 mb-2">
+            Sign in Required
+          </h1>
+          <p className="text-slate-500 text-sm mb-6">
+            Create an account to set up your review gatekeeper.
+          </p>
+          <Button
+            onClick={() => navigate("/auth?returnTo=/admin")}
+            className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white cursor-pointer"
+          >
+            Sign In
+          </Button>
+        </GlassPanel>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
@@ -101,6 +163,11 @@ export default function Admin() {
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-100/60 backdrop-blur-sm border border-blue-200/50 text-blue-700 text-sm font-medium mb-6">
             <Shield className="w-4 h-4" />
             Review Gatekeeper
+            {isPro && (
+              <span className="ml-1 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                PRO
+              </span>
+            )}
           </div>
           <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-slate-900">
             Configure Your{" "}
@@ -138,7 +205,7 @@ export default function Admin() {
                 </div>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-5">
+              <form onSubmit={handleCreate} className="space-y-5">
                 <div className="space-y-2">
                   <Label className="flex items-center gap-2 text-slate-700 font-medium text-sm">
                     <Store className="w-4 h-4 text-blue-500" />
@@ -286,6 +353,25 @@ export default function Admin() {
                 </div>
               </div>
 
+              {/* Free/Pro badge */}
+              {subscription && (
+                <div className={`mb-4 p-3 rounded-xl text-center text-xs font-medium ${
+                  isPro
+                    ? "bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 border border-blue-200/50"
+                    : "bg-slate-50 text-slate-500 border border-slate-200/50"
+                }`}>
+                  {isPro ? (
+                    <span className="flex items-center justify-center gap-1.5">
+                      <Shield className="w-3.5 h-3.5" /> Pro Plan — Unlimited
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-center gap-1.5">
+                      <Lock className="w-3.5 h-3.5" /> Free Plan — 1 profile, 15 feedbacks
+                    </span>
+                  )}
+                </div>
+              )}
+
               {!businesses ? (
                 <div className="space-y-3">
                   {[1, 2, 3].map((i) => (
@@ -369,6 +455,13 @@ export default function Admin() {
           </motion.div>
         </div>
       </div>
+
+      {/* Paywall Modal */}
+      <PaywallModal
+        open={showPaywall}
+        onClose={() => setShowPaywall(false)}
+        reason={paywallReason}
+      />
     </div>
   );
 }
