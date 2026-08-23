@@ -296,7 +296,7 @@ export default function Review() {
             <ShieldCheck className="w-4 h-4" />
             Your feedback is confidential
           </div>
-          {business.promoText && (
+          {business.promoEnabled && business.promoText && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -561,7 +561,7 @@ export default function Review() {
         </AnimatePresence>
 
         {/* ─── PROMOTIONAL BANNER ─── */}
-        {selectedRating === null && business.promoText && (
+        {selectedRating === null && business.promoEnabled && business.promoText && (
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}

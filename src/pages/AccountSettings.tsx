@@ -26,6 +26,10 @@ import {
   CreditCard,
   KeyRound,
   AlertTriangle,
+  Gift,
+  ToggleLeft,
+  ToggleRight,
+  Sparkles,
 } from "lucide-react";
 import { useNavigate } from "react-router";
 
@@ -58,7 +62,9 @@ export default function AccountSettings() {
   const { user, signIn } = useAuth();
   const navigate = useNavigate();
   const subscription = useQuery(api.subscriptions.getCurrent);
+  const businesses = useQuery(api.businesses.listByUser);
   const updateProfile = useMutation(api.users.updateProfile);
+  const updatePromo = useMutation(api.businesses.updatePromo);
   const hasPassword = useQuery(api.users.hasPasswordAccount);
 
   // Profile form state
@@ -68,6 +74,21 @@ export default function AccountSettings() {
   const [profileLoading, setProfileLoading] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
 
+  // Promo/reward settings state
+  const [promoEnabled, setPromoEnabled] = useState(false);
+  const [promoText, setPromoText] = useState("");
+  const [promoSaved, setPromoSaved] = useState(false);
+  const [promoLoading, setPromoLoading] = useState(false);
+
+  // Sync promo state from business data
+  useEffect(() => {
+    if (businesses && businesses.length > 0) {
+      const biz = businesses[0] as any;
+      setPromoEnabled(biz.promoEnabled ?? false);
+      setPromoText(biz.promoText ?? "");
+    }
+  }, [businesses]);
+
   // Password change state
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -75,6 +96,23 @@ export default function AccountSettings() {
   const [pwLoading, setPwLoading] = useState(false);
   const [pwSaved, setPwSaved] = useState(false);
   const [pwError, setPwError] = useState<string | null>(null);
+
+  const handleSavePromo = async () => {
+    if (!businesses || businesses.length === 0) return;
+    setPromoLoading(true);
+    try {
+      await updatePromo({
+        businessId: (businesses[0] as any).id,
+        promoEnabled,
+        promoText: promoText.trim(),
+      });
+      setPromoSaved(true);
+      setTimeout(() => setPromoSaved(false), 3000);
+    } catch (err) {
+      console.error("Failed to save promo settings:", err);
+    }
+    setPromoLoading(false);
+  };
 
   // Sync form state with user data
   useEffect(() => {
@@ -432,6 +470,100 @@ export default function AccountSettings() {
             </div>
           </GlassPanel>
         </motion.div>
+
+        {/* ─── Reward Settings ─── */}
+        {businesses && businesses.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.3 }}
+            className="mt-6"
+          >
+            <GlassPanel className="p-6">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-9 h-9 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                  <Gift className="w-5 h-5 text-amber-400" />
+                </div>
+                <div>
+                  <h2 className="text-base font-semibold text-white">Customer Reward Offer</h2>
+                  <p className="text-xs text-[#A1A1AA]">Show a promotional incentive on your review page</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {/* Toggle */}
+                <div className="flex items-center justify-between p-4 rounded-xl bg-white/[0.03] border border-white/5">
+                  <div>
+                    <p className="text-sm font-medium text-white">Show reward offer to customers</p>
+                    <p className="text-xs text-[#A1A1AA] mt-0.5">
+                      When enabled, customers see a promotional banner on your review page
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setPromoEnabled(!promoEnabled)}
+                    className="cursor-pointer transition-colors"
+                  >
+                    {promoEnabled ? (
+                      <ToggleRight className="w-10 h-10 text-[#16A34A]" />
+                    ) : (
+                      <ToggleLeft className="w-10 h-10 text-[#A1A1AA]/40" />
+                    )}
+                  </button>
+                </div>
+
+                {/* Reward Description */}
+                {promoEnabled && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="space-y-2"
+                  >
+                    <label className="block text-xs font-medium text-[#A1A1AA]">
+                      Reward Description
+                    </label>
+                    <Input
+                      value={promoText}
+                      onChange={(e) => setPromoText(e.target.value)}
+                      placeholder="e.g., Show this screen to the cashier for 10% off!"
+                      className="h-11 bg-white/5 border-white/10 text-white placeholder:text-[#A1A1AA]/40 focus:border-[#16A34A] focus:ring-[#16A34A]/20"
+                    />
+                    <p className="text-[10px] text-[#A1A1AA]/50">
+                      This text appears in an amber banner below the rating stars and on the thank-you screen.
+                    </p>
+
+                    {/* Preview */}
+                    <div className="p-3 rounded-xl bg-amber-500/[0.06] border border-amber-500/20">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Sparkles className="w-3 h-3 text-amber-400" />
+                        <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider">Preview</span>
+                      </div>
+                      <p className="text-xs text-amber-300/90">
+                        {promoText || "Your reward text will appear here..."}
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+
+                {promoSaved && (
+                  <div className="flex items-center gap-2 text-sm text-[#16A34A]">
+                    <CheckCircle2 className="w-4 h-4" />
+                    Reward settings saved!
+                  </div>
+                )}
+
+                <Button
+                  onClick={handleSavePromo}
+                  disabled={promoLoading || !promoEnabled}
+                  className="w-full h-10 bg-amber-500/80 hover:bg-amber-500 text-white font-semibold cursor-pointer"
+                >
+                  {promoLoading ? "Saving..." : "Save Reward Settings"}
+                </Button>
+              </div>
+            </GlassPanel>
+          </motion.div>
+        )}
       </div>
     </div>
   );

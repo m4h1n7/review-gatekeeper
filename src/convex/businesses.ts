@@ -152,8 +152,33 @@ export const getBySlug = query({
       reviewUrl: business.reviewUrl,
       alertEmail: business.alertEmail,
       heroUrl: business.heroUrl,
-      promoText: business.promoText,
+      promoEnabled: business.promoEnabled ?? false,
+      promoText: business.promoText ?? "",
     };
+  },
+});
+
+/** Update promo/reward settings for a business */
+export const updatePromo = mutation({
+  args: {
+    businessId: v.string(),
+    promoEnabled: v.boolean(),
+    promoText: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Must be signed in");
+
+    const business = await ctx.db.get(args.businessId as any);
+    if (!business) throw new Error("Business not found");
+    if ((business as any).userId !== userId) throw new Error("Unauthorized");
+
+    await ctx.db.patch(args.businessId as any, {
+      promoEnabled: args.promoEnabled,
+      promoText: args.promoText ?? "",
+    });
+
+    return { ok: true };
   },
 });
 
