@@ -40,13 +40,13 @@ const DEMO_FEEDBACKS = [
 ];
 
 const TREND_DATA = [
-  { day: "Mon", score: 62 },
-  { day: "Tue", score: 65 },
-  { day: "Wed", score: 68 },
-  { day: "Thu", score: 70 },
-  { day: "Fri", score: 74 },
-  { day: "Sat", score: 78 },
-  { day: "Sun", score: 82 },
+  { day: "Mon", score: 50, positive: 0, negative: 0, total: 0 },
+  { day: "Tue", score: 53.5, positive: 3, negative: 1, total: 4 },
+  { day: "Wed", score: 51, positive: 1, negative: 2, total: 3 },
+  { day: "Thu", score: 54, positive: 3, negative: 1, total: 4 },
+  { day: "Fri", score: 49.5, positive: 1, negative: 2, total: 3 },
+  { day: "Sat", score: 55, positive: 5, negative: 1, total: 6 },
+  { day: "Sun", score: 61, positive: 4, negative: 0, total: 4 },
 ];
 
 const DEMO_STATS = {
@@ -82,10 +82,17 @@ function StatCard({ icon, label, value, sub, color }: { icon: React.ReactNode; l
 
 function ChartTooltip({ active, payload, label }: any) {
   if (active && payload && payload.length) {
+    const item = payload[0]?.payload;
     return (
       <div className="bg-[#18181B]/95 backdrop-blur-xl border border-white/10 rounded-lg px-3 py-2 shadow-xl">
         <p className="text-xs text-[#A1A1AA] mb-1">{label}</p>
-        <p className="text-sm font-bold text-white">Score: {payload[0].value}</p>
+        <p className="text-sm font-bold text-white">Rating Score: {payload[0].value}</p>
+        {item && (
+          <div className="flex items-center gap-3 mt-1">
+            <span className="text-[10px] text-[#16A34A]">+{item.positive} positive</span>
+            <span className="text-[10px] text-amber-400">-{item.negative} negative</span>
+          </div>
+        )}
       </div>
     );
   }
@@ -189,7 +196,10 @@ export default function DemoDashboard() {
 
         {/* Rating Trend Chart */}
         <GlassPanel className="p-6 mb-8">
-          <h3 className="text-sm font-semibold text-white mb-4">Rating Performance Trend</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold text-white">Rating Performance Trend</h3>
+            <span className="text-[10px] text-[#A1A1AA] flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-full bg-[#16A34A]" /> Score (net daily)</span>
+          </div>
           <div className="h-[220px]">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={TREND_DATA}>

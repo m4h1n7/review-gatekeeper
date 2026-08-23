@@ -77,10 +77,17 @@ function StatCard({ icon, label, value, sub, color }: {
 
 function CustomTooltip({ active, payload, label }: any) {
   if (active && payload && payload.length) {
+    const item = payload[0]?.payload;
     return (
       <div className="bg-[#18181B]/95 backdrop-blur-xl border border-white/10 rounded-lg px-3 py-2 shadow-xl">
         <p className="text-xs text-[#A1A1AA] mb-1">{label}</p>
-        <p className="text-sm font-bold text-white">Score: {payload[0].value}</p>
+        <p className="text-sm font-bold text-white">Rating Score: {payload[0].value}</p>
+        {item && (
+          <div className="flex items-center gap-3 mt-1">
+            <span className="text-[10px] text-[#16A34A]">+{item.positive} positive</span>
+            <span className="text-[10px] text-amber-400">-{item.negative} negative</span>
+          </div>
+        )}
       </div>
     );
   }
@@ -295,7 +302,12 @@ export default function Dashboard() {
 
             {/* Chart */}
             <GlassPanel className="p-6 mb-6">
-              <h3 className="text-sm font-semibold text-white mb-4">Rating Performance Trend</h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-semibold text-white">Rating Performance Trend</h3>
+                <div className="flex items-center gap-4">
+                  <span className="text-[10px] text-[#A1A1AA] flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-full bg-[#16A34A]" /> Score (net daily)</span>
+                </div>
+              </div>
               <div className="h-[220px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={trend || []}>
@@ -307,7 +319,7 @@ export default function Dashboard() {
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                     <XAxis dataKey="day" stroke="#A1A1AA" fontSize={10} tickLine={false} axisLine={false} />
-                    <YAxis stroke="#A1A1AA" fontSize={10} tickLine={false} axisLine={false} domain={[0, 100]} />
+                    <YAxis stroke="#A1A1AA" fontSize={10} tickLine={false} axisLine={false} domain={[0, 100]} tickFormatter={(v: number) => v.toFixed(0)} />
                     <Tooltip content={<CustomTooltip />} />
                     <Area type="monotone" dataKey="score" stroke="#16A34A" strokeWidth={2} fill="url(#g)" />
                   </AreaChart>

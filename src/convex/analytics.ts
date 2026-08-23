@@ -124,43 +124,56 @@ export const ratingTrend = query({
       allInteractions.push(...interactions.map((i) => ({ rating: i.rating, type: i.type, createdAt: i.createdAt })));
     }
 
-    // Group by day
-    const dayMap: Record<string, { rating: number; type: string; score: number }[]> = {};
+    // Group events by date string (YYYY-MM-DD)
+    const dayMap: Record<string, { positive: number; negative: number }> = {};
     const now = new Date();
 
+    // Pre-fill every day in the range so gaps show as flat (no change)
     for (let d = args.days - 1; d >= 0; d--) {
       const date = new Date(now);
       date.setDate(date.getDate() - d);
       const key = date.toISOString().slice(0, 10);
-      dayMap[key] = [];
+      dayMap[key] = { positive: 0, negative: 0 };
     }
 
+    // Tally each interaction into its day bucket
     for (const interaction of allInteractions) {
       const date = new Date(interaction.createdAt).toISOString().slice(0, 10);
       if (dayMap[date]) {
-        dayMap[date].push({
-          rating: interaction.rating,
-          type: interaction.type,
-          score: interaction.rating >= 4 ? 1 : -0.5,
-        });
+        if (interaction.type === "redirect") {
+          dayMap[date].positive += 1;
+        } else {
+          dayMap[date].negative += 1;
+        }
       }
     }
 
-    // Calculate running score
-    let runningScore = 50; // start at neutral
-    const trend = Object.entries(dayMap).map(([date, items]) => {
-      const positive = items.filter((i) => i.type === "redirect").length;
-      const negative = items.filter((i) => i.type === "feedback_submitted").length;
-      const dayDelta = items.reduce((sum, i) => sum + i.score, 0);
-      runningScore = Math.max(0, Math.min(100, runningScore + dayDelta * 2));
+    // Scoring: +1.0 per positive redirect, -1.5 per negative feedback
+    // Cumulative score starts at a baseline of 50 and clamps to [0, 100]
+    const BASELINE = 50;
+    const POSITIVE_WEIGHT = 1.0;
+    const NEGATIVE_WEIGHT = -1.5;
+
+    let cumulativeScore = BASELINE;
+    const trend = Object.entries(dayMap).map(([date, counts]) => {
+      const dayDelta =
+        counts.positive * POSITIVE_WEIGHT +
+        counts.negative * NEGATIVE_WEIGHT;
+      cumulativeScore = Math.max(
+        0,
+        Math.min(100, cumulativeScore + dayDelta),
+      );
 
       return {
         date,
-        day: new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-        score: Math.round(runningScore),
-        positive,
-        negative,
-        total: items.length,
+        day: new Date(date + "T12:00:00").toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        }),
+        score: Math.round(cumulativeScore * 10) / 10,
+        positive: counts.positive,
+        negative: counts.negative,
+        total: counts.positive + counts.negative,
       };
     });
 
