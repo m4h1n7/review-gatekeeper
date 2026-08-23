@@ -602,14 +602,24 @@ export default function Landing() {
             </div>
             <div>
               <p className="text-xs font-semibold text-white uppercase tracking-wider mb-3">Founders</p>
-              <div className="space-y-2.5">
+              <div className="space-y-3">
                 <div>
                   <p className="text-sm text-zinc-300 font-medium">Mahin Hossain</p>
-                  <p className="text-xs text-zinc-500">Founder · +880 1791-130633</p>
+                  <p className="text-xs text-zinc-500">Founder</p>
+                  <p className="text-xs text-zinc-500">
+                    <a href="tel:+8801791130633" className="hover:text-white transition-colors">+880 1791-130633</a>
+                    <span className="text-zinc-600 mx-1">·</span>
+                    <a href="mailto:mahinhosen870@gmail.com" className="hover:text-white transition-colors">mahinhosen870@gmail.com</a>
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-zinc-300 font-medium">Ahnaf Tajwar Alif</p>
-                  <p className="text-xs text-zinc-500">Co-Founder · +880 1673-903919</p>
+                  <p className="text-xs text-zinc-500">Co-Founder</p>
+                  <p className="text-xs text-zinc-500">
+                    <a href="tel:+8801673903919" className="hover:text-white transition-colors">+880 1673-903919</a>
+                    <span className="text-zinc-600 mx-1">·</span>
+                    <a href="mailto:atazwar103@gmail.com" className="hover:text-white transition-colors">atazwar103@gmail.com</a>
+                  </p>
                 </div>
               </div>
               <a

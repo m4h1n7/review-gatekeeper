@@ -563,9 +563,14 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-white/5">
-            <div className="flex items-center gap-4 text-[10px] text-[#A1A1AA]/40">
-              <span>Mahin Hossain (Founder) · +880 1791-130633</span>
-              <span>Ahnaf Tajwar Alif (Co-Founder) · +880 1673-903919</span>
+            <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-[10px] text-[#A1A1AA]/40">
+              <span>Mahin Hossain (Founder)</span>
+              <a href="tel:+8801791130633" className="hover:text-white transition-colors">+880 1791-130633</a>
+              <a href="mailto:mahinhosen870@gmail.com" className="hover:text-white transition-colors">mahinhosen870@gmail.com</a>
+              <span className="text-[#A1A1AA]/10">|</span>
+              <span>Ahnaf Tajwar Alif (Co-Founder)</span>
+              <a href="tel:+8801673903919" className="hover:text-white transition-colors">+880 1673-903919</a>
+              <a href="mailto:atazwar103@gmail.com" className="hover:text-white transition-colors">atazwar103@gmail.com</a>
             </div>
             <a
               href={`https://wa.me/8801673903919?text=${encodeURIComponent("Hi STAR CATCH team, I need help with my review dashboard")}`}
