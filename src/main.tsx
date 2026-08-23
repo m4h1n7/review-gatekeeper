@@ -20,7 +20,7 @@ const Admin = lazy(() => import("./pages/Admin.tsx"));
 const Review = lazy(() => import("./pages/Review.tsx"));
 const Pricing = lazy(() => import("./pages/Pricing.tsx"));
 const DemoDashboard = lazy(() => import("./pages/DemoDashboard.tsx"));
-const AdminDashboard = lazy(() => import("./pages/AdminDashboard.tsx"));
+
 const AccountSettings = lazy(() => import("./pages/AccountSettings.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 
@@ -153,8 +153,7 @@ createRoot(document.getElementById("root")!).render(
                   </RequireAuth>
                 }
               />
-              <Route path="/admin" element={<SuperAdminGuard><AdminDashboard /></SuperAdminGuard>} />
-              <Route path="/manage" element={<Admin />} />
+              <Route path="/admin" element={<SuperAdminGuard><Admin /></SuperAdminGuard>} />
               <Route
                 path="/settings"
                 element={

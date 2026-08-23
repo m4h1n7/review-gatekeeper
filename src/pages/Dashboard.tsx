@@ -202,7 +202,7 @@ export default function Dashboard() {
             {isSuperAdmin(user?.email) && (
               <Button variant="outline" size="sm" onClick={() => navigate("/admin")}
                 className="border-[#16A34A]/30 bg-[#16A34A]/10 hover:bg-[#16A34A]/20 text-[#16A34A] cursor-pointer font-semibold text-xs">
-                <Shield className="w-3.5 h-3.5 mr-1" /> Admin
+                <Shield className="w-3.5 h-3.5 mr-1" /> Super Admin Portal
               </Button>
             )}
             <Button variant="outline" size="sm" onClick={() => navigate("/settings")}
