@@ -105,7 +105,8 @@ export default function Dashboard() {
   const subscription = useQuery(api.subscriptions.getCurrent);
   const overview = useQuery(api.analytics.dashboardOverview, { filter });
   const trend = useQuery(api.analytics.ratingTrend, { days: chartDays });
-  const [showPaywall, setShowPaywall] = useState(subscription?.status === "pending");
+  const isExpired = subscription?.plan === "pro" && subscription?.status === "active" && subscription?.expiresAt !== undefined && subscription.expiresAt < Date.now();
+  const [showPaywall, setShowPaywall] = useState(subscription?.status === "pending" || isExpired);
   const stats = useQuery(api.analytics.businessStats, selectedBusinessId ? { businessId: selectedBusinessId, filter } : "skip");
   const feedbacks = useQuery(api.analytics.recentFeedbacks, selectedBusinessId ? { businessId: selectedBusinessId, limit: 20 } : "skip");
 
@@ -169,10 +170,12 @@ export default function Dashboard() {
     ? Math.round((displayStats.redirectCount / displayStats.totalVisits) * 100)
     : 0;
 
-  const tabs: { id: TabType; label: string; icon: React.ReactNode }[] = [
+  const unresolvedCount = feedbacks?.filter((fb) => (fb as any).status === "unresolved").length ?? 0;
+
+  const tabs: { id: TabType; label: string; icon: React.ReactNode; badge?: number }[] = [
     { id: "overview", label: "Overview", icon: <BarChart3 className="w-4 h-4" /> },
     { id: "reviews", label: "Get Reviews", icon: <Star className="w-4 h-4" /> },
-    { id: "inbox", label: "Private Inbox", icon: <Inbox className="w-4 h-4" /> },
+    { id: "inbox", label: "Private Inbox", icon: <Inbox className="w-4 h-4" />, badge: unresolvedCount > 0 ? unresolvedCount : undefined },
   ];
 
   return (
@@ -180,7 +183,7 @@ export default function Dashboard() {
       <PaywallModal
         open={showPaywall}
         onClose={() => setShowPaywall(false)}
-        reason="Complete your Pro subscription to unlock full dashboard access. Pay via bKash, Nagad, or card."
+        reason={isExpired ? "Your Pro subscription has expired. Renew via bKash or Nagad to regain full access." : "Complete your Pro subscription to unlock full dashboard access. Pay via bKash, Nagad, or card."}
       />
 
       <div className="fixed inset-0 -z-10">
@@ -234,6 +237,11 @@ export default function Dashboard() {
                   : "text-[#A1A1AA] hover:text-white hover:bg-white/5"
               }`}>
               {tab.icon} {tab.label}
+              {tab.badge !== undefined && (
+                <span className="ml-1 px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-red-500/20 text-red-400">
+                  {tab.badge}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -295,7 +303,7 @@ export default function Dashboard() {
               <StatCard icon={<Star className="w-5 h-5 text-emerald-400" />} label="Google Redirects" value={displayStats?.redirectCount ?? 0}
                 sub={`${displayStats?.redirectPercentage ?? 0}% of total`} color="bg-emerald-500/10" />
               <StatCard icon={<MessageSquare className="w-5 h-5 text-amber-400" />} label="Private Feedback" value={displayStats?.feedbackCount ?? 0}
-                sub={`${displayStats?.feedbackPercentage ?? 0}% of total`} color="bg-amber-500/10" />
+                sub={unresolvedCount > 0 ? `${unresolvedCount} unresolved` : `${displayStats?.feedbackPercentage ?? 0}% of total`} color="bg-amber-500/10" />
               <StatCard icon={<TrendingUp className="w-5 h-5 text-[#16A34A]" />} label="Conversion Rate"
                 value={`${conversionRate}%`} sub="Positive review rate" color="bg-[#16A34A]/10" />
             </div>
@@ -385,9 +393,21 @@ export default function Dashboard() {
                     <span className="text-[#16A34A]">{window.location.origin}/review/{reviewSlug}</span><br /><br />
                     Thank you! — {overview.businesses[0]?.name || "Our Team"}
                   </div>
-                  <Button onClick={copyWhatsAppTemplate} variant="outline" className="w-full h-10 border-white/10 bg-white/5 hover:bg-white/10 text-white text-sm font-semibold cursor-pointer">
-                    {copiedTemplate ? <><CheckCircle2 className="w-4 h-4 mr-2" /> Copied!</> : <><MessageCircle className="w-4 h-4 mr-2" /> Copy WhatsApp Message</>}
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button onClick={copyWhatsAppTemplate} variant="outline" className="flex-1 h-10 border-white/10 bg-white/5 hover:bg-white/10 text-white text-sm font-semibold cursor-pointer">
+                      {copiedTemplate ? <><CheckCircle2 className="w-4 h-4 mr-2" /> Copied!</> : <><Copy className="w-4 h-4 mr-2" /> Copy Message</>}
+                    </Button>
+                    <Button onClick={() => {
+                      const slug = reviewSlug;
+                      const name = overview?.businesses[0]?.name || "Our Team";
+                      if (slug) {
+                        const msg = `Hi! We'd love your feedback on your recent visit. Please take 30 seconds to rate us:\n\n${window.location.origin}/review/${slug}\n\nThank you! — ${name}`;
+                        window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
+                      }
+                    }} className="flex-1 h-10 bg-[#25D366] hover:bg-[#128C7E] text-white text-sm font-semibold cursor-pointer">
+                      <MessageCircle className="w-4 h-4 mr-2" /> Open in WhatsApp
+                    </Button>
+                  </div>
                 </>
               ) : (
                 <p className="text-sm text-[#A1A1AA]">Set up a review profile first.</p>
@@ -445,12 +465,18 @@ export default function Dashboard() {
                 {feedbacks.map((fb) => {
                   const status = feedbackStatuses[fb.id] ?? (fb as any).status ?? "unresolved";
                   return (
-                    <div key={fb.id} className="p-5 hover:bg-white/[0.02] transition-colors">
+                    <div key={fb.id} className={`p-5 hover:bg-white/[0.02] transition-colors ${status === "unresolved" ? "border-l-2 border-l-red-500/60" : ""}`}>
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-3 mb-1">
                             <span className="text-sm font-medium text-white">{fb.customerName}</span>
                             <span className="text-amber-400 text-xs">{"★".repeat(fb.rating)}{"☆".repeat(5 - fb.rating)}</span>
+                            {status === "unresolved" && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 text-[10px] font-bold uppercase tracking-wider">
+                                <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
+                                New Complaint
+                              </span>
+                            )}
                             {fb.phone && <span className="text-xs text-[#A1A1AA]">{fb.phone}</span>}
                           </div>
                           <p className="text-sm text-[#A1A1AA] leading-relaxed">{fb.message}</p>

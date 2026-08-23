@@ -266,7 +266,7 @@ export default function Review() {
             Thank you for your feedback.
           </h2>
           <p className="text-[#A1A1AA] text-sm leading-relaxed">
-            Thank you for your feedback! The management team has been notified.
+            Our management team has been notified and will reach out to you shortly.
             We appreciate you taking the time to help us improve.
           </p>
           <div className="mt-6 flex items-center justify-center gap-2 text-xs text-[#A1A1AA]/60">
