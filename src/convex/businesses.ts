@@ -151,6 +151,8 @@ export const getBySlug = query({
       logoUrl: business.logoUrl,
       reviewUrl: business.reviewUrl,
       alertEmail: business.alertEmail,
+      heroUrl: business.heroUrl,
+      promoText: business.promoText,
     };
   },
 });

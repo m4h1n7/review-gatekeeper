@@ -41,6 +41,8 @@ const schema = defineSchema(
       alertEmail: v.string(),
       category: v.optional(v.string()),
       phone: v.optional(v.string()),
+      heroUrl: v.optional(v.string()),
+      promoText: v.optional(v.string()),
       createdAt: v.number(),
       userId: v.string(), // owner of this business profile
     })
