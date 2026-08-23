@@ -86,6 +86,7 @@ const schema = defineSchema(
       senderPhone: v.optional(v.string()),
       trxId: v.optional(v.string()),
       status: v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected")),
+      setupFee: v.optional(v.number()),
       submittedAt: v.number(),
       reviewedAt: v.optional(v.number()),
     })
@@ -95,7 +96,7 @@ const schema = defineSchema(
     // Subscription plans: pending payment or active pro
     subscriptions: defineTable({
       userId: v.string(),
-      plan: v.union(v.literal("free"), v.literal("pro")),
+      plan: v.union(v.literal("free"), v.literal("starter"), v.literal("pro")),
       status: v.union(v.literal("active"), v.literal("pending"), v.literal("cancelled")),
       createdAt: v.number(),
       expiresAt: v.optional(v.number()),

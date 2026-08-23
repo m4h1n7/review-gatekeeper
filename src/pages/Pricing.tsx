@@ -21,9 +21,11 @@ export default function Pricing() {
   const { isAuthenticated } = useAuth();
 
   const [showPaywall, setShowPaywall] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<"starter" | "pro">("pro");
 
   const handleGetStarted = (plan: string) => {
-    if (plan === "pro") {
+    if (plan === "starter" || plan === "pro") {
+      setSelectedPlan(plan as "starter" | "pro");
       setShowPaywall(true);
       return;
     }
@@ -94,7 +96,7 @@ export default function Pricing() {
             Protect your reputation
             <br />
             <span className="text-[#16A34A]">
-              with a single plan
+              with the right plan
             </span>
           </motion.h1>
 
@@ -104,19 +106,69 @@ export default function Pricing() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="mt-6 text-lg text-[#A1A1AA] max-w-xl mx-auto"
           >
-            One plan. Everything included. Pay monthly via bKash, Nagad, or card.
+            One-time setup fee + monthly subscription. Pay via bKash, Nagad, or card.
           </motion.p>
         </div>
       </section>
 
       {/* Pricing Cards */}
       <section className="relative z-10 px-4 sm:px-6 pb-20 sm:pb-28">
-        <div className="max-w-md mx-auto">
-          {/* Pro Tier */}
+        <div className="max-w-3xl mx-auto grid sm:grid-cols-2 gap-6 sm:gap-8">
+          {/* Starter Plan */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
+          >
+            <GlassPanel className="p-8 h-full flex flex-col rounded-3xl">
+              <div className="mb-6">
+                <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center mb-4">
+                  <Star className="w-6 h-6 text-zinc-400" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-1">Starter Plan</h3>
+                <p className="text-sm text-[#A1A1AA]">ছোট ক্যাফে / দোকান</p>
+              </div>
+
+              <div className="space-y-1 mb-6">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-extrabold text-white">৳১,৯৯৯</span>
+                  <span className="text-xs text-zinc-500">setup +</span>
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-extrabold text-white">৳১,৪৯৯</span>
+                  <span className="text-sm text-[#A1A1AA]">/month</span>
+                </div>
+                <p className="text-xs text-zinc-500">Total first payment: ৳৩,৪৯৮</p>
+              </div>
+
+              <div className="p-3 rounded-xl bg-white/[0.04] border border-white/[0.06] mb-5">
+                <p className="text-xs font-semibold text-zinc-400 mb-1">📦 Hardware</p>
+                <p className="text-xs text-zinc-500">১টি প্রিমিয়াম NFC QR কার্ড</p>
+              </div>
+
+              <div className="space-y-3 mb-8 flex-1">
+                {["প্রাইভেট ফিডব্যাক ফিল্টার (১-৩ স্টার ব্লক)", "গ্যাপ রিয়েল-টাইম চার্ট", "বেসিক ড্যাশবোর্ড"].map((feature) => (
+                  <div key={feature} className="flex items-center gap-3">
+                    <CheckCircle2 className="w-4 h-4 text-zinc-500 shrink-0" />
+                    <span className="text-sm text-[#A1A1AA] font-medium">{feature}</span>
+                  </div>
+                ))}
+              </div>
+
+              <Button
+                className="w-full h-12 bg-white/10 hover:bg-white/15 text-white font-semibold border border-white/10 transition-all cursor-pointer"
+                onClick={() => handleGetStarted("starter")}
+              >
+                Get Started
+              </Button>
+            </GlassPanel>
+          </motion.div>
+
+          {/* Business Pro Plan */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.5 }}
           >
             <GlassPanel className="p-8 h-full flex flex-col relative ring-2 ring-[#16A34A]/40 shadow-[0_8px_40px_rgba(22,163,74,0.1)] rounded-3xl">
               {/* Popular badge */}
@@ -131,35 +183,32 @@ export default function Pricing() {
                 <div className="w-12 h-12 rounded-xl bg-[#16A34A] flex items-center justify-center mb-4 shadow-lg shadow-[#16A34A]/25">
                   <Zap className="w-6 h-6 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-1">
-                  Pro
-                </h3>
-                <p className="text-sm text-[#A1A1AA]">
-                  For businesses that take reputation seriously
-                </p>
+                <h3 className="text-xl font-bold text-white mb-1">Business Pro Plan</h3>
+                <p className="text-sm text-[#A1A1AA]">জনপ্রিয় রেস্তোরাঁ / সেলুন</p>
               </div>
 
-              <div className="mb-6">
-                <span className="text-4xl font-extrabold text-white">
-                  ৳1,000
-                </span>
-                <span className="text-[#A1A1AA] text-sm ml-1">/month</span>
-                <p className="text-xs text-[#16A34A] mt-1">Also $10/month via card</p>
+              <div className="space-y-1 mb-6">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-extrabold text-white">৳২,৯৯৯</span>
+                  <span className="text-xs text-zinc-500">setup +</span>
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-extrabold text-white">৳২,৪৯৯</span>
+                  <span className="text-sm text-[#A1A1AA]">/month</span>
+                </div>
+                <p className="text-xs text-[#16A34A]">Total first payment: ৳৫,৪৯৮</p>
+              </div>
+
+              <div className="p-3 rounded-xl bg-[#16A34A]/[0.06] border border-[#16A34A]/15 mb-5">
+                <p className="text-xs font-semibold text-[#16A34A] mb-1">📦 Hardware</p>
+                <p className="text-xs text-zinc-400">২টি প্রিমিয়াম NFC কার্ড + ১টি অ্যাক্রিলিক টেবিল স্ট্যান্ডি</p>
               </div>
 
               <div className="space-y-3 mb-8 flex-1">
-                {[
-                  "Unlimited review profiles",
-                  "Unlimited analytics & feedback",
-                  "Automated email alerts",
-                  "Real-time notifications",
-                  "Priority support",
-                ].map((feature) => (
+                {["ডায়নামিক পারফরম্যান্স লাইন চার্ট", "হোয়াটসঅ্যাপ মেসেজ জেনারেটর", "কাস্টম কাস্টমার অফার ব্যানার", "প্রাইওরিটি সাপোর্ট"].map((feature) => (
                   <div key={feature} className="flex items-center gap-3">
                     <CheckCircle2 className="w-4 h-4 text-[#16A34A] shrink-0" />
-                    <span className="text-sm text-white font-medium">
-                      {feature}
-                    </span>
+                    <span className="text-sm text-white font-medium">{feature}</span>
                   </div>
                 ))}
               </div>
@@ -179,7 +228,8 @@ export default function Pricing() {
       <PaywallModal
         open={showPaywall}
         onClose={() => setShowPaywall(false)}
-        reason="Unlock unlimited profiles, analytics, and automated email alerts with the Pro plan."
+        reason={`Unlock all features with the ${selectedPlan === "pro" ? "Business Pro" : "Starter"} plan.`}
+        plan={selectedPlan}
       />
 
       {/* Feature comparison */}

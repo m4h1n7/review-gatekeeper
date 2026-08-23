@@ -189,7 +189,7 @@ export default function AccountSettings() {
     setPwLoading(false);
   };
 
-  const planLabel = subscription?.plan === "pro" && subscription?.status === "active" ? "Pro" : subscription?.status === "pending" ? "Pending Payment" : "Pro";
+  const planLabel = subscription?.plan === "pro" && subscription?.status === "active" ? "Business Pro" : subscription?.plan === "starter" && subscription?.status === "active" ? "Starter" : subscription?.status === "pending" ? "Pending Payment" : "Business Pro";
   const planColor = subscription?.plan === "pro" && subscription?.status === "active" ? "text-[#16A34A]" : subscription?.status === "pending" ? "text-amber-400" : "text-[#16A34A]";
 
   const passwordButtonText = hasPassword === undefined

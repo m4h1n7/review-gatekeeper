@@ -20,9 +20,11 @@ interface PaywallModalProps {
   open: boolean;
   onClose: () => void;
   reason: string;
+  plan?: "starter" | "pro";
 }
 
-export function PaywallModal({ open, onClose, reason }: PaywallModalProps) {
+export function PaywallModal({ open, onClose, reason, plan: initialPlan }: PaywallModalProps) {
+  const [selectedPlan, setSelectedPlan] = useState<"starter" | "pro">(initialPlan ?? "pro");
   const [senderNumber, setSenderNumber] = useState("");
   const [trxId, setTrxId] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -30,6 +32,12 @@ export function PaywallModal({ open, onClose, reason }: PaywallModalProps) {
   const [copied, setCopied] = useState(false);
 
   const submitPayment = useMutation(api.payments.submit);
+
+  const planDetails = {
+    starter: { setupFee: 1999, monthlyFee: 1499, totalFirst: 3498, label: "Starter Plan" },
+    pro: { setupFee: 2999, monthlyFee: 2499, totalFirst: 5498, label: "Business Pro Plan" },
+  };
+  const currentPlan = planDetails[selectedPlan];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,6 +47,7 @@ export function PaywallModal({ open, onClose, reason }: PaywallModalProps) {
         gateway: "bkash",
         senderPhone: senderNumber,
         trxId: trxId,
+        plan: selectedPlan,
       });
       setSubmitted(true);
     } catch (err: unknown) {
@@ -95,7 +104,7 @@ export function PaywallModal({ open, onClose, reason }: PaywallModalProps) {
                 <Lock className="w-8 h-8 text-white" />
               </div>
               <h2 className="text-2xl font-bold text-white mb-2">
-                Upgrade to Pro
+                Upgrade Your Plan
               </h2>
               <p className="text-white/70 text-sm">{reason}</p>
             </div>
@@ -129,24 +138,40 @@ export function PaywallModal({ open, onClose, reason }: PaywallModalProps) {
                 </motion.div>
               ) : (
                 <>
-                  {/* Pro features */}
-                  <h3 className="text-sm font-semibold text-[#A1A1AA] uppercase tracking-wider mb-4">
-                    What you get with Pro
-                  </h3>
-                  <div className="space-y-2.5 mb-6">
-                    {[
-                      "Unlimited review profiles",
-                      "Unlimited analytics & feedback",
-                      "Automated email alerts",
-                      "Priority support",
-                    ].map((feature) => (
-                      <div key={feature} className="flex items-center gap-3">
-                        <CheckCircle2 className="w-4 h-4 text-[#16A34A] shrink-0" />
-                        <span className="text-sm text-white">
-                          {feature}
-                        </span>
-                      </div>
-                    ))}
+                  {/* Plan Selector */}
+                  <div className="mb-6">
+                    <h3 className="text-sm font-semibold text-[#A1A1AA] uppercase tracking-wider mb-3">
+                      Select your plan
+                    </h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedPlan("starter")}
+                        className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                          selectedPlan === "starter"
+                            ? "border-white/20 bg-white/[0.08]"
+                            : "border-white/10 bg-white/[0.03] hover:bg-white/[0.06]"
+                        }`}
+                      >
+                        <p className="text-sm font-semibold text-white">Starter</p>
+                        <p className="text-xs text-[#A1A1AA] mt-0.5">৳১,৯৯৯ + ৳১,৪৯৯/mo</p>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedPlan("pro")}
+                        className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                          selectedPlan === "pro"
+                            ? "border-[#16A34A]/40 bg-[#16A34A]/[0.08]"
+                            : "border-white/10 bg-white/[0.03] hover:bg-white/[0.06]"
+                        }`}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-sm font-semibold text-white">Business Pro</p>
+                          <span className="text-[9px] bg-[#16A34A] text-white px-1.5 py-0.5 rounded-full font-bold">★</span>
+                        </div>
+                        <p className="text-xs text-[#A1A1AA] mt-0.5">৳২,৯৯৯ + ৳২,৪৯৯/mo</p>
+                      </button>
+                    </div>
                   </div>
 
                   {/* bKash Account Details */}
@@ -212,13 +237,17 @@ export function PaywallModal({ open, onClose, reason }: PaywallModalProps) {
                       </div>
                       <div className="h-px bg-white/10 my-1" />
                       <div className="flex items-center justify-between">
-                        <span className="text-[#A1A1AA]">Amount</span>
-                        <span className="font-bold text-lg text-white">
-                          ৳1,000
-                          <span className="text-xs font-normal text-[#A1A1AA] ml-1">
-                            /month
-                          </span>
-                        </span>
+                        <span className="text-[#A1A1AA]">Setup Fee</span>
+                        <span className="font-medium text-white">৳{currentPlan.setupFee.toLocaleString()}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[#A1A1AA]">Monthly Fee</span>
+                        <span className="font-medium text-white">৳{currentPlan.monthlyFee.toLocaleString()}/month</span>
+                      </div>
+                      <div className="h-px bg-white/10 my-1" />
+                      <div className="flex items-center justify-between">
+                        <span className="text-[#A1A1AA]">Total First Payment</span>
+                        <span className="font-bold text-lg text-white">৳{currentPlan.totalFirst.toLocaleString()}</span>
                       </div>
                     </div>
                   </div>
@@ -233,7 +262,7 @@ export function PaywallModal({ open, onClose, reason }: PaywallModalProps) {
                       {[
                         'Open your bKash App and select "Send Money".',
                         "Enter Number: 01673903919 (ahanf tazwar alif).",
-                        "Enter Amount: ৳1,000.",
+                        `Enter Amount: ৳${currentPlan.totalFirst.toLocaleString()} (setup + first month).`,
                         "Complete the transaction and copy the 10-character Transaction ID (TrxID).",
                         "Paste the TrxID and your sender phone number below to request verification.",
                       ].map((step, i) => (

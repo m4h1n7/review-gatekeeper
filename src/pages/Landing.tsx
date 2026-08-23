@@ -442,7 +442,7 @@ export default function Landing() {
 
       {/* Pricing */}
       <section id="pricing" className="relative z-10 px-4 sm:px-6 py-16 sm:py-24">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-5xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -451,32 +451,91 @@ export default function Landing() {
             className="text-center mb-12"
           >
             <p className="text-sm font-semibold text-[#16A34A] uppercase tracking-widest mb-3">Pricing</p>
-            <h2 className="text-3xl sm:text-4xl font-bold text-white">Simple, transparent pricing</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold text-white">Choose the right plan for your business</h2>
+            <p className="mt-3 text-[#A1A1AA] text-base max-w-lg mx-auto">One-time setup fee + monthly subscription. Pay via bKash or Nagad.</p>
           </motion.div>
 
-          <div className="max-w-md mx-auto">
-            {/* Pro Plan */}
+          <div className="grid sm:grid-cols-2 gap-6 sm:gap-8 max-w-3xl mx-auto">
+            {/* Starter Plan */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-50px" }}
               transition={{ duration: 0.5 }}
             >
-              <div className="rounded-3xl border border-[#16A34A]/30 bg-white/[0.04] backdrop-blur-2xl p-8 h-full flex flex-col relative overflow-hidden">
-                <div className="absolute top-0 right-0 px-3 py-1 bg-[#16A34A] text-white text-[10px] font-bold uppercase tracking-wider rounded-bl-lg">
-                  ★ Pro Plan
+              <div className="rounded-3xl border border-white/[0.1] bg-white/[0.04] backdrop-blur-2xl p-8 h-full flex flex-col relative overflow-hidden">
+                <h3 className="text-lg font-bold text-white mb-1">Starter Plan</h3>
+                <p className="text-sm text-[#A1A1AA] mb-1">ছোট ক্যাফে / দোকান</p>
+                <div className="mt-4 mb-1">
+                  <span className="text-xs text-zinc-500 line-through">Setup Fee</span>
                 </div>
-                <h3 className="text-lg font-bold text-white mb-1">Pro Plan</h3>
-                <p className="text-sm text-[#A1A1AA] mb-4">Everything you need to protect and grow your reputation</p>
-                <div className="mb-2">
-                  <span className="text-4xl font-extrabold text-white">৳1,000</span>
+                <div className="mb-1">
+                  <span className="text-3xl font-extrabold text-white">৳১,৯৯৯</span>
+                  <span className="text-xs text-zinc-500 ml-1">one-time</span>
+                </div>
+                <div className="mb-1">
+                  <span className="text-xs text-zinc-500 line-through">Monthly</span>
+                </div>
+                <div className="mb-4">
+                  <span className="text-3xl font-extrabold text-white">৳১,৪৯৯</span>
                   <span className="text-sm text-[#A1A1AA] ml-1">/month</span>
                 </div>
-                <p className="text-xs text-[#16A34A] mb-6">Also available: $10/month via Card</p>
-                <ul className="space-y-3 mb-8 flex-1">
-                  {["Unlimited Business Profiles", "Unlimited Reviews & Feedback", "Advanced Analytics Dashboard", "Automated Email Alerts", "QR Code Generator", "Priority Support"].map((f) => (
-                    <li key={f} className="flex items-center gap-2 text-sm text-[#A1A1AA]">
-                      <CheckCircle2 className="w-4 h-4 text-[#16A34A] shrink-0" />
+                <div className="p-3 rounded-xl bg-white/[0.04] border border-white/[0.06] mb-5">
+                  <p className="text-xs font-semibold text-[#16A34A] mb-1">📦 Hardware Included</p>
+                  <p className="text-xs text-zinc-400">১টি প্রিমিয়াম NFC QR কার্ড</p>
+                </div>
+                <ul className="space-y-2.5 mb-8 flex-1">
+                  {["প্রাইভেট ফিডব্যাক ফিল্টার (১-৩ স্টার ব্লক)", "গ্যাপ রিয়েল-টাইম চার্ট", "বেসিক ড্যাশবোর্ড"].map((f) => (
+                    <li key={f} className="flex items-start gap-2 text-sm text-[#A1A1AA]">
+                      <CheckCircle2 className="w-4 h-4 text-zinc-500 shrink-0 mt-0.5" />
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+                <Button
+                  onClick={() => navigate(isAuthenticated ? "/pricing" : "/auth")}
+                  className="w-full h-11 bg-white/10 hover:bg-white/15 text-white font-semibold cursor-pointer border border-white/10"
+                >
+                  Get Started
+                </Button>
+              </div>
+            </motion.div>
+
+            {/* Business Pro Plan */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+            >
+              <div className="rounded-3xl border border-[#16A34A]/30 bg-white/[0.04] backdrop-blur-2xl p-8 h-full flex flex-col relative overflow-hidden ring-1 ring-[#16A34A]/20">
+                <div className="absolute top-0 right-0 px-3 py-1 bg-[#16A34A] text-white text-[10px] font-bold uppercase tracking-wider rounded-bl-lg">
+                  ★ Most Popular
+                </div>
+                <h3 className="text-lg font-bold text-white mb-1">Business Pro Plan</h3>
+                <p className="text-sm text-[#A1A1AA] mb-1">জনপ্রিয় রেস্তোরাঁ / সেলুন</p>
+                <div className="mt-4 mb-1">
+                  <span className="text-xs text-zinc-500 line-through">Setup Fee</span>
+                </div>
+                <div className="mb-1">
+                  <span className="text-3xl font-extrabold text-white">৳২,৯৯৯</span>
+                  <span className="text-xs text-zinc-500 ml-1">one-time</span>
+                </div>
+                <div className="mb-1">
+                  <span className="text-xs text-zinc-500 line-through">Monthly</span>
+                </div>
+                <div className="mb-4">
+                  <span className="text-3xl font-extrabold text-white">৳২,৪৯৯</span>
+                  <span className="text-sm text-[#A1A1AA] ml-1">/month</span>
+                </div>
+                <div className="p-3 rounded-xl bg-[#16A34A]/[0.06] border border-[#16A34A]/15 mb-5">
+                  <p className="text-xs font-semibold text-[#16A34A] mb-1">📦 Hardware Included</p>
+                  <p className="text-xs text-zinc-400">২টি প্রিমিয়াম NFC কার্ড + ১টি অ্যাক্রিলিক টেবিল স্ট্যান্ডি</p>
+                </div>
+                <ul className="space-y-2.5 mb-8 flex-1">
+                  {["ডায়নামিক পারফরম্যান্স লাইন চার্ট", "হোয়াটসঅ্যাপ মেসেজ জেনারেটর", "কাস্টম কাস্টমার অফার ব্যানার", "প্রাইওরিটি সাপোর্ট"].map((f) => (
+                    <li key={f} className="flex items-start gap-2 text-sm text-[#A1A1AA]">
+                      <CheckCircle2 className="w-4 h-4 text-[#16A34A] shrink-0 mt-0.5" />
                       {f}
                     </li>
                   ))}

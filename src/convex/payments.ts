@@ -10,6 +10,7 @@ export const submit = mutation({
     gateway: v.union(v.literal("bkash"), v.literal("nagad")),
     senderPhone: v.string(),
     trxId: v.string(),
+    plan: v.optional(v.union(v.literal("starter"), v.literal("pro"))),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -29,6 +30,8 @@ export const submit = mutation({
       throw new Error("This Transaction ID has already been submitted");
     }
 
+    const setupFee = args.plan === "starter" ? 1999 : args.plan === "pro" ? 2999 : 2999;
+
     const id = await ctx.db.insert("payments", {
       userId,
       clientEmail,
@@ -36,6 +39,7 @@ export const submit = mutation({
       senderPhone: args.senderPhone,
       trxId: args.trxId,
       status: "pending",
+      setupFee,
       submittedAt: Date.now(),
     });
 
