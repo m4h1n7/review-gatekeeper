@@ -527,6 +527,13 @@ export default function Landing() {
       <footer className="relative z-10 px-4 sm:px-6 py-8 border-t border-white/[0.08]">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <Logo size="small" />
+          <div className="flex items-center gap-4 text-xs text-zinc-500">
+            <button onClick={() => navigate("/terms")} className="hover:text-white transition-colors cursor-pointer">Terms of Service</button>
+            <span className="text-zinc-700">·</span>
+            <button onClick={() => navigate("/privacy")} className="hover:text-white transition-colors cursor-pointer">Privacy Policy</button>
+            <span className="text-zinc-700">·</span>
+            <button onClick={() => navigate("/refund-policy")} className="hover:text-white transition-colors cursor-pointer">Refund Policy</button>
+          </div>
           <p className="text-xs text-zinc-500">
             © {new Date().getFullYear()} STAR CATCH Reviews and Feedback Agency Bd. All rights reserved.
           </p>

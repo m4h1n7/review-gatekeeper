@@ -474,6 +474,25 @@ export default function Dashboard() {
           </GlassPanel>
         )}
       </div>
+
+      {/* Footer */}
+      <footer className="relative z-10 px-4 sm:px-6 py-6 border-t border-white/5 mt-8">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-5 rounded bg-[#16A34A] flex items-center justify-center">
+              <Star className="w-3 h-3 text-white fill-white" />
+            </div>
+            <span className="text-xs text-[#A1A1AA]">STAR CATCH Reviews and Feedback Agency Bd</span>
+          </div>
+          <div className="flex items-center gap-4 text-xs text-[#A1A1AA]/60">
+            <button onClick={() => navigate("/terms")} className="hover:text-white transition-colors cursor-pointer">Terms of Service</button>
+            <span className="text-[#A1A1AA]/20">·</span>
+            <button onClick={() => navigate("/privacy")} className="hover:text-white transition-colors cursor-pointer">Privacy Policy</button>
+            <span className="text-[#A1A1AA]/20">·</span>
+            <button onClick={() => navigate("/refund-policy")} className="hover:text-white transition-colors cursor-pointer">Refund Policy</button>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

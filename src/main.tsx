@@ -23,6 +23,9 @@ const DemoDashboard = lazy(() => import("./pages/DemoDashboard.tsx"));
 
 const AccountSettings = lazy(() => import("./pages/AccountSettings.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
+const Terms = lazy(() => import("./pages/Terms.tsx"));
+const Privacy = lazy(() => import("./pages/Privacy.tsx"));
+const RefundPolicy = lazy(() => import("./pages/RefundPolicy.tsx"));
 
 // Simple loading fallback for route transitions
 function RouteLoading() {
@@ -165,6 +168,9 @@ createRoot(document.getElementById("root")!).render(
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/demo" element={<DemoDashboard />} />
               <Route path="/review/:clientSlug" element={<Review />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/refund-policy" element={<RefundPolicy />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>

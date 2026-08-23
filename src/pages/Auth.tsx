@@ -456,6 +456,21 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                     />
                   </div>
 
+                  <label className="flex items-start gap-2.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="agreeToTerms"
+                      className="mt-0.5 h-4 w-4 rounded border-white/20 bg-white/5 text-[#16A34A] focus:ring-[#16A34A]/20 cursor-pointer"
+                      required
+                    />
+                    <span className="text-xs text-[#A1A1AA] leading-relaxed">
+                      I agree to the{' '}
+                      <button type="button" onClick={() => window.open("/terms", "_blank")} className="text-[#16A34A] hover:underline">Terms of Service</button>
+                      {' '}and{' '}
+                      <button type="button" onClick={() => window.open("/privacy", "_blank")} className="text-[#16A34A] hover:underline">Privacy Policy</button>
+                    </span>
+                  </label>
+
                   {error && <p className="text-sm text-red-400">{error}</p>}
 
                   <Button

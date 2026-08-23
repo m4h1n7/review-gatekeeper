@@ -51,6 +51,7 @@ export default function Onboarding() {
   const [category, setCategory] = useState("");
   const [reviewUrl, setReviewUrl] = useState("");
   const [customSlug, setCustomSlug] = useState("");
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const handleComplete = async () => {
     setIsLoading(true);
@@ -229,6 +230,21 @@ export default function Onboarding() {
 
                 {error && <p className="text-sm text-red-400 mt-3">{error}</p>}
 
+                <label className="flex items-start gap-2.5 cursor-pointer mt-4">
+                  <input
+                    type="checkbox"
+                    checked={agreedToTerms}
+                    onChange={(e) => setAgreedToTerms(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 rounded border-white/20 bg-white/5 text-[#16A34A] focus:ring-[#16A34A]/20 cursor-pointer"
+                  />
+                  <span className="text-xs text-[#A1A1AA] leading-relaxed">
+                    I agree to the{' '}
+                    <button type="button" onClick={() => window.open("/terms", "_blank")} className="text-[#16A34A] hover:underline">Terms of Service</button>
+                    {' '}and{' '}
+                    <button type="button" onClick={() => window.open("/privacy", "_blank")} className="text-[#16A34A] hover:underline">Privacy Policy</button>
+                  </span>
+                </label>
+
                 <div className="flex gap-3 mt-6">
                   <Button
                     onClick={() => { setStep(1); setError(null); }}
@@ -240,7 +256,7 @@ export default function Onboarding() {
                   </Button>
                   <Button
                     onClick={handleComplete}
-                    disabled={!step2Valid || isLoading}
+                    disabled={!step2Valid || !agreedToTerms || isLoading}
                     className="flex-1 h-11 bg-[#16A34A] hover:bg-[#16A34A]/90 text-white font-semibold cursor-pointer"
                   >
                     {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
