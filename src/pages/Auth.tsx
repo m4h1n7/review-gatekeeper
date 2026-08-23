@@ -74,7 +74,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   // If there's an explicit returnTo, use it. Otherwise check onboarding.
   const baseRedirect = returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//")
     ? returnTo
-    : (redirectAfterAuth || "/dashboard");
+    : (redirectAfterAuth || "/");
 
   // Compute redirect with role-based routing
   const getRedirect = (email?: string | null) => {

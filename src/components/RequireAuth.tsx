@@ -29,10 +29,8 @@ export function RequireAuth({ children }: { children: ReactNode }) {
     );
   }
 
-  // Redirect to onboarding if not completed (skip for onboarding page itself)
-  if (!onboardingDone && location.pathname !== "/onboarding") {
-    return <Navigate to="/onboarding" replace />;
-  }
+  // Allow onboarding page access even if not yet completed
+  // Allow dashboard access even without onboarding (new flow: signup → home → pricing → payment → onboarding → dashboard)
 
   // Redirect away from onboarding if already completed
   if (onboardingDone && location.pathname === "/onboarding") {

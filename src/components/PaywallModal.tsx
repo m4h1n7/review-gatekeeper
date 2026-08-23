@@ -19,11 +19,12 @@ import {
 interface PaywallModalProps {
   open: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
   reason: string;
   plan?: "starter" | "pro";
 }
 
-export function PaywallModal({ open, onClose, reason, plan: initialPlan }: PaywallModalProps) {
+export function PaywallModal({ open, onClose, onSuccess, reason, plan: initialPlan }: PaywallModalProps) {
   const [selectedPlan, setSelectedPlan] = useState<"starter" | "pro">(initialPlan ?? "pro");
   const [senderNumber, setSenderNumber] = useState("");
   const [trxId, setTrxId] = useState("");
@@ -50,6 +51,7 @@ export function PaywallModal({ open, onClose, reason, plan: initialPlan }: Paywa
         plan: selectedPlan,
       });
       setSubmitted(true);
+      onSuccess?.();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to submit payment";
       alert(msg);

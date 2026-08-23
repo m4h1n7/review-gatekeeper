@@ -228,6 +228,10 @@ export default function Pricing() {
       <PaywallModal
         open={showPaywall}
         onClose={() => setShowPaywall(false)}
+        onSuccess={() => {
+          setShowPaywall(false);
+          navigate("/onboarding");
+        }}
         reason={`Unlock all features with the ${selectedPlan === "pro" ? "Business Pro" : "Starter"} plan.`}
         plan={selectedPlan}
       />
