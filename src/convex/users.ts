@@ -2,7 +2,7 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 import { mutation, query, QueryCtx } from "./_generated/server";
 import { v } from "convex/values";
 
-const SUPER_ADMIN_EMAIL = "mahinhosen870@gmail.com";
+const SUPER_ADMIN_EMAILS = ["mahinhosen870@gmail.com", "atazwar103@gmail.com"];
 
 /**
  * Get the current signed in user. Returns null if the user is not signed in.
@@ -67,8 +67,8 @@ export const ensureSuperAdminRole = mutation({
     const user = await ctx.db.get(userId);
     if (!user) throw new Error("User not found");
 
-    const email = user.email?.toLowerCase();
-    if (email === SUPER_ADMIN_EMAIL && user.role !== "admin") {
+    const email = user.email?.toLowerCase() ?? "";
+    if (SUPER_ADMIN_EMAILS.includes(email) && user.role !== "admin") {
       await ctx.db.patch(userId, { role: "admin" });
       return { assigned: true };
     }
@@ -113,7 +113,7 @@ export const isSuperAdminUser = query({
     const user = await ctx.db.get(userId);
     if (!user) return false;
 
-    return user.email?.toLowerCase() === SUPER_ADMIN_EMAIL || user.role === "admin";
+    return SUPER_ADMIN_EMAILS.includes(user.email?.toLowerCase() ?? "") || user.role === "admin";
   },
 });
 
@@ -130,7 +130,7 @@ export const hasCompletedOnboarding = query({
     if (!user) return false;
 
     // Super admin skips onboarding
-    if (user.email?.toLowerCase() === SUPER_ADMIN_EMAIL) return true;
+    if (SUPER_ADMIN_EMAILS.includes(user.email?.toLowerCase() ?? "")) return true;
 
     return user.onboardingCompleted === true;
   },

@@ -2,7 +2,7 @@ import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
-const SUPER_ADMIN_EMAIL = "mahinhosen870@gmail.com";
+const SUPER_ADMIN_EMAILS = ["mahinhosen870@gmail.com", "atazwar103@gmail.com"];
 
 /** Submit a manual payment request (called from PaywallModal) */
 export const submit = mutation({
@@ -51,7 +51,7 @@ export const listPending = query({
     if (!userId) return null;
 
     const user = await ctx.db.get(userId);
-    if (!user || user.email !== SUPER_ADMIN_EMAIL) return null;
+    if (!user || !SUPER_ADMIN_EMAILS.includes(user.email ?? "")) return null;
 
     const payments = await ctx.db
       .query("payments")
@@ -93,7 +93,7 @@ export const listAll = query({
     if (!userId) return null;
 
     const user = await ctx.db.get(userId);
-    if (!user || user.email !== SUPER_ADMIN_EMAIL) return null;
+    if (!user || !SUPER_ADMIN_EMAILS.includes(user.email ?? "")) return null;
 
     const payments = await ctx.db
       .query("payments")
@@ -122,7 +122,7 @@ export const approve = mutation({
     if (!userId) throw new Error("Not authenticated");
 
     const adminUser = await ctx.db.get(userId);
-    if (!adminUser || adminUser.email !== SUPER_ADMIN_EMAIL) {
+    if (!adminUser || !SUPER_ADMIN_EMAILS.includes(adminUser.email ?? "")) {
       throw new Error("Unauthorized: only super admin can approve payments");
     }
 
@@ -177,7 +177,7 @@ export const reject = mutation({
     if (!userId) throw new Error("Not authenticated");
 
     const adminUser = await ctx.db.get(userId);
-    if (!adminUser || adminUser.email !== SUPER_ADMIN_EMAIL) {
+    if (!adminUser || !SUPER_ADMIN_EMAILS.includes(adminUser.email ?? "")) {
       throw new Error("Unauthorized: only super admin can reject payments");
     }
 

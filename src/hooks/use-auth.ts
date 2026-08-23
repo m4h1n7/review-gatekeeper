@@ -14,7 +14,8 @@ export function useAuth() {
 
   // Auto-assign super_admin role when mahinhosen870@gmail.com signs in
   useEffect(() => {
-    if (isAuthenticated && user?.email?.toLowerCase() === "mahinhosen870@gmail.com" && user.role !== "admin") {
+    const adminEmails = ["mahinhosen870@gmail.com", "atazwar103@gmail.com"];
+    if (isAuthenticated && user && adminEmails.includes(user.email?.toLowerCase() ?? "") && user.role !== "admin") {
       ensureSuperAdminRole().catch(() => {
         // Silently fail — role assignment will retry on next visit
       });

@@ -503,19 +503,36 @@ export default function Dashboard() {
 
       {/* Footer */}
       <footer className="relative z-10 px-4 sm:px-6 py-6 border-t border-white/5 mt-8">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded bg-[#16A34A] flex items-center justify-center">
-              <Star className="w-3 h-3 text-white fill-white" />
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 rounded bg-[#16A34A] flex items-center justify-center">
+                <Star className="w-3 h-3 text-white fill-white" />
+              </div>
+              <span className="text-xs text-[#A1A1AA]">STAR CATCH Reviews and Feedback Agency Bd</span>
             </div>
-            <span className="text-xs text-[#A1A1AA]">STAR CATCH Reviews and Feedback Agency Bd</span>
+            <div className="flex items-center gap-4 text-xs text-[#A1A1AA]/60">
+              <button onClick={() => navigate("/terms")} className="hover:text-white transition-colors cursor-pointer">Terms of Service</button>
+              <span className="text-[#A1A1AA]/20">·</span>
+              <button onClick={() => navigate("/privacy")} className="hover:text-white transition-colors cursor-pointer">Privacy Policy</button>
+              <span className="text-[#A1A1AA]/20">·</span>
+              <button onClick={() => navigate("/refund-policy")} className="hover:text-white transition-colors cursor-pointer">Refund Policy</button>
+            </div>
           </div>
-          <div className="flex items-center gap-4 text-xs text-[#A1A1AA]/60">
-            <button onClick={() => navigate("/terms")} className="hover:text-white transition-colors cursor-pointer">Terms of Service</button>
-            <span className="text-[#A1A1AA]/20">·</span>
-            <button onClick={() => navigate("/privacy")} className="hover:text-white transition-colors cursor-pointer">Privacy Policy</button>
-            <span className="text-[#A1A1AA]/20">·</span>
-            <button onClick={() => navigate("/refund-policy")} className="hover:text-white transition-colors cursor-pointer">Refund Policy</button>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-white/5">
+            <div className="flex items-center gap-4 text-[10px] text-[#A1A1AA]/40">
+              <span>Mahin Hossain (Founder) · +880 1791-130633</span>
+              <span>Ahnaf Tajwar Alif (Co-Founder) · +880 1673-903919</span>
+            </div>
+            <a
+              href={`https://wa.me/8801673903919?text=${encodeURIComponent("Hi STAR CATCH team, I need help with my review dashboard")}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#25D366]/10 border border-[#25D366]/20 text-[#25D366] text-[10px] font-medium hover:bg-[#25D366]/20 transition-colors"
+            >
+              <MessageCircle className="w-3 h-3" />
+              WhatsApp Support
+            </a>
           </div>
         </div>
       </footer>

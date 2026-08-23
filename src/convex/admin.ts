@@ -2,14 +2,14 @@ import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
-const SUPER_ADMIN_EMAIL = "mahinhosen870@gmail.com";
+const SUPER_ADMIN_EMAILS = ["mahinhosen870@gmail.com", "atazwar103@gmail.com"];
 const PRO_MONTHLY_PRICE_BDT = 1000;
 
 async function requireAdmin(ctx: any) {
   const userId = await getAuthUserId(ctx);
   if (!userId) throw new Error("Not authenticated");
   const user = await ctx.db.get(userId);
-  if (!user || user.email?.toLowerCase() !== SUPER_ADMIN_EMAIL) {
+  if (!user || !SUPER_ADMIN_EMAILS.includes(user.email?.toLowerCase() ?? "")) {
     throw new Error("Unauthorized: super admin only");
   }
   return userId;

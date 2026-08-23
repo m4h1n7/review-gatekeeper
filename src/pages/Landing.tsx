@@ -24,6 +24,7 @@ import {
   Send,
   StarHalf,
   Link2,
+  MessageCircle,
 } from "lucide-react";
 
 function Logo({ size = "normal" }: { size?: "normal" | "small" }) {
@@ -524,19 +525,56 @@ export default function Landing() {
       </section>
 
       {/* Footer */}
-      <footer className="relative z-10 px-4 sm:px-6 py-8 border-t border-white/[0.08]">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <Logo size="small" />
-          <div className="flex items-center gap-4 text-xs text-zinc-500">
-            <button onClick={() => navigate("/terms")} className="hover:text-white transition-colors cursor-pointer">Terms of Service</button>
-            <span className="text-zinc-700">·</span>
-            <button onClick={() => navigate("/privacy")} className="hover:text-white transition-colors cursor-pointer">Privacy Policy</button>
-            <span className="text-zinc-700">·</span>
-            <button onClick={() => navigate("/refund-policy")} className="hover:text-white transition-colors cursor-pointer">Refund Policy</button>
+      <footer className="relative z-10 px-4 sm:px-6 py-10 border-t border-white/[0.08]">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid sm:grid-cols-3 gap-8 mb-8">
+            <div>
+              <Logo size="small" />
+              <p className="text-xs text-zinc-500 mt-3 leading-relaxed max-w-xs">
+                Protecting your Google rating by routing happy customers to leave public reviews and capturing negative feedback privately.
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-white uppercase tracking-wider mb-3">Founders</p>
+              <div className="space-y-2.5">
+                <div>
+                  <p className="text-sm text-zinc-300 font-medium">Mahin Hossain</p>
+                  <p className="text-xs text-zinc-500">Founder · +880 1791-130633</p>
+                </div>
+                <div>
+                  <p className="text-sm text-zinc-300 font-medium">Ahnaf Tajwar Alif</p>
+                  <p className="text-xs text-zinc-500">Co-Founder · +880 1673-903919</p>
+                </div>
+              </div>
+              <a
+                href={`https://wa.me/8801673903919?text=${encodeURIComponent("Hi STAR CATCH team, I need help with my review dashboard")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 mt-3 px-3 py-1.5 rounded-lg bg-[#25D366]/10 border border-[#25D366]/20 text-[#25D366] text-xs font-medium hover:bg-[#25D366]/20 transition-colors"
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+                Contact Support on WhatsApp
+              </a>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-white uppercase tracking-wider mb-3">Legal</p>
+              <div className="flex flex-col gap-2 text-xs text-zinc-500">
+                <button onClick={() => navigate("/terms")} className="hover:text-white transition-colors cursor-pointer text-left">Terms of Service</button>
+                <button onClick={() => navigate("/privacy")} className="hover:text-white transition-colors cursor-pointer text-left">Privacy Policy</button>
+                <button onClick={() => navigate("/refund-policy")} className="hover:text-white transition-colors cursor-pointer text-left">Refund &amp; Cancellation Policy</button>
+              </div>
+            </div>
           </div>
-          <p className="text-xs text-zinc-500">
-            © {new Date().getFullYear()} STAR CATCH Reviews and Feedback Agency Bd. All rights reserved.
-          </p>
+          <div className="border-t border-white/[0.06] pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p className="text-xs text-zinc-600">
+              © {new Date().getFullYear()} STAR CATCH Reviews and Feedback Agency Bd. All rights reserved.
+            </p>
+            <div className="flex items-center gap-4 text-xs text-zinc-600">
+              <a href="tel:+8801791130633" className="hover:text-white transition-colors">+880 1791-130633</a>
+              <span>·</span>
+              <a href="tel:+8801673903919" className="hover:text-white transition-colors">+880 1673-903919</a>
+            </div>
+          </div>
         </div>
       </footer>
     </div>
