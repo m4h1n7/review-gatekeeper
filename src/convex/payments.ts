@@ -80,6 +80,7 @@ export const listPending = query({
         trxId: p.trxId ?? "—",
         status: p.status,
         submittedAt: p.submittedAt,
+        selectedPlan: (p as any).plan ?? "pro",
         currentPlan: sub?.plan ?? "free",
         currentSubStatus: sub?.status ?? "none",
       });
@@ -143,7 +144,11 @@ export const approve = mutation({
       reviewedAt: Date.now(),
     });
 
-    // Find or create subscription for the client
+    // Read the plan from the payment record (set during submission)
+    const paymentData = paymentDoc as any;
+    const selectedPlan: "starter" | "pro" = paymentData.plan === "starter" ? "starter" : "pro";
+
+    // Find or create subscription for the client with the correct plan
     const existingSub = await ctx.db
       .query("subscriptions")
       .withIndex("by_userId", (q) => q.eq("userId", payment.userId))
@@ -153,7 +158,7 @@ export const approve = mutation({
 
     if (existingSub) {
       await ctx.db.patch(existingSub._id, {
-        plan: "pro",
+        plan: selectedPlan,
         status: "active",
         expiresAt,
         proExpiresAt: expiresAt,
@@ -161,7 +166,7 @@ export const approve = mutation({
     } else {
       await ctx.db.insert("subscriptions", {
         userId: payment.userId,
-        plan: "pro",
+        plan: selectedPlan,
         status: "active",
         createdAt: Date.now(),
         expiresAt,

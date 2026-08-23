@@ -429,11 +429,18 @@ export default function Admin() {
                           <td className="px-5 py-4 hidden lg:table-cell">
                             <span className="text-xs text-[#A1A1AA]">{formatTime(payment.submittedAt)}</span>
                           </td>
+                          <td className="px-5 py-4 hidden lg:table-cell">
+                            <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
+                              payment.selectedPlan === "pro" ? "bg-[#16A34A]/15 text-[#16A34A]" : "bg-amber-500/15 text-amber-400"
+                            }`}>
+                              {payment.selectedPlan === "pro" ? "★ Business Pro" : "Starter"}
+                            </span>
+                          </td>
                           <td className="px-5 py-4">
                             <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
                               payment.currentPlan === "pro" ? "bg-[#16A34A]/15 text-[#16A34A]" : "bg-white/5 text-[#A1A1AA]"
                             }`}>
-                              {payment.currentPlan === "pro" ? "Pro" : "Pending"}
+                              {payment.currentPlan === "pro" ? "Pro" : payment.currentPlan === "starter" ? "Starter" : "Pending"}
                             </span>
                           </td>
                           <td className="px-5 py-4 text-right">

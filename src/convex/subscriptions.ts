@@ -30,7 +30,23 @@ export const canCreateProfile = query({
       .withIndex("by_userId", (q) => q.eq("userId", userId))
       .first();
 
-    if (sub && sub.plan === "pro" && sub.status === "active") {
+    // Pro or Starter plan with active status: allow (Starter limited to 1 profile)
+    if (sub && (sub.plan === "pro" || sub.plan === "starter") && sub.status === "active") {
+      if (sub.plan === "starter") {
+        const businesses = await ctx.db
+          .query("businesses")
+          .withIndex("by_userId", (q) => q.eq("userId", userId))
+          .collect();
+        if (businesses.length >= 1) {
+          return {
+            allowed: false,
+            reason: "Starter plan limited to 1 profile",
+            currentCount: businesses.length,
+            maxCount: 1,
+          };
+        }
+        return { allowed: true, reason: "Starter plan" };
+      }
       return { allowed: true, reason: "Pro plan" };
     }
 
@@ -39,22 +55,7 @@ export const canCreateProfile = query({
       return { allowed: false, reason: "Pending payment", currentCount: 0, maxCount: 0 };
     }
 
-    // Free tier: count existing businesses
-    const businesses = await ctx.db
-      .query("businesses")
-      .withIndex("by_userId", (q) => q.eq("userId", userId))
-      .collect();
-
-    if (businesses.length >= 1) {
-      return {
-        allowed: false,
-        reason: "Free plan limited to 1 profile",
-        currentCount: businesses.length,
-        maxCount: 1,
-      };
-    }
-
-    return { allowed: true, reason: "Free plan" };
+    return { allowed: false, reason: "No active subscription" };
   },
 });
 
@@ -70,8 +71,14 @@ export const canReceiveFeedback = query({
       .withIndex("by_userId", (q) => q.eq("userId", userId))
       .first();
 
+    // Pro plan: unlimited feedback
     if (sub && sub.plan === "pro" && sub.status === "active") {
       return { allowed: true, plan: "pro" };
+    }
+
+    // Starter plan: unlimited feedback (1 profile, unlimited feedback)
+    if (sub && sub.plan === "starter" && sub.status === "active") {
+      return { allowed: true, plan: "starter" };
     }
 
     // Pending: not allowed
@@ -79,30 +86,7 @@ export const canReceiveFeedback = query({
       return { allowed: false, reason: "Pending payment", currentCount: 0, maxCount: 0 };
     }
 
-    // Free tier: max 15 total feedbacks across all profiles
-    const businesses = await ctx.db
-      .query("businesses")
-      .withIndex("by_userId", (q) => q.eq("userId", userId))
-      .collect();
-
-    let totalFeedback = 0;
-    for (const biz of businesses) {
-      const feedbacks = await ctx.db
-        .query("feedback")
-        .withIndex("by_businessId", (q) => q.eq("businessId", biz._id))
-        .collect();
-      totalFeedback += feedbacks.length;
-    }
-
-    if (totalFeedback >= 15) {
-      return {
-        allowed: false,
-        reason: "Free plan limited to 15 feedbacks total",
-        currentCount: totalFeedback,
-        maxCount: 15,
-      };
-    }
-
-    return { allowed: true, plan: "free", currentCount: totalFeedback, maxCount: 15 };
+    // No subscription: not allowed
+    return { allowed: false, reason: "No active subscription" };
   },
 });

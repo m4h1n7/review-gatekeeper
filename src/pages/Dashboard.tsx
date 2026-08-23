@@ -103,6 +103,8 @@ export default function Dashboard() {
   const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null);
 
   const subscription = useQuery(api.subscriptions.getCurrent);
+  const isPro = subscription?.plan === "pro" && subscription?.status === "active";
+  const isStarter = subscription?.plan === "starter" && subscription?.status === "active";
   const overview = useQuery(api.analytics.dashboardOverview, { filter });
   const trend = useQuery(api.analytics.ratingTrend, { days: chartDays });
   const isExpired = subscription?.plan === "pro" && subscription?.status === "active" && subscription?.expiresAt !== undefined && subscription.expiresAt < Date.now();
@@ -309,30 +311,57 @@ export default function Dashboard() {
             </div>
 
             {/* Chart */}
-            <GlassPanel className="p-6 mb-6">
+            <GlassPanel className="p-6 mb-6 relative overflow-hidden">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-semibold text-white">Rating Performance Trend</h3>
                 <div className="flex items-center gap-4">
                   <span className="text-[10px] text-[#A1A1AA] flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-full bg-[#16A34A]" /> Score (net daily)</span>
                 </div>
               </div>
-              <div className="h-[220px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={trend || []}>
-                    <defs>
-                      <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#16A34A" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#16A34A" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                    <XAxis dataKey="day" stroke="#A1A1AA" fontSize={10} tickLine={false} axisLine={false} />
-                    <YAxis stroke="#A1A1AA" fontSize={10} tickLine={false} axisLine={false} domain={[0, 100]} tickFormatter={(v: number) => v.toFixed(0)} />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Area type="monotone" dataKey="score" stroke="#16A34A" strokeWidth={2} fill="url(#g)" />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
+              {isPro ? (
+                <div className="h-[220px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={trend || []}>
+                      <defs>
+                        <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#16A34A" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="#16A34A" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                      <XAxis dataKey="day" stroke="#A1A1AA" fontSize={10} tickLine={false} axisLine={false} />
+                      <YAxis stroke="#A1A1AA" fontSize={10} tickLine={false} axisLine={false} domain={[0, 100]} tickFormatter={(v: number) => v.toFixed(0)} />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Area type="monotone" dataKey="score" stroke="#16A34A" strokeWidth={2} fill="url(#g)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <>
+                  {/* Starter: simplified total count graph */}
+                  <div className="h-[220px] flex items-center justify-center">
+                    <div className="text-center">
+                      <BarChart3 className="w-10 h-10 text-[#A1A1AA]/20 mx-auto mb-3" />
+                      <p className="text-sm text-[#A1A1AA] mb-1">Total Reviews: {displayStats?.totalVisits ?? 0}</p>
+                      <p className="text-xs text-[#A1A1AA]/60">Simple count view</p>
+                    </div>
+                  </div>
+                  {/* Upgrade overlay */}
+                  <div className="absolute inset-0 bg-[#0D0D0D]/60 backdrop-blur-[1px] flex items-center justify-center">
+                    <div className="text-center px-6">
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#16A34A]/15 border border-[#16A34A]/25 text-[#16A34A] text-xs font-semibold mb-3">
+                        <Star className="w-3 h-3 fill-[#16A34A]" /> PRO FEATURE
+                      </div>
+                      <p className="text-sm font-semibold text-white mb-1">Dynamic Trend Analysis</p>
+                      <p className="text-xs text-[#A1A1AA] mb-4">Upgrade to Business Pro to unlock the interactive daily rating chart</p>
+                      <Button onClick={() => navigate("/pricing")} size="sm"
+                        className="bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-semibold cursor-pointer">
+                        Upgrade to Business Pro
+                      </Button>
+                    </div>
+                  </div>
+                </>
+              )}
             </GlassPanel>
 
             {/* Breakdown bar */}
@@ -383,7 +412,21 @@ export default function Dashboard() {
             )}
 
             {/* WhatsApp Template */}
-            <GlassPanel className="p-6">
+            <GlassPanel className={`p-6 relative overflow-hidden ${isStarter ? 'opacity-70' : ''}`}>
+              {isStarter && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#0D0D0D]/70 backdrop-blur-[1px]">
+                  <div className="text-center px-4">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#16A34A]/15 border border-[#16A34A]/25 text-[#16A34A] text-xs font-semibold mb-2">
+                      <Star className="w-3 h-3 fill-[#16A34A]" /> PRO FEATURE
+                    </div>
+                    <p className="text-xs text-[#A1A1AA] mb-3">Upgrade to Business Pro to unlock WhatsApp message generator</p>
+                    <Button onClick={() => navigate("/pricing")} size="sm"
+                      className="bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-semibold cursor-pointer">
+                      Upgrade Now
+                    </Button>
+                  </div>
+                </div>
+              )}
               <h3 className="text-sm font-semibold text-white mb-1">WhatsApp / SMS Template</h3>
               <p className="text-xs text-[#A1A1AA] mb-4">Copy a ready-made message to send to customers</p>
               {reviewSlug ? (
