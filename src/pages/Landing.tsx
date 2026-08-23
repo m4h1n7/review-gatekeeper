@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/use-auth";
+import { isSuperAdmin } from "@/components/SuperAdminGuard";
 import {
   Star,
   Shield,
@@ -25,6 +26,7 @@ import {
   StarHalf,
   Link2,
   MessageCircle,
+  LogIn,
 } from "lucide-react";
 
 function Logo({ size = "normal" }: { size?: "normal" | "small" }) {
@@ -177,7 +179,16 @@ function InteractiveWidget() {
 
 export default function Landing() {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  const admin = isSuperAdmin(user?.email);
+
+  const handleNavClick = () => {
+    if (!isAuthenticated) return navigate("/auth");
+    if (admin) return navigate("/admin");
+    return navigate("/dashboard");
+  };
+
+  const navLabel = !isAuthenticated ? "Login / Sign Up" : admin ? "Admin Portal" : "Dashboard";
 
   return (
     <div className="min-h-screen overflow-hidden">
@@ -208,23 +219,19 @@ export default function Landing() {
             >
               Pricing
             </Button>
-            {isAuthenticated ? (
-              <Button
-                onClick={() => navigate("/dashboard")}
-                className="bg-[#16A34A] hover:bg-[#15803D] text-white font-semibold shadow-lg shadow-[#16A34A]/25 cursor-pointer"
-              >
-                Dashboard
-                <ArrowRight className="w-4 h-4 ml-1" />
-              </Button>
-            ) : (
-              <Button
-                onClick={() => navigate("/auth")}
-                className="bg-[#16A34A] hover:bg-[#15803D] text-white font-semibold shadow-lg shadow-[#16A34A]/25 cursor-pointer"
-              >
-                Get Started
-                <ArrowRight className="w-4 h-4 ml-1" />
-              </Button>
-            )}
+            <Button
+              onClick={handleNavClick}
+              className={`font-semibold shadow-lg cursor-pointer ${
+                isAuthenticated && admin
+                  ? "bg-amber-500 hover:bg-amber-600 shadow-amber-500/25"
+                  : "bg-[#16A34A] hover:bg-[#15803D] shadow-[#16A34A]/25"
+              } text-white`}
+            >
+              {admin && <Shield className="w-4 h-4 mr-1" />}
+              {!isAuthenticated && <LogIn className="w-4 h-4 mr-1" />}
+              {navLabel}
+              <ArrowRight className="w-4 h-4 ml-1" />
+            </Button>
           </div>
         </div>
       </nav>
@@ -277,11 +284,11 @@ export default function Landing() {
               >
                 <Button
                   size="lg"
-                  onClick={() => navigate(isAuthenticated ? "/dashboard" : "/auth")}
+                  onClick={handleNavClick}
                   className="h-13 px-7 bg-[#16A34A] hover:bg-[#15803D] text-white font-bold text-base shadow-xl shadow-[#16A34A]/25 cursor-pointer"
                 >
                   <Star className="w-5 h-5 mr-2 fill-white" />
-                  Get Started Now
+                  {navLabel === "Login / Sign Up" ? "Get Started Now" : navLabel}
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
                 <Button
@@ -571,11 +578,11 @@ export default function Landing() {
               </p>
               <Button
                 size="lg"
-                onClick={() => navigate(isAuthenticated ? "/dashboard" : "/auth")}
+                onClick={handleNavClick}
                 className="h-14 px-10 bg-[#16A34A] hover:bg-[#15803D] text-white font-bold text-base shadow-xl shadow-[#16A34A]/25 cursor-pointer"
               >
                 <Star className="w-5 h-5 mr-2 fill-white" />
-                {isAuthenticated ? "Go to Dashboard" : "Get Started Now"}
+                {navLabel === "Login / Sign Up" ? "Get Started Now" : `Go to ${navLabel}`}
                 <ChevronRight className="w-5 h-5 ml-1" />
               </Button>
             </div>

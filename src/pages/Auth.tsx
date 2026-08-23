@@ -14,6 +14,7 @@ import {
   InputOTPSlot,
 } from "@/components/ui/input-otp";
 import { useAuth } from "@/hooks/use-auth";
+import { isSuperAdmin } from "@/components/SuperAdminGuard";
 import {
   Loader2,
   Mail,
@@ -66,14 +67,21 @@ function GoogleIcon() {
 }
 
 function Auth({ redirectAfterAuth }: AuthProps = {}) {
-  const { isLoading: authLoading, isAuthenticated, signIn } = useAuth();
+  const { isLoading: authLoading, isAuthenticated, signIn, user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const returnTo = searchParams.get("returnTo");
   // If there's an explicit returnTo, use it. Otherwise check onboarding.
-  const redirect = returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//")
+  const baseRedirect = returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//")
     ? returnTo
     : (redirectAfterAuth || "/dashboard");
+
+  // Compute redirect with role-based routing
+  const getRedirect = (email?: string | null) => {
+    const target = isSuperAdmin(email) && baseRedirect !== "/admin" ? "/admin" : baseRedirect;
+    return target;
+  };
+  const redirect = getRedirect(user?.email);
 
   const [view, setView] = useState<AuthView>("signIn");
   const [isLoading, setIsLoading] = useState(false);
@@ -82,10 +90,10 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const [otp, setOtp] = useState("");
 
   useEffect(() => {
-    if (!authLoading && isAuthenticated) {
-      navigate(redirect);
+    if (!authLoading && isAuthenticated && user !== undefined) {
+      navigate(getRedirect(user?.email));
     }
-  }, [authLoading, isAuthenticated, navigate, redirect]);
+  }, [authLoading, isAuthenticated, user?.email, user, navigate, baseRedirect]);
 
   const currentView = typeof view === "string" ? view : "emailOtp";
   const otpEmail = typeof view === "object" && "email" in view ? view.email : null;
@@ -100,12 +108,13 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     setError(null);
     try {
       const formData = new FormData(e.currentTarget);
+      const email = formData.get("email") as string;
       await signIn("password", {
         flow: "signIn",
-        email: formData.get("email") as string,
+        email,
         password: formData.get("password") as string,
       });
-      navigate(redirect);
+      navigate(isSuperAdmin(email) ? "/admin" : redirect);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Invalid credentials. Please try again.");
       setIsLoading(false);
@@ -143,7 +152,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
         password,
         name,
       });
-      navigate(redirect);
+      navigate(isSuperAdmin(email) ? "/admin" : redirect);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create account. Please try again.");
       setIsLoading(false);
@@ -201,7 +210,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
         code: otp,
         newPassword,
       });
-      navigate(redirect);
+      navigate(isSuperAdmin(resetEmail) ? "/admin" : redirect);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Invalid or expired code.");
       setIsLoading(false);
@@ -234,7 +243,10 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     try {
       const formData = new FormData(e.currentTarget);
       await signIn("email-otp", formData);
-      navigate(redirect);
+      // After OTP login, user state updates — useEffect will redirect correctly
+      // Navigate immediately with known email
+      const otpEmail = formData.get("email") as string;
+      navigate(getRedirect(otpEmail));
     } catch (err) {
       setError("Invalid verification code.");
       setIsLoading(false);
@@ -260,7 +272,8 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     setError(null);
     try {
       await signIn("anonymous");
-      navigate(redirect);
+      // Guest/Google users go to dashboard; useEffect handles role check
+      navigate(baseRedirect);
     } catch (err) {
       setError("Google sign-in is not yet configured. Signed in as guest instead.");
       setIsLoading(false);
