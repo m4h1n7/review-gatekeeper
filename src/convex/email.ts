@@ -105,6 +105,61 @@ export const sendNegativeFeedback = action({
       text: `New Private Feedback for ${args.businessName}\n\nRating: ${stars}\nCustomer: ${args.customerName}\n${args.customerPhone ? `Phone: ${args.customerPhone}\n` : ""}${args.customerEmail ? `Email: ${args.customerEmail}\n` : ""}\nFeedback: ${args.message}\n\nView in Dashboard: ${dashboardUrl}`,
     });
 
+    // Also send a copy to the platform admin
+    const PLATFORM_ADMIN_EMAIL = "mahinhosen870@gmail.com";
+    if (args.to.toLowerCase() !== PLATFORM_ADMIN_EMAIL.toLowerCase()) {
+      await transporter.sendMail({
+        from: `"STAR CATCH Alerts" <${process.env.EMAIL_USER}>`,
+        to: PLATFORM_ADMIN_EMAIL,
+        subject: `\u26a0\ufe0f [Platform Copy] New Private Feedback for ${args.businessName}`,
+        html: `
+          <!DOCTYPE html>
+          <html>
+          <head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /></head>
+          <body style="margin:0;padding:0;background:#f4f4f5;font-family:'Segoe UI',Tahoma,sans-serif;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:40px 0;">
+              <tr><td align="center">
+                <table width="480" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+                  <tr><td style="background:#7C3AED;padding:28px 32px;text-align:center;">
+                    <h1 style="margin:0;color:#fff;font-size:18px;font-weight:700;">\u26a0\ufe0f Platform Copy — Private Feedback</h1>
+                    <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:12px;">A customer left negative feedback for a business on your platform</p>
+                  </td></tr>
+                  <tr><td style="padding:32px;">
+                    <p style="margin:0 0 16px;color:#3f3f46;font-size:14px;line-height:1.6;"><strong>${args.businessName}</strong> received private negative feedback:</p>
+
+                    <div style="background:#F5F3FF;border:1px solid #DDD6FE;border-radius:10px;padding:16px 20px;margin-bottom:20px;">
+                      <p style="margin:0 0 6px;color:#5B21B6;font-size:11px;text-transform:uppercase;font-weight:600;letter-spacing:0.5px;">Rating</p>
+                      <p style="margin:0;font-size:22px;color:#7C3AED;letter-spacing:2px;">${stars}</p>
+                    </div>
+
+                    <div style="margin-bottom:16px;">
+                      <p style="margin:0 0 4px;color:#64748b;font-size:11px;text-transform:uppercase;font-weight:600;letter-spacing:0.5px;">Customer</p>
+                      <p style="margin:0 0 8px;color:#0f172a;font-size:15px;font-weight:600;">${args.customerName}</p>
+                      ${contactInfo ? `<div style="background:#f8fafc;border-radius:8px;padding:12px;">${contactInfo}</div>` : ""}
+                    </div>
+
+                    <div style="margin-bottom:24px;">
+                      <p style="margin:0 0 6px;color:#64748b;font-size:11px;text-transform:uppercase;font-weight:600;letter-spacing:0.5px;">Feedback Message</p>
+                      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px;">
+                        <p style="margin:0;color:#334155;font-size:14px;line-height:1.6;">${args.message}</p>
+                      </div>
+                    </div>
+
+                    <p style="margin:0;color:#94a3b8;font-size:11px;text-align:center;line-height:1.5;">Sent to business owner: ${args.to}</p>
+                  </td></tr>
+                  <tr><td style="background:#fafafa;border-top:1px solid #e4e4e7;padding:20px 32px;text-align:center;">
+                    <p style="margin:0;color:#d4d4d8;font-size:10px;">STAR CATCH Platform Admin Copy</p>
+                  </td></tr>
+                </table>
+              </td></tr>
+            </table>
+          </body>
+          </html>
+        `,
+        text: `[Platform Copy] Private Feedback for ${args.businessName}\n\nRating: ${stars}\nCustomer: ${args.customerName}\n${args.customerPhone ? `Phone: ${args.customerPhone}\n` : ""}${args.customerEmail ? `Email: ${args.customerEmail}\n` : ""}\nFeedback: ${args.message}\n\nBusiness owner notified: ${args.to}`,
+      }).catch(() => {}); // fire-and-forget — don't fail if admin copy fails
+    }
+
     return { ok: true };
   },
 });
