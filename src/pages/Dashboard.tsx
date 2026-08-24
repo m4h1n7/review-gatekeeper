@@ -657,6 +657,8 @@ export default function Dashboard() {
           </div>
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-white/5">
             <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-[10px] text-[#A1A1AA]/40">
+              <a href="mailto:starcatchbd@gmail.com" className="hover:text-white transition-colors">starcatchbd@gmail.com</a>
+              <span className="text-[#A1A1AA]/10">·</span>
               <span>Mahin Hossain (Founder)</span>
               <a href="tel:+8801791130633" className="hover:text-white transition-colors">+880 1791-130633</a>
               <a href="mailto:mahinhosen870@gmail.com" className="hover:text-white transition-colors">mahinhosen870@gmail.com</a>

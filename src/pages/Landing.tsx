@@ -599,6 +599,10 @@ export default function Landing() {
               <p className="text-xs text-zinc-500 mt-3 leading-relaxed max-w-xs">
                 Protecting your Google rating by routing happy customers to leave public reviews and capturing negative feedback privately.
               </p>
+              <div className="mt-3">
+                <p className="text-[10px] text-zinc-600 uppercase tracking-wider mb-1">Official Support</p>
+                <a href="mailto:starcatchbd@gmail.com" className="text-xs text-zinc-400 hover:text-white transition-colors">starcatchbd@gmail.com</a>
+              </div>
             </div>
             <div>
               <p className="text-xs font-semibold text-white uppercase tracking-wider mb-3">Founders</p>
@@ -646,6 +650,8 @@ export default function Landing() {
               © {new Date().getFullYear()} STAR CATCH Reviews and Feedback Agency Bd. All rights reserved.
             </p>
             <div className="flex items-center gap-4 text-xs text-zinc-600">
+              <a href="mailto:starcatchbd@gmail.com" className="hover:text-white transition-colors">starcatchbd@gmail.com</a>
+              <span>·</span>
               <a href="tel:+8801791130633" className="hover:text-white transition-colors">+880 1791-130633</a>
               <span>·</span>
               <a href="tel:+8801673903919" className="hover:text-white transition-colors">+880 1673-903919</a>
