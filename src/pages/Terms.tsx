@@ -40,7 +40,7 @@ export default function Terms() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-white">Terms of Service</h1>
-            <p className="text-xs text-[#A1A1AA]">Last updated: August 23, 2026</p>
+            <p className="text-xs text-[#A1A1AA]">Last updated: August 24, 2026</p>
           </div>
         </div>
 
@@ -48,7 +48,7 @@ export default function Terms() {
           <section>
             <h2 className="text-lg font-semibold text-white mb-3">1. Acceptance of Terms</h2>
             <p className="text-sm text-[#A1A1AA] leading-relaxed">
-              By accessing or using STAR CATCH Reviews and Feedback Agency Bd ("STAR CATCH", "the Platform", "we", "us", or "our"), you agree to be bound by these Terms of Service. If you do not agree, do not use the Platform.
+              By accessing or using STAR CATCH Reviews and Feedback Agency Bd ("STAR CATCH", "the Platform", "we", "us", or "our"), you agree to be bound by these Terms of Service, which are governed by the laws of Bangladesh, including the Bangladesh Contract Act 1872. If you do not agree, do not use the Platform.
             </p>
           </section>
 
@@ -59,8 +59,18 @@ export default function Terms() {
             </p>
           </section>
 
+          <section className="p-5 rounded-xl bg-amber-500/5 border border-amber-500/20">
+            <h2 className="text-lg font-semibold text-amber-400 mb-3">3. Dynamic Review Redirection Disclaimer</h2>
+            <p className="text-sm text-[#A1A1AA] leading-relaxed">
+              <strong className="text-white">STAR CATCH operates as a customer feedback filtering tool. We do not manipulate Google's algorithm, buy fake reviews, or guarantee specific rating increases.</strong> Business clients are solely responsible for providing real and organic customer interactions through our platform. Any increase or decrease in your Google review profile is a natural outcome of your genuine customer experiences and is entirely outside STAR CATCH's control.
+            </p>
+            <p className="text-sm text-[#A1A1AA] leading-relaxed mt-3">
+              STAR CATCH does not generate, fabricate, or incentivize reviews in any way. We only provide the technical infrastructure to route existing customer feedback to the appropriate channel. Any use of STAR CATCH to solicit fake, misleading, or otherwise deceptive reviews is strictly prohibited and constitutes a violation of these Terms.
+            </p>
+          </section>
+
           <section>
-            <h2 className="text-lg font-semibold text-white mb-3">3. Disclaimer of Liability</h2>
+            <h2 className="text-lg font-semibold text-white mb-3">4. Disclaimer of Liability</h2>
             <p className="text-sm text-[#A1A1AA] leading-relaxed mb-3">
               STAR CATCH holds no responsibility for third-party platform actions, including but not limited to:
             </p>
@@ -77,61 +87,97 @@ export default function Terms() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-white mb-3">4. User Responsibility</h2>
+            <h2 className="text-lg font-semibold text-white mb-3">5. User Responsibility</h2>
             <p className="text-sm text-[#A1A1AA] leading-relaxed">
-              Businesses using STAR CATCH are solely responsible for how they collect customer feedback and run their review campaigns. This includes ensuring that all feedback collection practices comply with applicable laws and regulations, including but not limited to data protection and consumer protection laws in your jurisdiction. STAR CATCH is not liable for any misuse of the Platform or any legal consequences arising from your feedback collection practices.
+              Businesses using STAR CATCH are solely responsible for how they collect customer feedback and run their review campaigns. This includes ensuring that all feedback collection practices comply with applicable laws and regulations, including but not limited to the Bangladesh Digital Security Act 2018, data protection provisions under the Bangladesh Information and Communication Technology (ICT) Act 2006 (as amended in 2013), and consumer protection laws in your jurisdiction. STAR CATCH is not liable for any misuse of the Platform or any legal consequences arising from your feedback collection practices.
             </p>
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-white mb-3">5. Account Registration</h2>
+            <h2 className="text-lg font-semibold text-white mb-3">6. Account Registration</h2>
             <p className="text-sm text-[#A1A1AA] leading-relaxed">
               You must provide accurate and complete information when creating an account. You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account. You agree to notify us immediately of any unauthorized use of your account.
             </p>
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-white mb-3">6. Subscriptions &amp; Payments</h2>
+            <h2 className="text-lg font-semibold text-white mb-3">7. Subscriptions &amp; Payments</h2>
             <p className="text-sm text-[#A1A1AA] leading-relaxed mb-3">
-              STAR CATCH offers a Pro subscription plan priced at ৳1,000 BDT per month (or equivalent in USD at $10/month). Payments are processed manually via bKash or Nagad and approved by the platform administrator.
+              STAR CATCH offers the following subscription plans:
             </p>
-            <p className="text-sm text-[#A1A1AA] leading-relaxed">
-              <strong className="text-white">Non-Refundable Subscriptions:</strong> All bKash/Nagad subscription payments that are processed and activated by the Super Admin are strictly non-refundable. Once your Pro subscription is activated, no refunds will be issued for any reason, including but not limited to: voluntary cancellation, account termination, or dissatisfaction with the service. By submitting a payment, you acknowledge and accept this non-refundable policy.
+            <ul className="list-disc list-inside text-sm text-[#A1A1AA] leading-relaxed space-y-1.5 ml-4">
+              <li><strong className="text-white">Starter Plan:</strong> ৳1,499 BDT setup fee (one-time) + ৳1,499 BDT/month</li>
+              <li><strong className="text-white">Business Pro Plan:</strong> ৳1,699 BDT setup fee (one-time) + ৳2,499 BDT/month</li>
+            </ul>
+            <p className="text-sm text-[#A1A1AA] leading-relaxed mt-3">
+              Payments are processed manually via bKash or Nagad and approved by the platform administrator.
             </p>
-          </section>
-
-          <section>
-            <h2 className="text-lg font-semibold text-white mb-3">7. Data &amp; Privacy</h2>
-            <p className="text-sm text-[#A1A1AA] leading-relaxed">
-              Your use of the Platform is also governed by our Privacy Policy, which describes how we collect, use, and protect your data. By using STAR CATCH, you consent to the collection and use of data as outlined in our Privacy Policy.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-lg font-semibold text-white mb-3">8. Limitation of Liability</h2>
-            <p className="text-sm text-[#A1A1AA] leading-relaxed">
-              To the maximum extent permitted by law, STAR CATCH shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including but not limited to loss of profits, data, or business opportunities, arising out of or in connection with your use of the Platform. Our total liability shall not exceed the amount you paid for the Platform in the twelve (12) months preceding the claim.
+            <p className="text-sm text-[#A1A1AA] leading-relaxed mt-3">
+              <strong className="text-white">Non-Refundable Subscriptions:</strong> All setup fees, hardware costs (NFC cards, standees), and monthly recurring SaaS subscription payments that are processed and activated by the Super Admin are strictly non-refundable. Once your subscription is activated, no refunds will be issued for any reason, including but not limited to: voluntary cancellation, account termination, or dissatisfaction with the service. By submitting a payment, you acknowledge and accept this non-refundable policy.
             </p>
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-white mb-3">9. Termination</h2>
+            <h2 className="text-lg font-semibold text-white mb-3">8. Data &amp; Privacy</h2>
             <p className="text-sm text-[#A1A1AA] leading-relaxed">
-              We reserve the right to suspend or terminate your access to the Platform at any time, with or without cause, including but not limited to violations of these Terms. Upon termination, your right to use the Platform ceases immediately. No refund will be provided for any prepaid subscription period.
+              Your use of the Platform is also governed by our Privacy Policy, which describes how we collect, use, and protect your data in compliance with the Bangladesh Information and Communication Technology (ICT) Act 2006 (as amended in 2013). By using STAR CATCH, you consent to the collection and use of data as outlined in our Privacy Policy.
             </p>
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-white mb-3">10. Changes to Terms</h2>
+            <h2 className="text-lg font-semibold text-white mb-3">9. Limitation of Liability</h2>
             <p className="text-sm text-[#A1A1AA] leading-relaxed">
-              We reserve the right to modify these Terms at any time. Changes will be effective immediately upon posting. Your continued use of the Platform after changes are posted constitutes acceptance of the modified Terms.
+              To the maximum extent permitted under the Bangladesh Contract Act 1872, STAR CATCH Reviews and Feedback Agency Bd, its directors, officers, employees, and affiliates shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including but not limited to loss of profits, data, business opportunities, or business reputation, arising out of or in connection with your use of the Platform.
+            </p>
+            <p className="text-sm text-[#A1A1AA] leading-relaxed mt-3">
+              In particular, STAR CATCH shall not be held liable for:
+            </p>
+            <ul className="list-disc list-inside text-sm text-[#A1A1AA] leading-relaxed space-y-1.5 ml-4">
+              <li>Any account suspension, penalty, or policy enforcement action by Google Maps, Google Business Profile, or any other third-party platform</li>
+              <li>Loss of profits, revenue, or business reputation resulting from customer reviews (whether positive or negative)</li>
+              <li>Any action or inaction by Google or other third-party platforms that affects your review profile or business listing</li>
+              <li>Damages exceeding the total amount you paid to STAR CATCH in the twelve (12) months preceding the claim</li>
+            </ul>
+            <p className="text-sm text-[#A1A1AA] leading-relaxed mt-3">
+              This limitation of liability applies regardless of the legal theory (contract, tort, negligence, strict liability, or otherwise) and survives termination of your account.
             </p>
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-white mb-3">11. Contact</h2>
+            <h2 className="text-lg font-semibold text-white mb-3">10. Account Termination</h2>
             <p className="text-sm text-[#A1A1AA] leading-relaxed">
-              If you have questions about these Terms, please contact us via WhatsApp at +880 1673-903919 or through our platform support channels.
+              STAR CATCH reserves the absolute and unrestricted right to suspend, deactivate, or permanently terminate your access to the Platform at any time, with or without cause, and without prior legal notice. Grounds for termination include, but are not limited to:
+            </p>
+            <ul className="list-disc list-inside text-sm text-[#A1A1AA] leading-relaxed space-y-1.5 ml-4">
+              <li>Non-payment or overdue subscription renewal</li>
+              <li>Fraudulent, chargeback, or disputed payment transactions</li>
+              <li>Violation of these Terms of Service or any applicable law</li>
+              <li>Misuse of the Platform, including soliciting fake reviews or abusing the feedback system</li>
+              <li>Any activity deemed harmful to STAR CATCH's reputation, other users, or third parties</li>
+            </ul>
+            <p className="text-sm text-[#A1A1AA] leading-relaxed mt-3">
+              Upon termination, your right to use the Platform ceases immediately. No refund will be provided for any prepaid subscription period. STAR CATCH may retain your data for a period necessary to comply with legal obligations or enforce these Terms.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold text-white mb-3">11. Governing Law &amp; Jurisdiction</h2>
+            <p className="text-sm text-[#A1A1AA] leading-relaxed">
+              These Terms of Service shall be governed by and construed in accordance with the laws of Bangladesh. All legal disputes arising out of or in connection with these Terms or your use of the Platform are strictly subject to the exclusive jurisdiction of the courts of Dhaka, Bangladesh. By using the Platform, you irrevocably submit to the exclusive jurisdiction of the courts of Dhaka for the resolution of any disputes.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold text-white mb-3">12. Changes to Terms</h2>
+            <p className="text-sm text-[#A1A1AA] leading-relaxed">
+              We reserve the right to modify these Terms at any time. Changes will be effective immediately upon posting. Your continued use of the Platform after changes are posted constitutes acceptance of the modified Terms. It is your responsibility to review these Terms periodically.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold text-white mb-3">13. Contact</h2>
+            <p className="text-sm text-[#A1A1AA] leading-relaxed">
+              If you have questions about these Terms, please contact us via WhatsApp at +880 1673-903919, email us at starcatchbd@gmail.com, or reach us through our platform support channels.
             </p>
           </section>
         </GlassPanel>
