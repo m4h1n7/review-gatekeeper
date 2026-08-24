@@ -3,7 +3,6 @@ import { convexAuth } from "@convex-dev/auth/server";
 import { Anonymous } from "@convex-dev/auth/providers/Anonymous";
 import { Password } from "@convex-dev/auth/providers/Password";
 import { Email } from "@convex-dev/auth/providers/Email";
-import axios from "axios";
 import { RandomReader, generateRandomString } from "@oslojs/crypto/random";
 
 /** Custom password requirements: 8+ chars, 1 uppercase, 1 number, 1 special char */
@@ -22,17 +21,25 @@ function validatePasswordRequirements(password: string) {
   }
 }
 
-/** Generate and send a 6-digit OTP via email */
+/** Send OTP email via the Convex HTTP endpoint (Nodemailer SMTP) */
 async function generateAndSendOTP(
   email: string,
   token: string,
   appName: string,
 ) {
-  await axios.post(
-    "https://auth.freebuff.app/send_otp",
-    { to: email, otp: token, appName },
-    { headers: { "x-api-key": "fb_email_2crN1hqIArZP2bEfvjp5Qik4" } },
-  );
+  const siteUrl = process.env.CONVEX_SITE_URL;
+  if (!siteUrl) throw new Error("CONVEX_SITE_URL not configured");
+
+  const res = await fetch(`${siteUrl}/api/send-otp`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, otp: token, appName }),
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`OTP email failed: ${err}`);
+  }
 }
 
 /** Email OTP provider for sign-in verification */
@@ -50,13 +57,12 @@ const emailOtp = Email({
   },
   async sendVerificationRequest({ identifier: email, token }) {
     try {
-      await generateAndSendOTP(
-        email,
-        token,
-        process.env.VLY_APP_NAME || "STAR CATCH Reviews",
-      );
+      const appName = process.env.VLY_APP_NAME || "STAR CATCH Reviews";
+      await generateAndSendOTP(email, token, appName);
     } catch (error) {
-      throw new Error(JSON.stringify(error));
+      throw new Error(
+        `Failed to send OTP email: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   },
 });
@@ -76,13 +82,12 @@ const passwordResetEmail = Email({
   },
   async sendVerificationRequest({ identifier: email, token }) {
     try {
-      await generateAndSendOTP(
-        email,
-        token,
-        process.env.VLY_APP_NAME || "STAR CATCH Reviews",
-      );
+      const appName = process.env.VLY_APP_NAME || "STAR CATCH Reviews";
+      await generateAndSendOTP(email, token, appName);
     } catch (error) {
-      throw new Error(JSON.stringify(error));
+      throw new Error(
+        `Failed to send reset code email: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   },
 });

@@ -5,7 +5,7 @@ import { api } from "../convex/_generated/api";
 import { useNavigate } from "react-router";
 import { Shield, Star } from "lucide-react";
 
-const SUPER_ADMIN_EMAILS = ["mahinhosen870@gmail.com", "atazwar103@gmail.com"];
+const SUPER_ADMIN_EMAILS = ["mahinhosen870@gmail.com", "atazwar103@gmail.com", "starcatchbd@gmail.com"];
 
 export function isSuperAdmin(email?: string | null): boolean {
   return SUPER_ADMIN_EMAILS.includes(email?.toLowerCase() ?? "");

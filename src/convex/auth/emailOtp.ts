@@ -1,11 +1,9 @@
 import { Email } from "@convex-dev/auth/providers/Email";
-import axios from "axios";
 import { RandomReader, generateRandomString } from "@oslojs/crypto/random";
 
 export const emailOtp = Email({
   id: "email-otp",
   maxAge: 60 * 15, // 15 minutes
-  // This function can be asynchronous
   async generateVerificationToken() {
     const random: RandomReader = {
       read(bytes: Uint8Array) {
@@ -17,21 +15,24 @@ export const emailOtp = Email({
   },
   async sendVerificationRequest({ identifier: email, token }) {
     try {
-      await axios.post(
-        "https://auth.freebuff.app/send_otp",
-        {
-          to: email,
-          otp: token,
-          appName: process.env.VLY_APP_NAME || "a freebuff.com application",
-        },
-        {
-          headers: {
-            "x-api-key": "fb_email_2crN1hqIArZP2bEfvjp5Qik4",
-          },
-        },
-      );
+      const siteUrl = process.env.CONVEX_SITE_URL;
+      if (!siteUrl) throw new Error("CONVEX_SITE_URL not configured");
+
+      const appName = process.env.VLY_APP_NAME || "STAR CATCH Reviews";
+      const res = await fetch(`${siteUrl}/api/send-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, otp: token, appName }),
+      });
+
+      if (!res.ok) {
+        const err = await res.text();
+        throw new Error(`OTP email failed: ${err}`);
+      }
     } catch (error) {
-      throw new Error(JSON.stringify(error));
+      throw new Error(
+        `Failed to send OTP email: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   },
 });
