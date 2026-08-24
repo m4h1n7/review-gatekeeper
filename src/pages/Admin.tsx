@@ -1240,7 +1240,6 @@ export default function Admin() {
             </GlassPanel>
           </div>
         )}
-      </div>
 
         {/* ═══ AUDIT LOG TAB ═══ */}
         {activeTab === "audit" && (
@@ -1340,13 +1339,23 @@ export default function Admin() {
         )}
 
       </div>
+
+      {/* ═══ ARCHIVE CONFIRMATION MODAL ═══ */}
+      {archiveModalOpen && archiveTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+            className="bg-[#18181B] border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-red-500/15 flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5 text-red-400" />
+              </div>
               <div>
                 <h3 className="text-sm font-bold text-red-400">⚠️ DANGER ZONE</h3>
                 <p className="text-xs text-[#A1A1AA]">Permanent Account Deletion</p>
               </div>
             </div>
             <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-4 mb-4">
-              <p className="text-sm text-white font-semibold mb-1">Archive \&quot;{archiveTarget.name}\&quot;?</p>
+              <p className="text-sm text-white font-semibold mb-1">Archive &quot;{archiveTarget.name}&quot;?</p>
               <p className="text-xs text-[#A1A1AA] leading-relaxed">
                 This will suspend the account and hide it from all client views. The data will be preserved for <strong className="text-white">30 days</strong>, after which it will be permanently deleted. You can restore it at any time from the Archived tab.
               </p>
@@ -1372,8 +1381,6 @@ export default function Admin() {
           </motion.div>
         </div>
       )}
-
-      </div>
 
       {/* ═══ MASTER PIN CONFIRMATION MODAL ═══ */}
       {pinModalOpen && (

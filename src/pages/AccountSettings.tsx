@@ -127,8 +127,7 @@ export default function AccountSettings() {
   const [staffEmail, setStaffEmail] = useState("");
   const [staffLoading, setStaffLoading] = useState(false);
   const staffList = useQuery(
-    api.admin.listStaff,
-    user?.email ? { ownerEmail: user.email } : "skip"
+    api.admin.listStaff, user?.email ? undefined : "skip"
   );
   const inviteStaffMutation = useMutation(api.admin.inviteStaff);
 
@@ -229,7 +228,6 @@ export default function AccountSettings() {
     setStaffLoading(true);
     try {
       await inviteStaffMutation({
-        ownerEmail: user.email,
         staffEmail: staffEmail.trim(),
       });
       setStaffEmail("");
