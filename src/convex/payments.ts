@@ -30,7 +30,7 @@ export const submit = mutation({
       throw new Error("This Transaction ID has already been submitted");
     }
 
-    const setupFee = args.plan === "starter" ? 1999 : args.plan === "pro" ? 2999 : 2999;
+    const setupFee = args.plan === "starter" ? 1499 : args.plan === "pro" ? 1699 : 1699;
 
     const id = await ctx.db.insert("payments", {
       userId,

@@ -35,8 +35,8 @@ export function PaywallModal({ open, onClose, onSuccess, reason, plan: initialPl
   const submitPayment = useMutation(api.payments.submit);
 
   const planDetails = {
-    starter: { setupFee: 1999, monthlyFee: 1499, totalFirst: 3498, label: "Starter Plan" },
-    pro: { setupFee: 2999, monthlyFee: 2499, totalFirst: 5498, label: "Business Pro Plan" },
+    starter: { setupFee: 1499, monthlyFee: 1499, totalFirst: 2998, label: "Starter Plan" },
+    pro: { setupFee: 1699, monthlyFee: 2499, totalFirst: 4198, label: "Business Pro Plan" },
   };
   const currentPlan = planDetails[selectedPlan];
 
@@ -156,7 +156,7 @@ export function PaywallModal({ open, onClose, onSuccess, reason, plan: initialPl
                         }`}
                       >
                         <p className="text-sm font-semibold text-white">Starter</p>
-                        <p className="text-xs text-[#A1A1AA] mt-0.5">৳১,৯৯৯ + ৳১,৪৯৯/mo</p>
+                        <p className="text-xs text-[#A1A1AA] mt-0.5">৳১,৪৯৯ + ৳১,৪৯৯/mo</p>
                       </button>
                       <button
                         type="button"
@@ -171,7 +171,7 @@ export function PaywallModal({ open, onClose, onSuccess, reason, plan: initialPl
                           <p className="text-sm font-semibold text-white">Business Pro</p>
                           <span className="text-[9px] bg-[#16A34A] text-white px-1.5 py-0.5 rounded-full font-bold">★</span>
                         </div>
-                        <p className="text-xs text-[#A1A1AA] mt-0.5">৳২,৯৯৯ + ৳২,৪৯৯/mo</p>
+                        <p className="text-xs text-[#A1A1AA] mt-0.5">৳১,৬৯৯ + ৳২,৪৯৯/mo</p>
                       </button>
                     </div>
                   </div>

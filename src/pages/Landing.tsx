@@ -477,7 +477,7 @@ export default function Landing() {
                   <span className="text-xs text-zinc-500 line-through">Setup Fee</span>
                 </div>
                 <div className="mb-1">
-                  <span className="text-3xl font-extrabold text-white">৳১,৯৯৯</span>
+                  <span className="text-3xl font-extrabold text-white">৳১,৪৯৯</span>
                   <span className="text-xs text-zinc-500 ml-1">one-time</span>
                 </div>
                 <div className="mb-1">
@@ -525,7 +525,7 @@ export default function Landing() {
                   <span className="text-xs text-zinc-500 line-through">Setup Fee</span>
                 </div>
                 <div className="mb-1">
-                  <span className="text-3xl font-extrabold text-white">৳২,৯৯৯</span>
+                  <span className="text-3xl font-extrabold text-white">৳১,৬৯৯</span>
                   <span className="text-xs text-zinc-500 ml-1">one-time</span>
                 </div>
                 <div className="mb-1">

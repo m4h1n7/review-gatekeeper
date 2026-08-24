@@ -131,14 +131,14 @@ export default function Pricing() {
 
               <div className="space-y-1 mb-6">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-extrabold text-white">৳১,৯৯৯</span>
+                  <span className="text-3xl font-extrabold text-white">৳১,৪৯৯</span>
                   <span className="text-xs text-zinc-500">setup +</span>
                 </div>
                 <div className="flex items-baseline gap-2">
                   <span className="text-2xl font-extrabold text-white">৳১,৪৯৯</span>
                   <span className="text-sm text-[#A1A1AA]">/month</span>
                 </div>
-                <p className="text-xs text-zinc-500">Total first payment: ৳৩,৪৯৮</p>
+                <p className="text-xs text-zinc-500">Total first payment: ৳২,৯৯৮</p>
               </div>
 
               <div className="p-3 rounded-xl bg-white/[0.04] border border-white/[0.06] mb-5">
@@ -189,14 +189,14 @@ export default function Pricing() {
 
               <div className="space-y-1 mb-6">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-extrabold text-white">৳২,৯৯৯</span>
+                  <span className="text-3xl font-extrabold text-white">৳১,৬৯৯</span>
                   <span className="text-xs text-zinc-500">setup +</span>
                 </div>
                 <div className="flex items-baseline gap-2">
                   <span className="text-2xl font-extrabold text-white">৳২,৪৯৯</span>
                   <span className="text-sm text-[#A1A1AA]">/month</span>
                 </div>
-                <p className="text-xs text-[#16A34A]">Total first payment: ৳৫,৪৯৮</p>
+                <p className="text-xs text-[#16A34A]">Total first payment: ৳৪,১৯৮</p>
               </div>
 
               <div className="p-3 rounded-xl bg-[#16A34A]/[0.06] border border-[#16A34A]/15 mb-5">
