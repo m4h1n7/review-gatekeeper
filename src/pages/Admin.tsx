@@ -96,14 +96,65 @@ function RevenueTooltip({ active, payload, label }: any) {
         <p className="text-sm font-bold text-[#16A34A]">{formatCurrency(payload[0].value)}</p>
         {payload[0].payload?.count !== undefined && (
           <p className="text-[10px] text-[#A1A1AA] mt-0.5">{payload[0].payload.count} payment(s)</p>
-        )}
-      </div>
-    );
-  }
+      )}
+
+      {/* ═══ DANGER ZONE: ARCHIVE CONFIRMATION MODAL ═══ */}
+      {archiveModalOpen && archiveTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+            className="bg-[#18181B] border-2 border-red-500/30 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-red-500/15 flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5 text-red-400" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-red-400">⚠️ DANGER ZONE</h3>
+                <p className="text-xs text-[#A1A1AA]">Permanent Account Deletion</p>
+              </div>
+            </div>
+            <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-4 mb-4">
+              <p className="text-sm text-white font-semibold mb-1">Archive "{archiveTarget.name}"?</p>
+              <p className="text-xs text-[#A1A1AA] leading-relaxed">
+                This will suspend the account and hide it from all client views. The data will be preserved for <strong className="text-white">30 days</strong>, after which it will be permanently deleted. You can restore it at any time from the Archived tab.
+              </p>
+            </div>
+            <div className="mb-4">
+              <label className="text-xs font-medium text-red-400 mb-2 block">
+                Type <code className="bg-red-500/10 px-1.5 py-0.5 rounded text-red-300 font-mono">DELETE-{(archiveTarget.businessName || archiveTarget.name).toUpperCase()}</code> to confirm:
+              </label>
+              <input
+                type="text"
+                value={archiveConfirmText}
+                onChange={(e) => setArchiveConfirmText(e.target.value)}
+                placeholder={`DELETE-${(archiveTarget.businessName || archiveTarget.name).toUpperCase()}`}
+                className="w-full bg-white/5 border border-red-500/30 rounded-lg px-3 py-2.5 text-sm text-white placeholder-[#A1A1AA]/30 focus:outline-none focus:border-red-500 font-mono"
+                autoFocus
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => { setArchiveModalOpen(false); setArchiveTarget(null); setArchiveConfirmText(""); }}
+                className="flex-1 border-white/10 text-[#A1A1AA] hover:bg-white/5 cursor-pointer">Cancel</Button>
+              <Button
+                onClick={handleArchive}
+                disabled={archiveConfirmText !== `DELETE-${(archiveTarget.businessName || archiveTarget.name).toUpperCase()}`}
+                className={`flex-1 font-semibold cursor-pointer transition-all ${
+                  archiveConfirmText === `DELETE-${(archiveTarget.businessName || archiveTarget.name).toUpperCase()}`
+                    ? "bg-red-600 hover:bg-red-700 text-white"
+                    : "bg-red-500/20 text-red-400/40 cursor-not-allowed"
+                }`}>
+                <Trash2 className="w-4 h-4 mr-1.5" /> Archive Account
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </div>
+  );
+}
   return null;
 }
 
-type AdminTab = "overview" | "payments" | "clients" | "announcements";
+type AdminTab = "overview" | "payments" | "clients" | "archived" | "announcements";
 
 /* ─── Rejection Reason Modal ──────────────────────────────── */
 function RejectModal({
@@ -170,6 +221,11 @@ export default function Admin() {
   // Client action dropdown
   const [openActionMenu, setOpenActionMenu] = useState<string | null>(null);
 
+  // Archive (danger zone) modal
+  const [archiveModalOpen, setArchiveModalOpen] = useState(false);
+  const [archiveTarget, setArchiveTarget] = useState<{ userId: string; name: string } | null>(null);
+  const [archiveConfirmText, setArchiveConfirmText] = useState("");
+
   // Data
   const kpis = useQuery(api.admin.adminKPIs);
   const revenueData = useQuery(api.admin.monthlyRevenue);
@@ -185,7 +241,8 @@ export default function Admin() {
   const createClient = useMutation(api.admin.createClient);
   const suspendClient = useMutation(api.admin.suspendClient);
   const activateClient = useMutation(api.admin.activateClient);
-  const deleteClientMutation = useMutation(api.admin.deleteClient);
+  const archiveClient = useMutation(api.admin.archiveClient);
+  const restoreClient = useMutation(api.admin.restoreClient);
   const createAnnouncement = useMutation(api.admin.createAnnouncement);
   const toggleAnnouncement = useMutation(api.admin.toggleAnnouncement);
   const deleteAnnouncement = useMutation(api.admin.deleteAnnouncement);
@@ -307,14 +364,39 @@ export default function Admin() {
       toast.error(err instanceof Error ? err.message : "Failed");
     }
   };
-  const handleDeleteClient = async (userId: string, name: string) => {
-    if (!confirm(`Are you sure you want to delete ${name}? This is irreversible.`)) return;
+  const openArchiveModal = (userId: string, name: string) => {
+    setArchiveTarget({ userId, name });
+    setArchiveConfirmText("");
+    setArchiveModalOpen(true);
+    setOpenActionMenu(null);
+  };
+
+  const handleArchive = async () => {
+    if (!archiveTarget) return;
+    const expected = `DELETE-${archiveTarget.name.toUpperCase()}`;
+    if (archiveConfirmText !== expected) {
+      toast.error(`Type "${expected}" exactly to confirm`);
+      return;
+    }
     try {
-      await deleteClientMutation({ userId });
-      toast.success(`${name} has been deleted`);
-      setOpenActionMenu(null);
+      await archiveClient({ userId: archiveTarget.userId });
+      toast.success(`${archiveTarget.name} has been archived for 30 days`, {
+        description: "The account is suspended and hidden. It can be restored within 30 days.",
+      });
+      setArchiveModalOpen(false);
+      setArchiveTarget(null);
+      setArchiveConfirmText("");
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Failed");
+      toast.error(err instanceof Error ? err.message : "Failed to archive");
+    }
+  };
+
+  const handleRestore = async (userId: string, name: string) => {
+    try {
+      await restoreClient({ userId });
+      toast.success(`${name} has been restored and is now active`);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to restore");
     }
   };
 
@@ -354,6 +436,8 @@ export default function Admin() {
   const filteredClients = useMemo(() => {
     if (!clients) return [];
     return clients.filter((c: any) => {
+      // Exclude archived clients from All Clients tab
+      if (c.accountStatus === "archived") return false;
       const q = clientSearch.toLowerCase();
       const matchesSearch = !q || c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q)
         || (c.businessName && c.businessName.toLowerCase().includes(q));
@@ -373,6 +457,7 @@ export default function Admin() {
     { id: "overview", label: "Overview", icon: <BarChart className="w-4 h-4" /> },
     { id: "payments", label: "Pending Approvals", icon: <CreditCard className="w-4 h-4" />, count: pendingPayments?.length },
     { id: "clients", label: "All Clients", icon: <Users className="w-4 h-4" />, count: clients?.length },
+    { id: "archived", label: "Archived", icon: <Clock className="w-4 h-4" />, count: clients?.filter((c: any) => c.accountStatus === "archived").length },
     { id: "announcements", label: "Announcements", icon: <Megaphone className="w-4 h-4" /> },
   ];
 
@@ -887,7 +972,8 @@ export default function Admin() {
                                   {client.accountStatus === "suspended" ? <Pause className="w-3.5 h-3.5" /> : <Trash2 className="w-3.5 h-3.5" />}
                                 </button>
                                 {openActionMenu === client.userId && (
-                                  <div className="absolute right-0 top-full mt-1 z-30 w-48 rounded-xl bg-[#18181B] border border-white/10 shadow-2xl p-1">
+                                  <div className="absolute right-0 top-full mt-1 z-30 w-52 rounded-xl bg-[#18181B] border border-white/10 shadow-2xl p-1">
+                                    {/* Standard actions */}
                                     {client.accountStatus !== "suspended" ? (
                                       <button onClick={() => handleSuspend(client.userId, client.name)}
                                         className="w-full flex items-center gap-2 px-3 py-2 text-xs text-amber-400 hover:bg-amber-500/10 rounded-lg cursor-pointer transition-colors">
@@ -899,9 +985,11 @@ export default function Admin() {
                                         <Play className="w-3.5 h-3.5" /> Activate Account
                                       </button>
                                     )}
-                                    <button onClick={() => handleDeleteClient(client.userId, client.name)}
-                                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-400 hover:bg-red-500/10 rounded-lg cursor-pointer transition-colors">
-                                      <Trash2 className="w-3.5 h-3.5" /> Delete Account
+                                    {/* Danger zone — separated with border */}
+                                    <div className="border-t border-red-500/20 my-1" />
+                                    <button onClick={() => openArchiveModal(client.userId, client.businessName || client.name)}
+                                      className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-red-400 bg-red-500/5 hover:bg-red-500/15 rounded-lg cursor-pointer transition-colors">
+                                      <Trash2 className="w-3.5 h-3.5" /> Archive Account
                                     </button>
                                   </div>
                                 )}
@@ -915,6 +1003,92 @@ export default function Admin() {
                 </table>
               </div>
             )}
+          </GlassPanel>
+        )}
+
+        {/* ═══ ARCHIVED TAB ═══ */}
+        {activeTab === "archived" && (
+          <GlassPanel className="overflow-hidden">
+            <div className="p-5 border-b border-white/5">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center">
+                  <Clock className="w-4 h-4 text-red-400" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-white">Archived Accounts</h3>
+                  <p className="text-xs text-[#A1A1AA]">Soft-deleted accounts — data preserved for 30 days</p>
+                </div>
+              </div>
+            </div>
+            {(() => {
+              const archived = clients?.filter((c: any) => c.accountStatus === "archived") ?? [];
+              if (archived.length === 0) {
+                return (
+                  <div className="p-12 text-center">
+                    <div className="w-16 h-16 mx-auto rounded-2xl bg-white/5 flex items-center justify-center mb-4">
+                      <Clock className="w-8 h-8 text-[#A1A1AA]/20" />
+                    </div>
+                    <h2 className="text-lg font-semibold text-white mb-2">No archived accounts</h2>
+                    <p className="text-sm text-[#A1A1AA]">Archived accounts will appear here for 30 days.</p>
+                  </div>
+                );
+              }
+              return (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-t border-white/5">
+                        <th className="px-5 py-3 text-left text-xs font-semibold text-[#A1A1AA] uppercase tracking-wider">Client</th>
+                        <th className="px-5 py-3 text-left text-xs font-semibold text-[#A1A1AA] uppercase tracking-wider hidden md:table-cell">Business</th>
+                        <th className="px-5 py-3 text-left text-xs font-semibold text-[#A1A1AA] uppercase tracking-wider">Archived</th>
+                        <th className="px-5 py-3 text-left text-xs font-semibold text-[#A1A1AA] uppercase tracking-wider hidden lg:table-cell">Days Left</th>
+                        <th className="px-5 py-3 text-right text-xs font-semibold text-[#A1A1AA] uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {archived.map((client: any) => {
+                        const archivedDaysAgo = client.archivedAt
+                          ? Math.floor((Date.now() - client.archivedAt) / (1000 * 60 * 60 * 24))
+                          : 0;
+                        const daysLeft = Math.max(0, 30 - archivedDaysAgo);
+                        return (
+                          <tr key={client.userId} className="hover:bg-white/[0.03] transition-colors">
+                            <td className="px-5 py-4">
+                              <div>
+                                <span className="text-sm font-medium text-white">{client.name}</span>
+                                <p className="text-[10px] text-[#A1A1AA]/50 mt-0.5">{client.email}</p>
+                              </div>
+                            </td>
+                            <td className="px-5 py-4 hidden md:table-cell">
+                              <span className="text-sm text-[#A1A1AA]">{client.businessName ?? "—"}</span>
+                            </td>
+                            <td className="px-5 py-4">
+                              <span className="text-xs text-[#A1A1AA]">
+                                {client.archivedAt ? formatTime(client.archivedAt) : "—"}
+                              </span>
+                            </td>
+                            <td className="px-5 py-4 hidden lg:table-cell">
+                              <span className={`text-xs font-semibold ${
+                                daysLeft <= 7 ? "text-red-400" : "text-[#A1A1AA]"
+                              }`}>
+                                {daysLeft} days remaining
+                              </span>
+                            </td>
+                            <td className="px-5 py-4 text-right">
+                              <Button size="sm"
+                                onClick={() => handleRestore(client.userId, client.name)}
+                                className="h-8 px-3 bg-[#16A34A] hover:bg-[#16A34A]/90 text-white text-xs font-semibold cursor-pointer">
+                                <Play className="w-3.5 h-3.5 mr-1" /> Restore Account
+                              </Button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })()}
           </GlassPanel>
         )}
 

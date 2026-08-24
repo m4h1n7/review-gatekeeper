@@ -30,7 +30,8 @@ const schema = defineSchema(
       isAnonymous: v.optional(v.boolean()), // is the user anonymous. do not remove
 
       role: v.optional(roleValidator), // role of the user. do not remove
-      accountStatus: v.optional(v.union(v.literal("active"), v.literal("suspended"), v.literal("deleted"))),
+      accountStatus: v.optional(v.union(v.literal("active"), v.literal("suspended"), v.literal("archived"), v.literal("deleted"))),
+      archivedAt: v.optional(v.number()), // timestamp when account was archived (30-day soft delete)
       onboardingCompleted: v.optional(v.boolean()),
       emailVerified: v.optional(v.boolean()), // whether the user verified their email via OTP
       signupOtp: v.optional(v.string()), // 6-digit OTP for email verification

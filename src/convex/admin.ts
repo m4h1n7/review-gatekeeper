@@ -177,6 +177,7 @@ export const allClients = query({
         name: user.name ?? "Unnamed",
         email: user.email ?? "No email",
         accountStatus: (user as any).accountStatus ?? "active",
+        archivedAt: (user as any).archivedAt ?? null,
         onboardingCompleted: user.onboardingCompleted ?? false,
         businessCount: businesses.length,
         businessCategory: businesses[0]?.category ?? null,
@@ -341,8 +342,38 @@ export const activateClient = mutation({
   },
 });
 
-/** Admin mutation: soft-delete a client account */
-export const deleteClient = mutation({
+/** Admin mutation: archive a client account (30-day soft delete) */
+export const archiveClient = mutation({
+  args: { userId: v.string() },
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+    const user = await ctx.db.get(args.userId as any);
+    if (!user) throw new Error("User not found");
+    await ctx.db.patch(args.userId as any, {
+      accountStatus: "archived",
+      archivedAt: Date.now(),
+    });
+    return { ok: true };
+  },
+});
+
+/** Admin mutation: restore an archived client account */
+export const restoreClient = mutation({
+  args: { userId: v.string() },
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+    const user = await ctx.db.get(args.userId as any);
+    if (!user) throw new Error("User not found");
+    await ctx.db.patch(args.userId as any, {
+      accountStatus: "active",
+      archivedAt: undefined,
+    });
+    return { ok: true };
+  },
+});
+
+/** Admin mutation: permanently delete an archived account (after 30 days) */
+export const permanentDelete = mutation({
   args: { userId: v.string() },
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
