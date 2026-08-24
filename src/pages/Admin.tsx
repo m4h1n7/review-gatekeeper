@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useMutation } from "convex/react";
@@ -42,6 +42,8 @@ import {
   Play,
   Trash2,
   AlertTriangle,
+  Lock,
+  FileDown,
 } from "lucide-react";
 import { useNavigate } from "react-router";
 
@@ -96,65 +98,14 @@ function RevenueTooltip({ active, payload, label }: any) {
         <p className="text-sm font-bold text-[#16A34A]">{formatCurrency(payload[0].value)}</p>
         {payload[0].payload?.count !== undefined && (
           <p className="text-[10px] text-[#A1A1AA] mt-0.5">{payload[0].payload.count} payment(s)</p>
-      )}
-
-      {/* ═══ DANGER ZONE: ARCHIVE CONFIRMATION MODAL ═══ */}
-      {archiveModalOpen && archiveTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-            className="bg-[#18181B] border-2 border-red-500/30 rounded-2xl p-6 w-full max-w-md shadow-2xl">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-red-500/15 flex items-center justify-center">
-                <AlertTriangle className="w-5 h-5 text-red-400" />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-red-400">⚠️ DANGER ZONE</h3>
-                <p className="text-xs text-[#A1A1AA]">Permanent Account Deletion</p>
-              </div>
-            </div>
-            <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-4 mb-4">
-              <p className="text-sm text-white font-semibold mb-1">Archive "{archiveTarget.name}"?</p>
-              <p className="text-xs text-[#A1A1AA] leading-relaxed">
-                This will suspend the account and hide it from all client views. The data will be preserved for <strong className="text-white">30 days</strong>, after which it will be permanently deleted. You can restore it at any time from the Archived tab.
-              </p>
-            </div>
-            <div className="mb-4">
-              <label className="text-xs font-medium text-red-400 mb-2 block">
-                Type <code className="bg-red-500/10 px-1.5 py-0.5 rounded text-red-300 font-mono">DELETE-{(archiveTarget.businessName || archiveTarget.name).toUpperCase()}</code> to confirm:
-              </label>
-              <input
-                type="text"
-                value={archiveConfirmText}
-                onChange={(e) => setArchiveConfirmText(e.target.value)}
-                placeholder={`DELETE-${(archiveTarget.businessName || archiveTarget.name).toUpperCase()}`}
-                className="w-full bg-white/5 border border-red-500/30 rounded-lg px-3 py-2.5 text-sm text-white placeholder-[#A1A1AA]/30 focus:outline-none focus:border-red-500 font-mono"
-                autoFocus
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => { setArchiveModalOpen(false); setArchiveTarget(null); setArchiveConfirmText(""); }}
-                className="flex-1 border-white/10 text-[#A1A1AA] hover:bg-white/5 cursor-pointer">Cancel</Button>
-              <Button
-                onClick={handleArchive}
-                disabled={archiveConfirmText !== `DELETE-${(archiveTarget.businessName || archiveTarget.name).toUpperCase()}`}
-                className={`flex-1 font-semibold cursor-pointer transition-all ${
-                  archiveConfirmText === `DELETE-${(archiveTarget.businessName || archiveTarget.name).toUpperCase()}`
-                    ? "bg-red-600 hover:bg-red-700 text-white"
-                    : "bg-red-500/20 text-red-400/40 cursor-not-allowed"
-                }`}>
-                <Trash2 className="w-4 h-4 mr-1.5" /> Archive Account
-              </Button>
-            </div>
-          </motion.div>
-        </div>
-      )}
-    </div>
-  );
-}
+        )}
+      </div>
+    );
+  }
   return null;
 }
 
-type AdminTab = "overview" | "payments" | "clients" | "archived" | "announcements";
+type AdminTab = "overview" | "payments" | "clients" | "archived" | "announcements" | "audit" | "security";
 
 /* ─── Rejection Reason Modal ──────────────────────────────── */
 function RejectModal({
@@ -226,6 +177,96 @@ export default function Admin() {
   const [archiveTarget, setArchiveTarget] = useState<{ userId: string; name: string } | null>(null);
   const [archiveConfirmText, setArchiveConfirmText] = useState("");
 
+  // Session timeout (30 min inactivity)
+  const lastActivityRef = useRef(Date.now());
+  useEffect(() => {
+    const resetTimer = () => { lastActivityRef.current = Date.now(); };
+    const events = ["mousedown", "mousemove", "keydown", "scroll", "touchstart"];
+    events.forEach((e) => window.addEventListener(e, resetTimer));
+    const interval = setInterval(() => {
+      if (Date.now() - lastActivityRef.current > 30 * 60 * 1000) {
+        toast.warning("Session expired due to inactivity");
+        signOut();
+        navigate("/");
+      }
+    }, 60 * 1000);
+    return () => {
+      events.forEach((e) => window.removeEventListener(e, resetTimer));
+      clearInterval(interval);
+    };
+  }, [signOut, navigate]);
+
+  // Security audit logs
+  const auditLogs = useQuery(api.admin.getAuditLogs, { limit: 50 });
+  // Maintenance mode
+  const maintenance = useQuery(api.admin.getMaintenanceMode);
+  const toggleMaintenance = useMutation(api.admin.toggleMaintenanceMode);
+  const generateBackup = useMutation(api.admin.generateBackup);
+  const verifyPin = useMutation(api.admin.verifyMasterPin);
+
+  // Maintenance toggle state
+  const [maintEnabled, setMaintEnabled] = useState(false);
+  const [maintMessage, setMaintMessage] = useState("System is currently under maintenance. Please try again later.");
+  useEffect(() => {
+    if (maintenance) {
+      setMaintEnabled(maintenance.enabled);
+      setMaintMessage(maintenance.message);
+    }
+  }, [maintenance?.enabled]);
+
+  // Master PIN confirmation modal
+  const [pinModalOpen, setPinModalOpen] = useState(false);
+  const [pinAction, setPinAction] = useState<(() => void) | null>(null);
+  const [pinInput, setPinInput] = useState("");
+  const [pinError, setPinError] = useState(false);
+
+  const requirePin = (action: () => void) => {
+    setPinAction(() => action);
+    setPinInput("");
+    setPinError(false);
+    setPinModalOpen(true);
+  };
+
+  const handlePinVerify = async () => {
+    const result = await verifyPin({ pin: pinInput });
+    if (result.valid) {
+      setPinModalOpen(false);
+      pinAction?.();
+      setPinAction(null);
+    } else {
+      setPinError(true);
+    }
+  };
+
+  const handleBackup = async () => {
+    requirePin(async () => {
+      try {
+        const data = await generateBackup();
+        const json = JSON.stringify(data, null, 2);
+        const blob = new Blob([json], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a"); a.href = url;
+        a.download = `starcatch-backup-${new Date().toISOString().slice(0, 10)}.json`;
+        a.click(); URL.revokeObjectURL(url);
+        toast.success("Backup downloaded!", { description: `${data.recordCounts.businesses} businesses, ${data.recordCounts.feedbacks} feedbacks, ${data.recordCounts.interactions} interactions` });
+      } catch (err) {
+        toast.error("Backup failed");
+      }
+    });
+  };
+
+  const handleMaintenanceToggle = async () => {
+    requirePin(async () => {
+      try {
+        await toggleMaintenance({ enabled: !maintEnabled, message: maintMessage });
+        setMaintEnabled(!maintEnabled);
+        toast.success(maintEnabled ? "Maintenance mode disabled" : "Maintenance mode enabled");
+      } catch (err) {
+        toast.error("Failed to update maintenance mode");
+      }
+    });
+  };
+
   // Data
   const kpis = useQuery(api.admin.adminKPIs);
   const revenueData = useQuery(api.admin.monthlyRevenue);
@@ -267,6 +308,7 @@ export default function Admin() {
 
   /* ─── Approve ────────────────────────────────────────────── */
   const handleApprove = async (paymentId: string) => {
+    requirePin(async () => {
     setProcessingId(paymentId);
     try {
       const result = await approvePayment({ paymentId });
@@ -284,6 +326,7 @@ export default function Admin() {
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Failed to approve");
     } finally { setProcessingId(null); }
+    });
   };
 
   /* ─── Reject ─────────────────────────────────────────────── */
@@ -347,6 +390,7 @@ export default function Admin() {
 
   /* ─── Suspend / Activate / Delete Client ──────────────── */
   const handleSuspend = async (userId: string, name: string) => {
+    requirePin(async () => {
     try {
       await suspendClient({ userId });
       toast.success(`${name} has been suspended`);
@@ -354,6 +398,7 @@ export default function Admin() {
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Failed");
     }
+    });
   };
   const handleActivate = async (userId: string, name: string) => {
     try {
@@ -378,6 +423,7 @@ export default function Admin() {
       toast.error(`Type "${expected}" exactly to confirm`);
       return;
     }
+    requirePin(async () => {
     try {
       await archiveClient({ userId: archiveTarget.userId });
       toast.success(`${archiveTarget.name} has been archived for 30 days`, {
@@ -389,6 +435,7 @@ export default function Admin() {
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Failed to archive");
     }
+    });
   };
 
   const handleRestore = async (userId: string, name: string) => {
@@ -463,6 +510,8 @@ export default function Admin() {
     { id: "clients", label: "All Clients", icon: <Users className="w-4 h-4" />, count: clients?.length },
     { id: "archived", label: "Archived", icon: <Clock className="w-4 h-4" />, count: clients?.filter((c: any) => c.accountStatus === "archived").length },
     { id: "announcements", label: "Announcements", icon: <Megaphone className="w-4 h-4" /> },
+    { id: "audit", label: "Audit Log", icon: <Shield className="w-4 h-4" /> },
+    { id: "security", label: "Security", icon: <Lock className="w-4 h-4" /> },
   ];
 
   return (
@@ -1192,6 +1241,177 @@ export default function Admin() {
           </div>
         )}
       </div>
+
+        {/* ═══ AUDIT LOG TAB ═══ */}
+        {activeTab === "audit" && (
+          <GlassPanel className="overflow-hidden">
+            <div className="p-5 border-b border-white/5">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                  <Shield className="w-5 h-5 text-blue-400" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-white">Security Audit Log</h3>
+                  <p className="text-xs text-[#A1A1AA]">All critical admin actions recorded here</p>
+                </div>
+              </div>
+            </div>
+            {!auditLogs || auditLogs.length === 0 ? (
+              <div className="p-12 text-center">
+                <Shield className="w-10 h-10 text-[#A1A1AA]/20 mx-auto mb-3" />
+                <p className="text-sm text-[#A1A1AA]">No audit logs yet</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-white/5">
+                {auditLogs.map((log: any) => (
+                  <div key={log.id} className="px-5 py-4 hover:bg-white/[0.02] transition-colors">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                            log.action.includes("APPROVE") ? "bg-[#16A34A]/15 text-[#16A34A]"
+                            : log.action.includes("REJECT") ? "bg-red-500/15 text-red-400"
+                            : log.action.includes("SUSPEND") ? "bg-amber-500/15 text-amber-400"
+                            : log.action.includes("ARCHIVE") ? "bg-red-500/15 text-red-400"
+                            : log.action.includes("BACKUP") ? "bg-blue-500/15 text-blue-400"
+                            : log.action.includes("MAINTENANCE") ? "bg-purple-500/15 text-purple-400"
+                            : "bg-white/10 text-[#A1A1AA]"
+                          }`}>
+                            {log.action.replace(/_/g, " ")}
+                          </span>
+                          <span className="text-xs text-[#A1A1AA]">by {log.adminEmail}</span>
+                        </div>
+                        {log.targetEmail && <p className="text-xs text-[#A1A1AA]/60">Target: {log.targetEmail}</p>}
+                        {log.details && <p className="text-xs text-[#A1A1AA]/50 mt-0.5">{log.details}</p>}
+                      </div>
+                      <span className="text-[10px] text-[#A1A1AA]/40 whitespace-nowrap">{formatTime(log.createdAt)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </GlassPanel>
+        )}
+
+        {/* ═══ SECURITY & SYSTEM TAB ═══ */}
+        {activeTab === "security" && (
+          <div className="grid sm:grid-cols-2 gap-6">
+            <GlassPanel className="p-6">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center">
+                  <AlertTriangle className="w-5 h-5 text-purple-400" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-white">System Maintenance Mode</h3>
+                  <p className="text-xs text-[#A1A1AA]">Show a maintenance banner to public visitors</p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 rounded-xl bg-white/[0.03] border border-white/5">
+                  <div>
+                    <p className="text-sm font-medium text-white">Maintenance Mode</p>
+                    <p className="text-xs text-[#A1A1AA] mt-0.5">{maintEnabled ? "Active" : "Disabled"}</p>
+                  </div>
+                  <button onClick={handleMaintenanceToggle}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${maintEnabled ? "bg-purple-500" : "bg-white/20"}`}>
+                    <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${maintEnabled ? "translate-x-[22px]" : "translate-x-[3px]"}`} />
+                  </button>
+                </div>
+                <textarea value={maintMessage} onChange={(e) => setMaintMessage(e.target.value)}
+                  placeholder="Maintenance message..."
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-[#A1A1AA]/40 focus:outline-none resize-none h-20" />
+              </div>
+            </GlassPanel>
+            <GlassPanel className="p-6">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                  <FileDown className="w-5 h-5 text-blue-400" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-white">Database Backup</h3>
+                  <p className="text-xs text-[#A1A1AA]">Export anonymized records as JSON</p>
+                </div>
+              </div>
+              <Button onClick={handleBackup} className="w-full h-10 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold cursor-pointer">
+                <FileDown className="w-4 h-4 mr-2" /> Download Full System Backup
+              </Button>
+            </GlassPanel>
+          </div>
+        )}
+
+      {/* ═══ DANGER ZONE: ARCHIVE CONFIRMATION MODAL ═══ */}
+      {archiveModalOpen && archiveTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+            className="bg-[#18181B] border-2 border-red-500/30 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-red-500/15 flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5 text-red-400" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-red-400">⚠️ DANGER ZONE</h3>
+                <p className="text-xs text-[#A1A1AA]">Permanent Account Deletion</p>
+              </div>
+            </div>
+            <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-4 mb-4">
+              <p className="text-sm text-white font-semibold mb-1">Archive \&quot;{archiveTarget.name}\&quot;?</p>
+              <p className="text-xs text-[#A1A1AA] leading-relaxed">
+                This will suspend the account and hide it from all client views. The data will be preserved for <strong className="text-white">30 days</strong>, after which it will be permanently deleted. You can restore it at any time from the Archived tab.
+              </p>
+            </div>
+            <div className="mb-4">
+              <label className="text-xs font-medium text-red-400 mb-2 block">
+                Type <code className="bg-red-500/10 px-1.5 py-0.5 rounded text-red-300 font-mono">DELETE-{(archiveTarget.businessName || archiveTarget.name).toUpperCase()}</code> to confirm:
+              </label>
+              <input type="text" value={archiveConfirmText}
+                onChange={(e) => setArchiveConfirmText(e.target.value)}
+                placeholder={`DELETE-${(archiveTarget.businessName || archiveTarget.name).toUpperCase()}`}
+                className="w-full bg-white/5 border border-red-500/30 rounded-lg px-3 py-2.5 text-sm text-white placeholder-[#A1A1AA]/30 focus:outline-none focus:border-red-500 font-mono" autoFocus />
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => { setArchiveModalOpen(false); setArchiveTarget(null); setArchiveConfirmText(""); }}
+                className="flex-1 border-white/10 text-[#A1A1AA] hover:bg-white/5 cursor-pointer">Cancel</Button>
+              <Button onClick={handleArchive}
+                disabled={archiveConfirmText !== `DELETE-${(archiveTarget.businessName || archiveTarget.name).toUpperCase()}`}
+                className={`flex-1 font-semibold cursor-pointer transition-all ${archiveConfirmText === `DELETE-${(archiveTarget.businessName || archiveTarget.name).toUpperCase()}` ? "bg-red-600 hover:bg-red-700 text-white" : "bg-red-500/20 text-red-400/40 cursor-not-allowed"}`}>
+                <Trash2 className="w-4 h-4 mr-1.5" /> Archive Account
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      </div>
+
+      {/* ═══ MASTER PIN CONFIRMATION MODAL ═══ */}
+      {pinModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+            className="bg-[#18181B] border border-white/10 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/15 flex items-center justify-center">
+                <Lock className="w-5 h-5 text-amber-400" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-white">Master PIN Required</h3>
+                <p className="text-xs text-[#A1A1AA]">Enter PIN to confirm this critical action</p>
+              </div>
+            </div>
+            <input type="password" value={pinInput}
+              onChange={(e) => { setPinInput(e.target.value); setPinError(false); }}
+              onKeyDown={(e) => e.key === "Enter" && handlePinVerify()}
+              placeholder="Enter master PIN"
+              className={`w-full bg-white/5 border rounded-lg px-3 py-2.5 text-sm text-white placeholder-[#A1A1AA]/40 focus:outline-none mb-3 font-mono ${pinError ? "border-red-500/50" : "border-white/10"}`} autoFocus />
+            {pinError && <p className="text-xs text-red-400 mb-3">Incorrect PIN.</p>}
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => { setPinModalOpen(false); setPinAction(null); }}
+                className="flex-1 border-white/10 text-[#A1A1AA] hover:bg-white/5 cursor-pointer">Cancel</Button>
+              <Button onClick={handlePinVerify}
+                className="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-semibold cursor-pointer">Verify</Button>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       {/* ═══ CREATE CLIENT MODAL ═══ */}
       {showCreateClient && (

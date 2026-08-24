@@ -121,6 +121,37 @@ const schema = defineSchema(
       proExpiresAt: v.optional(v.number()),
     })
       .index("by_userId", ["userId"]),
+
+    // Security audit log for admin actions
+    auditLogs: defineTable({
+      adminEmail: v.string(),
+      action: v.string(),
+      targetUser: v.optional(v.string()),
+      targetEmail: v.optional(v.string()),
+      details: v.optional(v.string()),
+      createdAt: v.number(),
+    })
+      .index("by_createdAt", ["createdAt"]),
+
+    // Staff sub-accounts (Business Pro feature)
+    staffAccounts: defineTable({
+      ownerId: v.string(), // business owner userId
+      staffEmail: v.string(),
+      staffName: v.optional(v.string()),
+      status: v.union(v.literal("pending"), v.literal("active"), v.literal("revoked")),
+      createdAt: v.number(),
+    })
+      .index("by_ownerId", ["ownerId"])
+      .index("by_staffEmail", ["staffEmail"]),
+
+    // System-wide settings (maintenance mode, etc.)
+    systemSettings: defineTable({
+      key: v.string(),
+      value: v.string(),
+      updatedAt: v.number(),
+      updatedBy: v.optional(v.string()),
+    })
+      .index("by_key", ["key"]),
   },
   {
     schemaValidation: false,

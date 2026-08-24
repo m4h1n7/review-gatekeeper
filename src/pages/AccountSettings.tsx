@@ -28,6 +28,8 @@ import {
   AlertTriangle,
   Gift,
   ToggleLeft,
+  Users,
+  UserPlus,
   ToggleRight,
   Sparkles,
 } from "lucide-react";
@@ -121,6 +123,15 @@ export default function AccountSettings() {
   const [pwSaved, setPwSaved] = useState(false);
   const [pwError, setPwError] = useState<string | null>(null);
 
+  // Staff access
+  const [staffEmail, setStaffEmail] = useState("");
+  const [staffLoading, setStaffLoading] = useState(false);
+  const staffList = useQuery(
+    api.admin.listStaff,
+    user?.email ? { ownerEmail: user.email } : "skip"
+  );
+  const inviteStaffMutation = useMutation(api.admin.inviteStaff);
+
   const handleSavePromo = async () => {
     if (!businesses || businesses.length === 0) return;
     setPromoLoading(true);
@@ -211,6 +222,21 @@ export default function AccountSettings() {
       setPwError(err instanceof Error ? err.message : "Failed to update password.");
     }
     setPwLoading(false);
+  };
+
+  const handleInviteStaff = async () => {
+    if (!staffEmail.trim() || !user?.email) return;
+    setStaffLoading(true);
+    try {
+      await inviteStaffMutation({
+        ownerEmail: user.email,
+        staffEmail: staffEmail.trim(),
+      });
+      setStaffEmail("");
+    } catch (err) {
+      // Error handled by Convex
+    }
+    setStaffLoading(false);
   };
 
   const planLabel = subscription?.plan === "pro" && subscription?.status === "active" ? "Business Pro" : subscription?.plan === "starter" && subscription?.status === "active" ? "Starter" : subscription?.status === "pending" ? "Pending Payment" : "Business Pro";
@@ -664,6 +690,68 @@ export default function AccountSettings() {
                 </Button>
               </div>
             </GlassPanel>
+
+            {/* ═══ STAFF ACCESS (Pro Feature) ═══ */}
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+              <GlassPanel className={`p-6 relative overflow-hidden ${!isPro ? 'opacity-70' : ''}`}>
+                {!isPro && (
+                  <div className="absolute inset-0 z-10 bg-[#0D0D0D]/60 backdrop-blur-sm flex items-center justify-center rounded-2xl">
+                    <div className="text-center">
+                      <Lock className="w-6 h-6 text-amber-400 mx-auto mb-2" />
+                      <p className="text-xs font-bold text-amber-400">PRO FEATURE</p>
+                      <p className="text-[10px] text-[#A1A1AA] mt-1">Upgrade to Business Pro to invite staff</p>
+                    </div>
+                  </div>
+                )}
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                    <Users className="w-5 h-5 text-blue-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-white">Staff Access</h3>
+                    <p className="text-xs text-[#A1A1AA]">Invite team members with view-only dashboard access (Pro)</p>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  {staffList && staffList.length > 0 && (
+                    <div className="space-y-2">
+                      {staffList.map((s: any) => (
+                        <div key={s._id} className="flex items-center justify-between p-3 rounded-xl bg-white/[0.03] border border-white/5">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-blue-500/15 flex items-center justify-center">
+                              <UserPlus className="w-3.5 h-3.5 text-blue-400" />
+                            </div>
+                            <div>
+                              <p className="text-xs font-medium text-white">{s.staffEmail}</p>
+                              <p className="text-[10px] text-[#A1A1AA]">Invited {new Date(s.invitedAt).toLocaleDateString()}</p>
+                            </div>
+                          </div>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-500/15 text-green-400">View Only</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex gap-2">
+                    <Input
+                      value={staffEmail}
+                      onChange={(e) => setStaffEmail(e.target.value)}
+                      placeholder="Enter staff email address"
+                      className="h-10 bg-white/5 border-white/10 text-white text-sm placeholder:text-[#A1A1AA]/40 focus:border-[#16A34A] focus:ring-[#16A34A]/20"
+                    />
+                    <Button
+                      onClick={handleInviteStaff}
+                      disabled={!staffEmail || staffLoading}
+                      className="h-10 px-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold cursor-pointer shrink-0"
+                    >
+                      {staffLoading ? "..." : <><UserPlus className="w-3.5 h-3.5 mr-1" /> Invite</>}
+                    </Button>
+                  </div>
+                  <p className="text-[10px] text-[#A1A1AA]/50">
+                    Staff users can view analytics and feedback but cannot edit business settings or payment information.
+                  </p>
+                </div>
+              </GlassPanel>
+            </motion.div>
           </motion.div>
         )}
       </div>

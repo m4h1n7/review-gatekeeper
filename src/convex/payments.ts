@@ -186,6 +186,18 @@ export const approve = mutation({
 
     // Return client email + plan for frontend to trigger approval email
     const ownerUser = (await ctx.db.get(payment.userId as any)) as any;
+
+    // Audit log
+    const adminEmail = adminUser.email ?? "unknown";
+    await ctx.db.insert("auditLogs", {
+      adminEmail,
+      action: "APPROVE_PAYMENT",
+      targetUser: payment.userId,
+      targetEmail: paymentData.clientEmail ?? ownerUser?.email,
+      details: `Plan: ${selectedPlan}, TrxID: ${paymentData.trxId ?? "—"}`,
+      createdAt: Date.now(),
+    });
+
     return {
       ok: true,
       clientEmail: paymentData.clientEmail ?? ownerUser?.email ?? "",
@@ -226,6 +238,18 @@ export const reject = mutation({
     // Return client email + plan for frontend to trigger rejection email
     const paymentData = paymentDoc as any;
     const ownerUser = (await ctx.db.get(paymentData.userId as any)) as any;
+
+    // Audit log
+    const adminEmail = adminUser.email ?? "unknown";
+    await ctx.db.insert("auditLogs", {
+      adminEmail,
+      action: "REJECT_PAYMENT",
+      targetUser: paymentData.userId,
+      targetEmail: paymentData.clientEmail ?? ownerUser?.email,
+      details: `Reason: ${args.reason || "No reason provided"}, TrxID: ${paymentData.trxId ?? "—"}`,
+      createdAt: Date.now(),
+    });
+
     return {
       ok: true,
       clientEmail: paymentData.clientEmail ?? ownerUser?.email ?? "",
