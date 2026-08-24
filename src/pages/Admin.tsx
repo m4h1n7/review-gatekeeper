@@ -445,10 +445,14 @@ export default function Admin() {
       const isPro = sub?.plan === "pro" && sub?.status === "active";
       const isExpired = sub?.status === "expired";
       const isPending = sub?.status === "pending";
+      const isStarter = sub?.plan === "starter" && sub?.status === "active";
+      const isActiveClient = c.lastScanAt && c.lastScanAt > Date.now() - 7 * 24 * 60 * 60 * 1000;
+      const isInactive = (isPro || isStarter) && !isActiveClient && c.totalInteractions === 0;
       const matchesPlan = clientPlanFilter === "all"
         || (clientPlanFilter === "active" && isPro)
         || (clientPlanFilter === "pending" && isPending)
-        || (clientPlanFilter === "expired" && isExpired);
+        || (clientPlanFilter === "expired" && isExpired)
+        || (clientPlanFilter === "inactive" && isInactive);
       return matchesSearch && matchesPlan;
     });
   }, [clients, clientSearch, clientPlanFilter]);
@@ -854,6 +858,7 @@ export default function Admin() {
                     <option value="active">Active Pro</option>
                     <option value="pending">Pending</option>
                     <option value="expired">Expired</option>
+                    <option value="inactive">⚠️ Inactive (7d+)</option>
                   </select>
                 </div>
               </div>
@@ -892,8 +897,11 @@ export default function Admin() {
                       const isPending = sub?.status === "pending";
                       const daysLeft = sub?.daysRemaining;
 
+                      const isActiveClient = client.lastScanAt && client.lastScanAt > Date.now() - 7 * 24 * 60 * 60 * 1000;
+                      const isInactive = (isPro || isStarter) && !isActiveClient && client.totalInteractions === 0;
+
                       return (
-                        <tr key={client.userId} className="hover:bg-white/[0.03] transition-colors">
+                        <tr key={client.userId} className={`hover:bg-white/[0.03] transition-colors ${isInactive ? "bg-amber-500/[0.04] border-l-2 border-l-amber-500/60" : ""}`}>
                           <td className="px-5 py-4">
                             <div>
                               <span className="text-sm font-medium text-white">{client.name}</span>
@@ -936,7 +944,15 @@ export default function Admin() {
                             ) : <span className="text-xs text-[#A1A1AA]/40">—</span>}
                           </td>
                           <td className="px-5 py-4">
-                            <span className="text-sm font-semibold text-white tabular-nums">{client.totalInteractions}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-semibold text-white tabular-nums">{client.totalInteractions}</span>
+                              {isInactive && (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400 text-[9px] font-bold uppercase tracking-wider whitespace-nowrap">
+                                  <span className="w-1 h-1 rounded-full bg-amber-400 animate-pulse" />
+                                  No Activity
+                                </span>
+                              )}
+                            </div>
                           </td>
                           <td className="px-5 py-4 hidden lg:table-cell">
                             {client.onboardingCompleted

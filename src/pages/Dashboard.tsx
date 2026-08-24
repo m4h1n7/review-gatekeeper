@@ -179,6 +179,12 @@ export default function Dashboard() {
     ? Math.round((displayStats.redirectCount / displayStats.totalVisits) * 100)
     : 0;
 
+  // ROI calculation: blocked negative reviews x ৳750 estimated customer lifetime value
+  const CUSTOMER_LTV = 750;
+  const savedRevenue = (displayStats?.feedbackCount ?? 0) * CUSTOMER_LTV;
+  const subscriptionCost = subscription?.plan === "pro" ? 2499 : subscription?.plan === "starter" ? 1499 : 0;
+  const roiMultiple = subscriptionCost > 0 ? Math.round(savedRevenue / subscriptionCost) : 0;
+
   const unresolvedCount = feedbacks?.filter((fb) => (fb as any).status === "unresolved").length ?? 0;
 
   const tabs: { id: TabType; label: string; icon: React.ReactNode; badge?: number }[] = [
@@ -409,6 +415,30 @@ export default function Dashboard() {
               <StatCard icon={<TrendingUp className="w-5 h-5 text-[#16A34A]" />} label="Conversion Rate"
                 value={`${conversionRate}%`} sub="Positive review rate" color="bg-[#16A34A]/10" />
             </div>
+
+            {/* ROI & Revenue Saver Widget */}
+            <GlassPanel className="p-5 mb-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-[#16A34A]/10 flex items-center justify-center">
+                    <TrendingUp className="w-6 h-6 text-[#16A34A]" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-[#A1A1AA] uppercase tracking-wider">Estimated Saved Revenue</p>
+                    <p className="text-2xl font-extrabold text-white">৳{savedRevenue.toLocaleString()}</p>
+                    <p className="text-[10px] text-[#A1A1AA]/60 mt-0.5">
+                      Based on {displayStats?.feedbackCount ?? 0} blocked negative reviews × ৳{CUSTOMER_LTV} customer lifetime value
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#16A34A]/10 border border-[#16A34A]/20">
+                  <Star className="w-4 h-4 text-[#16A34A] fill-[#16A34A]" />
+                  <span className="text-xs font-bold text-[#16A34A]">
+                    STAR CATCH ROI: {roiMultiple > 0 ? `${roiMultiple}x` : '—'} Subscription Value
+                  </span>
+                </div>
+              </div>
+            </GlassPanel>
 
             {/* Funnel Conversion Metrics */}
             <GlassPanel className="p-5 mb-6">
@@ -684,6 +714,20 @@ export default function Dashboard() {
                           <p className="text-[10px] text-[#A1A1AA]/40 mt-2">{new Date(fb.createdAt).toLocaleString()}</p>
                         </div>
                         <div className="flex items-center gap-3 shrink-0">
+                          {/* WhatsApp Recovery Button */}
+                          {fb.phone && (
+                            <a
+                              href={`https://wa.me/${fb.phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(
+                                `Hi ${fb.customerName},\n\nThank you for sharing your feedback with us. We're sorry your experience didn't meet expectations.\n\nWe'd love to make it right! As a token of our appreciation, please enjoy a special discount on your next visit.\n\nJust show this message to our staff.\n\nWarm regards,\n${overview?.businesses[0]?.name || "Our Team"}`
+                              )}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#25D366]/10 border border-[#25D366]/20 text-[#25D366] text-[10px] font-semibold hover:bg-[#25D366]/20 transition-colors cursor-pointer whitespace-nowrap"
+                              title="Recover this customer via WhatsApp"
+                            >
+                              <MessageCircle className="w-3 h-3" /> WhatsApp
+                            </a>
+                          )}
                           <button onClick={() => handleToggleStatus(fb.id, status)}
                             className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors cursor-pointer ${status === "resolved" ? "bg-[#16A34A]" : "bg-red-500/80"}`}>
                             <span className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${status === "resolved" ? "translate-x-[18px]" : "translate-x-[3px]"}`} />

@@ -151,8 +151,9 @@ export const allClients = query({
         .withIndex("by_userId", (q: any) => q.eq("userId", user._id))
         .collect();
 
-      // Get total interactions across all businesses
+      // Get total interactions across all businesses + last scan timestamp
       let totalInteractions = 0;
+      let lastScanAt = 0;
       for (const biz of businesses) {
         const interactions = await ctx.db
           .query("interactions")
@@ -161,6 +162,11 @@ export const allClients = query({
           )
           .collect();
         totalInteractions += interactions.length;
+        for (const interaction of interactions) {
+          if (interaction.createdAt > lastScanAt) {
+            lastScanAt = interaction.createdAt;
+          }
+        }
       }
 
       // Check if subscription is expired
@@ -195,6 +201,7 @@ export const allClients = query({
             }
           : null,
         totalInteractions,
+        lastScanAt: lastScanAt || null,
       });
     }
 
