@@ -37,6 +37,7 @@ import {
   QrCode,
   Share2,
   LayoutDashboard,
+  Lock,
 } from "lucide-react";
 import { useNavigate } from "react-router";
 
@@ -432,7 +433,7 @@ export default function Dashboard() {
 
             {/* QR Code */}
             {reviewSlug && (
-              <PrintableQR slug={reviewSlug} businessName={overview.businesses[0]?.name || businessName} />
+              <PrintableQR slug={reviewSlug} businessName={overview.businesses[0]?.name || businessName} isPro={!!isPro} />
             )}
 
             {/* WhatsApp Template */}
@@ -514,10 +515,29 @@ export default function Dashboard() {
                 <p className="text-xs text-[#A1A1AA] mt-0.5">Customer feedback from 1-3 star ratings</p>
               </div>
               {feedbacks && feedbacks.length > 0 && (
-                <Button variant="outline" size="sm" onClick={handleDownloadCSV}
-                  className="border-white/10 bg-white/5 hover:bg-white/10 text-[#A1A1AA] hover:text-white cursor-pointer text-xs">
-                  <Download className="w-3.5 h-3.5 mr-1.5" /> Export CSV
-                </Button>
+                <div className="relative">
+                  {!isPro ? (
+                    <div className="relative group">
+                      <Button variant="outline" size="sm" disabled
+                        className="border-white/10 bg-white/5 text-[#A1A1AA]/40 cursor-not-allowed text-xs opacity-60">
+                        <Lock className="w-3.5 h-3.5 mr-1.5" /> Export CSV
+                      </Button>
+                      <div className="absolute right-0 top-full mt-2 z-20 hidden group-hover:block w-56 p-3 rounded-xl bg-[#18181B] border border-white/10 shadow-xl">
+                        <p className="text-[10px] font-semibold text-[#16A34A] mb-1">PRO FEATURE</p>
+                        <p className="text-xs text-[#A1A1AA] mb-2">Upgrade to Business Pro to export feedback data</p>
+                        <Button onClick={() => navigate("/pricing")} size="sm"
+                          className="w-full h-7 bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-semibold cursor-pointer">
+                          Upgrade Now
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <Button variant="outline" size="sm" onClick={handleDownloadCSV}
+                      className="border-white/10 bg-white/5 hover:bg-white/10 text-[#A1A1AA] hover:text-white cursor-pointer text-xs">
+                      <Download className="w-3.5 h-3.5 mr-1.5" /> Export CSV
+                    </Button>
+                  )}
+                </div>
               )}
             </div>
 
