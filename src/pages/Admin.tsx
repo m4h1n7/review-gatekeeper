@@ -36,6 +36,12 @@ import {
   CalendarPlus,
   Copy,
   X,
+  UserPlus,
+  Megaphone,
+  Pause,
+  Play,
+  Trash2,
+  AlertTriangle,
 } from "lucide-react";
 import { useNavigate } from "react-router";
 
@@ -97,7 +103,7 @@ function RevenueTooltip({ active, payload, label }: any) {
   return null;
 }
 
-type AdminTab = "overview" | "payments" | "clients";
+type AdminTab = "overview" | "payments" | "clients" | "announcements";
 
 /* ─── Rejection Reason Modal ──────────────────────────────── */
 function RejectModal({
@@ -154,17 +160,35 @@ export default function Admin() {
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [rejectPaymentId, setRejectPaymentId] = useState<string | null>(null);
 
+  // Create client modal
+  const [showCreateClient, setShowCreateClient] = useState(false);
+  const [createForm, setCreateForm] = useState({ email: "", name: "", businessName: "", plan: "pro" as "starter" | "pro" });
+
+  // Announcement form
+  const [announcementForm, setAnnouncementForm] = useState({ title: "", message: "" });
+
+  // Client action dropdown
+  const [openActionMenu, setOpenActionMenu] = useState<string | null>(null);
+
   // Data
   const kpis = useQuery(api.admin.adminKPIs);
   const revenueData = useQuery(api.admin.monthlyRevenue);
   const clients = useQuery(api.admin.allClients);
   const pendingPayments = useQuery(api.payments.listPending);
   const allPayments = useQuery(api.payments.listAll);
+  const announcements = useQuery(api.admin.getAnnouncements);
 
   // Mutations
   const approvePayment = useMutation(api.payments.approve);
   const rejectPayment = useMutation(api.payments.reject);
   const extendSubscription = useMutation(api.admin.extendSubscription);
+  const createClient = useMutation(api.admin.createClient);
+  const suspendClient = useMutation(api.admin.suspendClient);
+  const activateClient = useMutation(api.admin.activateClient);
+  const deleteClientMutation = useMutation(api.admin.deleteClient);
+  const createAnnouncement = useMutation(api.admin.createAnnouncement);
+  const toggleAnnouncement = useMutation(api.admin.toggleAnnouncement);
+  const deleteAnnouncement = useMutation(api.admin.deleteAnnouncement);
 
   const handleSignOut = async () => { await signOut(); navigate("/"); };
 
@@ -243,6 +267,89 @@ export default function Admin() {
   /* ─── Copy helper ────────────────────────────────────────── */
   const copyTrxId = (trxId: string) => { navigator.clipboard.writeText(trxId); toast.success("Transaction ID copied!"); };
 
+  /* ─── Create Client ────────────────────────────────────── */
+  const handleCreateClient = async () => {
+    if (!createForm.email || !createForm.name || !createForm.businessName) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+    try {
+      await createClient({
+        email: createForm.email,
+        name: createForm.name,
+        businessName: createForm.businessName,
+        plan: createForm.plan,
+      });
+      toast.success("Client account created!", { description: `${createForm.email} has been added as a ${createForm.plan === "pro" ? "Business Pro" : "Starter"} subscriber.` });
+      setShowCreateClient(false);
+      setCreateForm({ email: "", name: "", businessName: "", plan: "pro" });
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to create client");
+    }
+  };
+
+  /* ─── Suspend / Activate / Delete Client ──────────────── */
+  const handleSuspend = async (userId: string, name: string) => {
+    try {
+      await suspendClient({ userId });
+      toast.success(`${name} has been suspended`);
+      setOpenActionMenu(null);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed");
+    }
+  };
+  const handleActivate = async (userId: string, name: string) => {
+    try {
+      await activateClient({ userId });
+      toast.success(`${name} has been reactivated`);
+      setOpenActionMenu(null);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed");
+    }
+  };
+  const handleDeleteClient = async (userId: string, name: string) => {
+    if (!confirm(`Are you sure you want to delete ${name}? This is irreversible.`)) return;
+    try {
+      await deleteClientMutation({ userId });
+      toast.success(`${name} has been deleted`);
+      setOpenActionMenu(null);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed");
+    }
+  };
+
+  /* ─── Announcements ────────────────────────────────────── */
+  const handleCreateAnnouncement = async () => {
+    if (!announcementForm.title || !announcementForm.message) {
+      toast.error("Please fill in both title and message");
+      return;
+    }
+    try {
+      await createAnnouncement({ title: announcementForm.title, message: announcementForm.message });
+      toast.success("Announcement published!");
+      setAnnouncementForm({ title: "", message: "" });
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed");
+    }
+  };
+  const handleToggleAnnouncement = async (id: string, active: boolean) => {
+    try {
+      await toggleAnnouncement({ announcementId: id, active });
+      toast.success(active ? "Announcement activated" : "Announcement deactivated");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed");
+    }
+  };
+  const handleDeleteAnnouncement = async (id: string) => {
+    if (!confirm("Delete this announcement?")) return;
+    try {
+      await deleteAnnouncement({ announcementId: id });
+      toast.success("Announcement deleted");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed");
+    }
+  };
+
   /* ─── Filtered clients ───────────────────────────────────── */
   const filteredClients = useMemo(() => {
     if (!clients) return [];
@@ -266,6 +373,7 @@ export default function Admin() {
     { id: "overview", label: "Overview", icon: <BarChart className="w-4 h-4" /> },
     { id: "payments", label: "Pending Approvals", icon: <CreditCard className="w-4 h-4" />, count: pendingPayments?.length },
     { id: "clients", label: "All Clients", icon: <Users className="w-4 h-4" />, count: clients?.length },
+    { id: "announcements", label: "Announcements", icon: <Megaphone className="w-4 h-4" /> },
   ];
 
   return (
@@ -641,6 +749,10 @@ export default function Admin() {
                     <p className="text-xs text-[#A1A1AA]">{filteredClients.length} of {clients?.length ?? 0} client(s)</p>
                   </div>
                 </div>
+                <Button onClick={() => setShowCreateClient(true)}
+                  className="bg-[#16A34A] hover:bg-[#16A34A]/90 text-white text-xs font-semibold cursor-pointer">
+                  <UserPlus className="w-3.5 h-3.5 mr-1.5" /> Create New Client
+                </Button>
               </div>
               <div className="flex flex-col sm:flex-row gap-3">
                 <div className="relative flex-1">
@@ -767,6 +879,33 @@ export default function Admin() {
                                     : <><CalendarPlus className="w-3.5 h-3.5 mr-1" /><span className="hidden sm:inline">+30d</span></>}
                                 </Button>
                               )}
+                              {/* Account status actions */}
+                              <div className="relative">
+                                <button
+                                  onClick={() => setOpenActionMenu(openActionMenu === client.userId ? null : client.userId)}
+                                  className="h-8 px-2 rounded-md border border-white/10 bg-white/5 hover:bg-white/10 text-[#A1A1AA] hover:text-white text-xs font-semibold cursor-pointer transition-all">
+                                  {client.accountStatus === "suspended" ? <Pause className="w-3.5 h-3.5" /> : <Trash2 className="w-3.5 h-3.5" />}
+                                </button>
+                                {openActionMenu === client.userId && (
+                                  <div className="absolute right-0 top-full mt-1 z-30 w-48 rounded-xl bg-[#18181B] border border-white/10 shadow-2xl p-1">
+                                    {client.accountStatus !== "suspended" ? (
+                                      <button onClick={() => handleSuspend(client.userId, client.name)}
+                                        className="w-full flex items-center gap-2 px-3 py-2 text-xs text-amber-400 hover:bg-amber-500/10 rounded-lg cursor-pointer transition-colors">
+                                        <Pause className="w-3.5 h-3.5" /> Suspend Account
+                                      </button>
+                                    ) : (
+                                      <button onClick={() => handleActivate(client.userId, client.name)}
+                                        className="w-full flex items-center gap-2 px-3 py-2 text-xs text-[#16A34A] hover:bg-[#16A34A]/10 rounded-lg cursor-pointer transition-colors">
+                                        <Play className="w-3.5 h-3.5" /> Activate Account
+                                      </button>
+                                    )}
+                                    <button onClick={() => handleDeleteClient(client.userId, client.name)}
+                                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-400 hover:bg-red-500/10 rounded-lg cursor-pointer transition-colors">
+                                      <Trash2 className="w-3.5 h-3.5" /> Delete Account
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </td>
                         </tr>
@@ -778,7 +917,152 @@ export default function Admin() {
             )}
           </GlassPanel>
         )}
+
+        {/* ═══ ANNOUNCEMENTS TAB ═══ */}
+        {activeTab === "announcements" && (
+          <div className="grid sm:grid-cols-2 gap-6">
+            {/* Create Announcement */}
+            <GlassPanel className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                  <Megaphone className="w-5 h-5 text-amber-400" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-white">Post New Announcement</h3>
+                  <p className="text-xs text-[#A1A1AA]">Broadcast a notice to all client dashboards</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <input
+                  type="text"
+                  placeholder="Announcement title (e.g. Holiday Discount)"
+                  value={announcementForm.title}
+                  onChange={(e) => setAnnouncementForm((p) => ({ ...p, title: e.target.value }))}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-[#A1A1AA]/40 focus:outline-none focus:border-[#16A34A]/50"
+                />
+                <textarea
+                  placeholder="Announcement message (visible to all clients)"
+                  value={announcementForm.message}
+                  onChange={(e) => setAnnouncementForm((p) => ({ ...p, message: e.target.value }))}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-[#A1A1AA]/40 focus:outline-none focus:border-[#16A34A]/50 resize-none h-24"
+                />
+                <Button onClick={handleCreateAnnouncement}
+                  className="w-full h-10 bg-[#16A34A] hover:bg-[#16A34A]/90 text-white text-sm font-semibold cursor-pointer">
+                  <Megaphone className="w-4 h-4 mr-2" /> Publish Announcement
+                </Button>
+              </div>
+            </GlassPanel>
+
+            {/* Announcements History */}
+            <GlassPanel className="p-6">
+              <h3 className="text-sm font-semibold text-white mb-4">All Announcements</h3>
+              {!announcements || announcements.length === 0 ? (
+                <div className="text-center py-8">
+                  <Megaphone className="w-8 h-8 text-[#A1A1AA]/20 mx-auto mb-3" />
+                  <p className="text-sm text-[#A1A1AA]">No announcements yet</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {announcements.map((a: any) => (
+                    <div key={a.id} className={`p-4 rounded-xl border transition-colors ${
+                      a.active ? "border-[#16A34A]/30 bg-[#16A34A]/5" : "border-white/5 bg-white/[0.02]"
+                    }`}>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <p className="text-sm font-semibold text-white truncate">{a.title}</p>
+                            {a.active && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#16A34A]/15 text-[#16A34A] text-[10px] font-bold">
+                                LIVE
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-[#A1A1AA] line-clamp-2">{a.message}</p>
+                          <p className="text-[10px] text-[#A1A1AA]/40 mt-2">{formatTime(a.createdAt)}</p>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button onClick={() => handleToggleAnnouncement(a.id, !a.active)}
+                            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors cursor-pointer ${a.active ? "bg-[#16A34A]" : "bg-white/20"}`}>
+                            <span className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${a.active ? "translate-x-[18px]" : "translate-x-[3px]"}`} />
+                          </button>
+                          <span className={`text-[10px] font-semibold ${a.active ? "text-[#16A34A]" : "text-[#A1A1AA]"}`}>
+                            {a.active ? "On" : "Off"}
+                          </span>
+                          <button onClick={() => handleDeleteAnnouncement(a.id)}
+                            className="text-[#A1A1AA]/30 hover:text-red-400 transition-colors cursor-pointer ml-1">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </GlassPanel>
+          </div>
+        )}
       </div>
+
+      {/* ═══ CREATE CLIENT MODAL ═══ */}
+      {showCreateClient && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+            className="bg-[#18181B] border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2">
+                <UserPlus className="w-5 h-5 text-[#16A34A]" />
+                <h3 className="text-sm font-semibold text-white">Create New Client Account</h3>
+              </div>
+              <button onClick={() => setShowCreateClient(false)} className="text-[#A1A1AA] hover:text-white cursor-pointer">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-xs text-[#A1A1AA] mb-4">
+              Manually create a client account. No email verification required.
+            </p>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-medium text-[#A1A1AA] mb-1 block">Client Email</label>
+                <input type="email" placeholder="client@email.com"
+                  value={createForm.email}
+                  onChange={(e) => setCreateForm((p) => ({ ...p, email: e.target.value }))}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-[#A1A1AA]/40 focus:outline-none focus:border-[#16A34A]/50" />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-[#A1A1AA] mb-1 block">Client Name</label>
+                <input type="text" placeholder="John Doe"
+                  value={createForm.name}
+                  onChange={(e) => setCreateForm((p) => ({ ...p, name: e.target.value }))}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-[#A1A1AA]/40 focus:outline-none focus:border-[#16A34A]/50" />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-[#A1A1AA] mb-1 block">Business Name</label>
+                <input type="text" placeholder="Business Name"
+                  value={createForm.businessName}
+                  onChange={(e) => setCreateForm((p) => ({ ...p, businessName: e.target.value }))}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-[#A1A1AA]/40 focus:outline-none focus:border-[#16A34A]/50" />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-[#A1A1AA] mb-1 block">Subscription Plan</label>
+                <select value={createForm.plan}
+                  onChange={(e) => setCreateForm((p) => ({ ...p, plan: e.target.value as "starter" | "pro" }))}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#16A34A]/50 cursor-pointer">
+                  <option value="pro">★ Business Pro (৳2,499/mo)</option>
+                  <option value="starter">Starter (৳1,499/mo)</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex gap-2 mt-5">
+              <Button variant="outline" onClick={() => setShowCreateClient(false)}
+                className="flex-1 border-white/10 text-[#A1A1AA] hover:bg-white/5 cursor-pointer">Cancel</Button>
+              <Button onClick={handleCreateClient}
+                className="flex-1 bg-[#16A34A] hover:bg-[#16A34A]/90 text-white font-semibold cursor-pointer">
+                <UserPlus className="w-4 h-4 mr-1.5" /> Create Account
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }

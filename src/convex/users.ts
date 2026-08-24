@@ -118,6 +118,57 @@ export const isSuperAdminUser = query({
 });
 
 /**
+ * Get the current user's account status (active, suspended, deleted).
+ */
+export const getAccountStatus = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return null;
+
+    const user = await ctx.db.get(userId);
+    if (!user) return null;
+
+    // Super admins are always active
+    if (SUPER_ADMIN_EMAILS.includes(user.email?.toLowerCase() ?? "")) return "active";
+
+    return (user as any).accountStatus ?? "active";
+  },
+});
+
+/**
+ * Get the currently active system announcement (shown on all dashboards).
+ */
+export const getActiveAnnouncement = query({
+  args: {},
+  handler: async (ctx) => {
+    const active = await ctx.db
+      .query("announcements")
+      .withIndex("by_active", (q) => q.eq("active", true))
+      .first();
+    if (!active) return null;
+    return {
+      title: active.title,
+      message: active.message,
+    };
+  },
+});
+
+/**
+ * Check if a business owner's account is suspended (for public review pages).
+ */
+export const isBusinessOwnerSuspended = query({
+  args: { userId: v.string() },
+  handler: async (ctx, args) => {
+    const user = (await ctx.db.get(args.userId as any)) as any;
+    if (!user) return false;
+    // Super admins are never suspended
+    if (SUPER_ADMIN_EMAILS.includes(user.email?.toLowerCase() ?? "")) return false;
+    return user.accountStatus === "suspended";
+  },
+});
+
+/**
  * Check if the current user has completed onboarding.
  */
 export const hasCompletedOnboarding = query({

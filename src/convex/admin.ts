@@ -176,6 +176,7 @@ export const allClients = query({
         userId: user._id,
         name: user.name ?? "Unnamed",
         email: user.email ?? "No email",
+        accountStatus: (user as any).accountStatus ?? "active",
         onboardingCompleted: user.onboardingCompleted ?? false,
         businessCount: businesses.length,
         businessCategory: businesses[0]?.category ?? null,
@@ -267,6 +268,196 @@ export const cancelSubscription = mutation({
       status: "cancelled",
     });
 
+    return { ok: true };
+  },
+});
+
+/** Admin mutation: manually create a new client account */
+export const createClient = mutation({
+  args: {
+    email: v.string(),
+    name: v.string(),
+    businessName: v.string(),
+    plan: v.union(v.literal("starter"), v.literal("pro")),
+  },
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
+    // Check if user with this email already exists
+    const existing = await ctx.db
+      .query("users")
+      .withIndex("email", (q: any) => q.eq("email", args.email.toLowerCase()))
+      .first();
+
+    if (existing) {
+      throw new Error(`A user with email ${args.email} already exists (ID: ${existing._id}). Cannot create duplicate.`);
+    }
+
+    // Create a user record directly (bypasses OTP verification)
+    const userId = await ctx.db.insert("users", {
+      name: args.name,
+      email: args.email.toLowerCase(),
+      emailVerified: true,
+      onboardingCompleted: true,
+      accountStatus: "active",
+    });
+
+    // Create an active subscription
+    const expiresAt = Date.now() + 30 * 24 * 60 * 60 * 1000; // 30 days
+    await ctx.db.insert("subscriptions", {
+      userId: userId as any,
+      plan: args.plan,
+      status: "active",
+      createdAt: Date.now(),
+      expiresAt,
+      proExpiresAt: expiresAt,
+    });
+
+    return { ok: true, userId };
+  },
+});
+
+/** Admin mutation: suspend a client account */
+export const suspendClient = mutation({
+  args: { userId: v.string() },
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+    const user = await ctx.db.get(args.userId as any);
+    if (!user) throw new Error("User not found");
+    await ctx.db.patch(args.userId as any, { accountStatus: "suspended" });
+    return { ok: true };
+  },
+});
+
+/** Admin mutation: reactivate a suspended client */
+export const activateClient = mutation({
+  args: { userId: v.string() },
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+    const user = await ctx.db.get(args.userId as any);
+    if (!user) throw new Error("User not found");
+    await ctx.db.patch(args.userId as any, { accountStatus: "active" });
+    return { ok: true };
+  },
+});
+
+/** Admin mutation: soft-delete a client account */
+export const deleteClient = mutation({
+  args: { userId: v.string() },
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+    const user = await ctx.db.get(args.userId as any);
+    if (!user) throw new Error("User not found");
+    await ctx.db.patch(args.userId as any, { accountStatus: "deleted" });
+    return { ok: true };
+  },
+});
+
+/** Admin: get all active announcements */
+export const getAnnouncements = query({
+  args: {},
+  handler: async (ctx) => {
+    const all = await ctx.db
+      .query("announcements")
+      .order("desc")
+      .collect();
+    return all.map((a) => ({
+      id: a._id,
+      title: a.title,
+      message: a.message,
+      active: a.active,
+      createdBy: a.createdBy,
+      createdAt: a.createdAt,
+    }));
+  },
+});
+
+/** Admin: get the currently active broadcast announcement */
+export const getActiveAnnouncement = query({
+  args: {},
+  handler: async (ctx) => {
+    const active = await ctx.db
+      .query("announcements")
+      .withIndex("by_active", (q: any) => q.eq("active", true))
+      .first();
+    if (!active) return null;
+    return {
+      id: active._id,
+      title: active.title,
+      message: active.message,
+      createdAt: active.createdAt,
+    };
+  },
+});
+
+/** Admin: create a new announcement */
+export const createAnnouncement = mutation({
+  args: {
+    title: v.string(),
+    message: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const adminId = await requireAdmin(ctx);
+
+    // Deactivate any currently active announcements
+    const activeAnnouncements = await ctx.db
+      .query("announcements")
+      .withIndex("by_active", (q: any) => q.eq("active", true))
+      .collect();
+    for (const a of activeAnnouncements) {
+      await ctx.db.patch(a._id, { active: false });
+    }
+
+    // Create new active announcement
+    const id = await ctx.db.insert("announcements", {
+      title: args.title,
+      message: args.message,
+      active: true,
+      createdBy: adminId as any,
+      createdAt: Date.now(),
+    });
+
+    return { ok: true, id };
+  },
+});
+
+/** Admin: toggle an announcement on/off */
+export const toggleAnnouncement = mutation({
+  args: {
+    announcementId: v.string(),
+    active: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+    const doc = await ctx.db.get(args.announcementId as any);
+    if (!doc) throw new Error("Announcement not found");
+
+    // If activating, deactivate all others first
+    if (args.active) {
+      const activeOnes = await ctx.db
+        .query("announcements")
+        .withIndex("by_active", (q: any) => q.eq("active", true))
+        .collect();
+      for (const a of activeOnes) {
+        if (a._id !== args.announcementId) {
+          await ctx.db.patch(a._id, { active: false });
+        }
+      }
+    }
+
+    await ctx.db.patch(args.announcementId as any, { active: args.active });
+    return { ok: true };
+  },
+});
+
+/** Admin: delete an announcement */
+export const deleteAnnouncement = mutation({
+  args: {
+    announcementId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+    await ctx.db.delete(args.announcementId as any);
     return { ok: true };
   },
 });

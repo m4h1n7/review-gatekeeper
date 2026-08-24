@@ -30,6 +30,7 @@ const schema = defineSchema(
       isAnonymous: v.optional(v.boolean()), // is the user anonymous. do not remove
 
       role: v.optional(roleValidator), // role of the user. do not remove
+      accountStatus: v.optional(v.union(v.literal("active"), v.literal("suspended"), v.literal("deleted"))),
       onboardingCompleted: v.optional(v.boolean()),
       emailVerified: v.optional(v.boolean()), // whether the user verified their email via OTP
       signupOtp: v.optional(v.string()), // 6-digit OTP for email verification
@@ -97,6 +98,16 @@ const schema = defineSchema(
     })
       .index("by_status", ["status"])
       .index("by_userId", ["userId"]),
+
+    // System announcements broadcast to all client dashboards
+    announcements: defineTable({
+      title: v.string(),
+      message: v.string(),
+      active: v.boolean(),
+      createdBy: v.string(),
+      createdAt: v.number(),
+    })
+      .index("by_active", ["active"]),
 
     // Subscription plans: pending payment or active pro
     subscriptions: defineTable({

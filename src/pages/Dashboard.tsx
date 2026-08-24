@@ -38,6 +38,8 @@ import {
   Share2,
   LayoutDashboard,
   Lock,
+  Megaphone,
+  AlertTriangle,
 } from "lucide-react";
 import { useNavigate } from "react-router";
 
@@ -104,6 +106,8 @@ export default function Dashboard() {
   const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null);
 
   const subscription = useQuery(api.subscriptions.getCurrent);
+  const accountStatus = useQuery(api.users.getAccountStatus);
+  const announcement = useQuery(api.users.getActiveAnnouncement);
   const isPro = subscription?.plan === "pro" && subscription?.status === "active";
   const isStarter = subscription?.plan === "starter" && subscription?.status === "active";
   const overview = useQuery(api.analytics.dashboardOverview, { filter });
@@ -213,6 +217,32 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* Announcement Banner */}
+      {announcement && (
+        <div className="bg-[#16A34A]/10 border-b border-[#16A34A]/20">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3">
+            <Megaphone className="w-4 h-4 text-[#16A34A] shrink-0" />
+            <div>
+              <p className="text-sm font-semibold text-[#16A34A]">{announcement.title}</p>
+              <p className="text-xs text-[#16A34A]/70">{announcement.message}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Suspended Account Banner */}
+      {accountStatus === "suspended" && (
+        <div className="bg-red-500/10 border-b border-red-500/20">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 text-center">
+            <div className="flex items-center justify-center gap-3 mb-2">
+              <AlertTriangle className="w-5 h-5 text-red-400" />
+              <p className="text-sm font-bold text-red-300">Account Suspended</p>
+            </div>
+            <p className="text-xs text-red-300/70">Your account has been suspended by an administrator. Please contact support to restore access.</p>
+          </div>
+        </div>
+      )}
+
       <div className="fixed inset-0 -z-10">
         <div className="absolute inset-0 bg-[#0D0D0D]" />
         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#16A34A]/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
@@ -248,7 +278,26 @@ export default function Dashboard() {
       </nav>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
+        {/* Suspended: blocked dashboard */}
+        {accountStatus === "suspended" && (
+          <GlassPanel className="p-12 text-center">
+            <div className="w-16 h-16 mx-auto rounded-2xl bg-red-500/10 flex items-center justify-center mb-5">
+              <AlertTriangle className="w-8 h-8 text-red-400" />
+            </div>
+            <h2 className="text-xl font-bold text-white mb-2">Your Account Is Suspended</h2>
+            <p className="text-sm text-[#A1A1AA] mb-6 max-w-md mx-auto">
+              Your dashboard access has been temporarily suspended. Please contact our support team for assistance.
+            </p>
+            <a href={`https://wa.me/8801673903919?text=${encodeURIComponent("Hi, my account is suspended. Please help.")}`} target="_blank" rel="noopener noreferrer">
+              <Button className="bg-[#25D366] hover:bg-[#128C7E] text-white cursor-pointer font-semibold">
+                <MessageCircle className="w-4 h-4 mr-2" /> Contact Support on WhatsApp
+              </Button>
+            </a>
+          </GlassPanel>
+        )}
+
         {/* Header */}
+
         <div className="mb-6">
           <h1 className="text-xl sm:text-2xl font-bold text-white">Welcome back, {businessName}!</h1>
           <p className="text-sm text-[#A1A1AA] mt-1">Here's how your review gateway is performing.</p>
