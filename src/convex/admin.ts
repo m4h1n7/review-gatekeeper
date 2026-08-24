@@ -2,7 +2,7 @@ import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
-const SUPER_ADMIN_EMAILS = ["mahinhosen870@gmail.com", "atazwar103@gmail.com"];
+const SUPER_ADMIN_EMAILS = ["mahinhosen870@gmail.com", "atazwar103@gmail.com", "starcatchbd@gmail.com"];
 const PRO_MONTHLY_PRICE_BDT = 1000;
 
 async function requireAdmin(ctx: any) {
@@ -167,6 +167,11 @@ export const allClients = query({
       const isExpired =
         sub?.expiresAt !== undefined && sub.expiresAt < Date.now();
 
+      // Calculate days remaining
+      const daysRemaining = sub?.expiresAt
+        ? Math.max(0, Math.ceil((sub.expiresAt - Date.now()) / (1000 * 60 * 60 * 24)))
+        : null;
+
       results.push({
         userId: user._id,
         name: user.name ?? "Unnamed",
@@ -175,6 +180,7 @@ export const allClients = query({
         businessCount: businesses.length,
         businessCategory: businesses[0]?.category ?? null,
         businessName: businesses[0]?.name ?? null,
+        businessSlug: businesses[0]?.slug ?? null,
         createdAt: businesses[0]?.createdAt ?? 0,
         subscription: sub
           ? {
@@ -183,6 +189,7 @@ export const allClients = query({
               expiresAt: sub.expiresAt,
               proExpiresAt: sub.proExpiresAt,
               createdAt: sub.createdAt,
+              daysRemaining,
             }
           : null,
         totalInteractions,

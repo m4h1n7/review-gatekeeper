@@ -38,6 +38,7 @@ export const submit = mutation({
       gateway: args.gateway,
       senderPhone: args.senderPhone,
       trxId: args.trxId,
+      plan: args.plan ?? "pro",
       status: "pending",
       setupFee,
       submittedAt: Date.now(),
@@ -63,7 +64,7 @@ export const listPending = query({
       .order("desc")
       .collect();
 
-    // Enrich with subscription status
+    // Enrich with subscription status and user/business info
     const results = [];
     for (const p of payments) {
       const sub = await ctx.db
@@ -71,13 +72,22 @@ export const listPending = query({
         .withIndex("by_userId", (q) => q.eq("userId", p.userId))
         .first();
 
+      const ownerUser = (await ctx.db.get(p.userId as any)) as any;
+      const biz = (await ctx.db
+        .query("businesses")
+        .withIndex("by_userId", (q) => q.eq("userId", p.userId))
+        .first()) as any;
+
       results.push({
         id: p._id,
         userId: p.userId,
         clientEmail: p.clientEmail ?? "unknown",
+        clientName: ownerUser?.name ?? "—",
+        businessName: biz?.name ?? null,
         gateway: p.gateway,
         senderPhone: p.senderPhone ?? "—",
         trxId: p.trxId ?? "—",
+        setupFee: p.setupFee ?? null,
         status: p.status,
         submittedAt: p.submittedAt,
         selectedPlan: (p as any).plan ?? "pro",
@@ -174,13 +184,23 @@ export const approve = mutation({
       });
     }
 
-    return { ok: true };
+    // Return client email + plan for frontend to trigger approval email
+    const ownerUser = (await ctx.db.get(payment.userId as any)) as any;
+    return {
+      ok: true,
+      clientEmail: paymentData.clientEmail ?? ownerUser?.email ?? "",
+      plan: selectedPlan,
+      clientName: ownerUser?.name ?? "",
+    };
   },
 });
 
-/** Admin only: reject a payment */
+/** Admin only: reject a payment with an optional reason */
 export const reject = mutation({
-  args: { paymentId: v.string() },
+  args: {
+    paymentId: v.string(),
+    reason: v.optional(v.string()),
+  },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
@@ -199,9 +219,17 @@ export const reject = mutation({
 
     await ctx.db.patch(payment._id, {
       status: "rejected",
+      rejectionReason: args.reason,
       reviewedAt: Date.now(),
     });
 
-    return { ok: true };
+    // Return client email + plan for frontend to trigger rejection email
+    const paymentData = paymentDoc as any;
+    const ownerUser = (await ctx.db.get(paymentData.userId as any)) as any;
+    return {
+      ok: true,
+      clientEmail: paymentData.clientEmail ?? ownerUser?.email ?? "",
+      plan: paymentData.plan ?? "pro",
+    };
   },
 });

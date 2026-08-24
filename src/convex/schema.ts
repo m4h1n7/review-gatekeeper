@@ -89,7 +89,9 @@ const schema = defineSchema(
       senderPhone: v.optional(v.string()),
       trxId: v.optional(v.string()),
       status: v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected")),
+      plan: v.optional(v.union(v.literal("starter"), v.literal("pro"))),
       setupFee: v.optional(v.number()),
+      rejectionReason: v.optional(v.string()),
       submittedAt: v.number(),
       reviewedAt: v.optional(v.number()),
     })

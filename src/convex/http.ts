@@ -121,4 +121,90 @@ http.route({
   }),
 });
 
+/**
+ * POST /api/send-approval-email
+ * Sends an approval notification email to the client after payment is approved.
+ */
+http.route({
+  path: "/api/send-approval-email",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    try {
+      const body = (await request.json()) as {
+        to?: string;
+        plan?: string;
+        clientName?: string;
+      };
+
+      if (!body.to) {
+        return new Response(
+          JSON.stringify({ ok: false, error: "Missing recipient email" }),
+          { status: 400, headers: { "Content-Type": "application/json" } },
+        );
+      }
+
+      const result = await ctx.runAction(api.email.sendPaymentApproved, {
+        to: body.to,
+        plan: body.plan || "pro",
+        clientName: body.clientName,
+      });
+
+      return new Response(JSON.stringify(result), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (error) {
+      console.error("Approval email error:", error);
+      return new Response(
+        JSON.stringify({ ok: false, error: error instanceof Error ? error.message : String(error) }),
+        { status: 500, headers: { "Content-Type": "application/json" } },
+      );
+    }
+  }),
+});
+
+/**
+ * POST /api/send-rejection-email
+ * Sends a rejection notification email to the client after payment is rejected.
+ */
+http.route({
+  path: "/api/send-rejection-email",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    try {
+      const body = (await request.json()) as {
+        to?: string;
+        plan?: string;
+        reason?: string;
+        clientName?: string;
+      };
+
+      if (!body.to) {
+        return new Response(
+          JSON.stringify({ ok: false, error: "Missing recipient email" }),
+          { status: 400, headers: { "Content-Type": "application/json" } },
+        );
+      }
+
+      const result = await ctx.runAction(api.email.sendPaymentRejected, {
+        to: body.to,
+        plan: body.plan,
+        reason: body.reason,
+        clientName: body.clientName,
+      });
+
+      return new Response(JSON.stringify(result), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (error) {
+      console.error("Rejection email error:", error);
+      return new Response(
+        JSON.stringify({ ok: false, error: error instanceof Error ? error.message : String(error) }),
+        { status: 500, headers: { "Content-Type": "application/json" } },
+      );
+    }
+  }),
+});
+
 export default http;

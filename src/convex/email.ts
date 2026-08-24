@@ -109,6 +109,108 @@ export const sendNegativeFeedback = action({
   },
 });
 
+export const sendPaymentApproved = action({
+  args: {
+    to: v.string(),
+    plan: v.string(),
+    clientName: v.optional(v.string()),
+  },
+  handler: async (_ctx, args) => {
+    const transporter = await getTransporter();
+    const planLabel = args.plan === "starter" ? "Starter Plan" : "Business Pro Plan";
+    const dashboardUrl = `https://${process.env.CONVEX_SITE_URL?.replace(/^https?:\/\//, "") || "starcatch.reviews"}/dashboard`;
+
+    await transporter.sendMail({
+      from: `"STAR CATCH" <${process.env.EMAIL_USER}>`,
+      to: args.to,
+      subject: `\u2705 Your Payment Has Been Approved — Welcome to ${planLabel}!`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /></head>
+        <body style="margin:0;padding:0;background:#f4f4f5;font-family:'Segoe UI',Tahoma,sans-serif;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:40px 0;">
+            <tr><td align="center">
+              <table width="480" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+                <tr><td style="background:#16A34A;padding:28px 32px;text-align:center;">
+                  <h1 style="margin:0;color:#fff;font-size:18px;font-weight:700;">\u2705 Payment Approved!</h1>
+                  <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:12px;">Welcome to STAR CATCH ${planLabel}</p>
+                </td></tr>
+                <tr><td style="padding:32px;">
+                  <p style="margin:0 0 20px;color:#3f3f46;font-size:14px;line-height:1.6;">Hi ${args.clientName || "there"},</p>
+                  <p style="margin:0 0 20px;color:#3f3f46;font-size:14px;line-height:1.6;">Great news! Your payment has been verified and approved. Your <strong>${planLabel}</strong> subscription is now active for <strong>30 days</strong>.</p>
+                  <p style="margin:0 0 24px;color:#3f3f46;font-size:14px;line-height:1.6;">You now have full access to your dashboard, analytics, QR code generator, and all ${planLabel} features.</p>
+                  <a href="${dashboardUrl}" style="display:inline-block;background:#16A34A;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;text-align:center;width:100%;box-sizing:border-box;">Go to Dashboard</a>
+                </td></tr>
+                <tr><td style="background:#fafafa;border-top:1px solid #e4e4e7;padding:20px 32px;text-align:center;">
+                  <p style="margin:0;color:#d4d4d8;font-size:10px;">STAR CATCH Reviews &amp; Feedback Agency Bd</p>
+                </td></tr>
+              </table>
+            </td></tr>
+          </table>
+        </body>
+        </html>
+      `,
+      text: `Hi ${args.clientName || "there"},\n\nYour payment has been approved! Your ${planLabel} subscription is now active for 30 days.\n\nGo to Dashboard: ${dashboardUrl}\n\nSTAR CATCH Reviews & Feedback Agency Bd`,
+    });
+    return { ok: true };
+  },
+});
+
+export const sendPaymentRejected = action({
+  args: {
+    to: v.string(),
+    plan: v.optional(v.string()),
+    reason: v.optional(v.string()),
+    clientName: v.optional(v.string()),
+  },
+  handler: async (_ctx, args) => {
+    const transporter = await getTransporter();
+    const planLabel = args.plan === "starter" ? "Starter Plan" : args.plan === "pro" ? "Business Pro Plan" : "your plan";
+    const reasonText = args.reason || "No reason provided.";
+    const supportUrl = `https://wa.me/8801673903919?text=${encodeURIComponent("Hi Star Catch team, I need help with my payment.")}`;
+
+    await transporter.sendMail({
+      from: `"STAR CATCH" <${process.env.EMAIL_USER}>`,
+      to: args.to,
+      subject: `\u274c Payment Update — Action Required`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /></head>
+        <body style="margin:0;padding:0;background:#f4f4f5;font-family:'Segoe UI',Tahoma,sans-serif;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:40px 0;">
+            <tr><td align="center">
+              <table width="480" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+                <tr><td style="background:#DC2626;padding:28px 32px;text-align:center;">
+                  <h1 style="margin:0;color:#fff;font-size:18px;font-weight:700;">\u274c Payment Not Verified</h1>
+                  <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:12px;">Your ${planLabel} submission needs attention</p>
+                </td></tr>
+                <tr><td style="padding:32px;">
+                  <p style="margin:0 0 20px;color:#3f3f46;font-size:14px;line-height:1.6;">Hi ${args.clientName || "there"},</p>
+                  <p style="margin:0 0 20px;color:#3f3f46;font-size:14px;line-height:1.6;">We were unable to verify your payment for <strong>${planLabel}</strong>. Please review the reason below and resubmit.</p>
+                  <div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:10px;padding:16px 20px;margin-bottom:24px;">
+                    <p style="margin:0 0 4px;color:#991B1B;font-size:11px;text-transform:uppercase;font-weight:600;letter-spacing:0.5px;">Reason</p>
+                    <p style="margin:0;color:#DC2626;font-size:14px;line-height:1.5;">${reasonText}</p>
+                  </div>
+                  <p style="margin:0 0 24px;color:#3f3f46;font-size:14px;line-height:1.6;">Please ensure your Transaction ID and sender phone number are correct, then try again.</p>
+                  <a href="${supportUrl}" style="display:inline-block;background:#16A34A;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;text-align:center;width:100%;box-sizing:border-box;">Contact Support on WhatsApp</a>
+                </td></tr>
+                <tr><td style="background:#fafafa;border-top:1px solid #e4e4e7;padding:20px 32px;text-align:center;">
+                  <p style="margin:0;color:#d4d4d8;font-size:10px;">STAR CATCH Reviews &amp; Feedback Agency Bd</p>
+                </td></tr>
+              </table>
+            </td></tr>
+          </table>
+        </body>
+        </html>
+      `,
+      text: `Hi ${args.clientName || "there"},\n\nYour payment for ${planLabel} was not verified.\nReason: ${reasonText}\n\nPlease resubmit with correct details or contact support.\nWhatsApp: https://wa.me/8801673903919\n\nSTAR CATCH Reviews & Feedback Agency Bd`,
+    });
+    return { ok: true };
+  },
+});
+
 export const sendOtp = action({
   args: {
     to: v.string(),
