@@ -308,10 +308,72 @@ export const sendOtp = action({
           </table>
         </body>
         </html>
-      `,
-      text: `Your ${name} verification code is: ${args.otp}\n\nThis code expires in 15 minutes.\nIf you did not request this code, you can safely ignore this email.`,
+      `,        text: `Your ${name} verification code is: ${args.otp}\n\nThis code expires in 15 minutes.\nIf you did not request this code, you can safely ignore this email.`,
     });
 
     return { ok: true };
+  },
+});
+
+// ─── Integration test helpers (run via: bun convex run email:testSmtpConnection)
+
+export const testSmtpConnection = action({
+  args: {},
+  handler: async () => {
+    const transporter = await getTransporter();
+    try {
+      await transporter.verify();
+      return { ok: true, message: "SMTP connection verified successfully" };
+    } catch (err) {
+      return {
+        ok: false,
+        message: err instanceof Error ? err.message : String(err),
+      };
+    }
+  },
+});
+
+export const sendTestEmail = action({
+  args: {},
+  handler: async () => {
+    const transporter = await getTransporter();
+    try {
+      const info = await transporter.sendMail({
+        from: `"STAR CATCH Integration Test" <${process.env.EMAIL_USER}>`,
+        to: "starcatchbd@gmail.com",
+        subject: "\u2705 STAR CATCH Integration Test — Nodemailer Working",
+        html: `
+          <!DOCTYPE html>
+          <html>
+          <head><meta charset="utf-8" /></head>
+          <body style="margin:0;padding:0;background:#f4f4f5;font-family:'Segoe UI',Tahoma,sans-serif;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:40px 0;">
+              <tr><td align="center">
+                <table width="400" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+                  <tr><td style="background:#16A34A;padding:24px 28px;text-align:center;">
+                    <h1 style="margin:0;color:#fff;font-size:18px;font-weight:700;">\u2705 Integration Test Passed</h1>
+                  </td></tr>
+                  <tr><td style="padding:28px;">
+                    <p style="margin:0 0 16px;color:#3f3f46;font-size:14px;line-height:1.6;">Nodemailer SMTP connection and email sending are working correctly.</p>
+                    <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:14px;">
+                      <p style="margin:0;color:#166534;font-size:13px;">\u2714 SMTP host: smtp.gmail.com:465 (SSL)<br/>\u2714 Sender: ${process.env.EMAIL_USER}<br/>\u2714 Recipient: starcatchbd@gmail.com</p>
+                    </div>
+                    <p style="margin:16px 0 0;color:#94a3b8;font-size:11px;text-align:center;">Sent at ${new Date().toISOString()}</p>
+                  </td></tr>
+                </table>
+              </td></tr>
+            </table>
+          </body>
+          </html>
+        `,
+        text: `STAR CATCH Integration Test Passed\n\nNodemailer SMTP connection verified.\nHost: smtp.gmail.com:465\nSender: ${process.env.EMAIL_USER}\nSent at: ${new Date().toISOString()}`,
+      });
+      return { ok: true, messageId: info.messageId, accepted: info.accepted };
+    } catch (err) {
+      return {
+        ok: false,
+        message: err instanceof Error ? err.message : String(err),
+      };
+    }
   },
 });
