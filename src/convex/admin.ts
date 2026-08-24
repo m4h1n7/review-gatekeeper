@@ -397,15 +397,31 @@ export const permanentDelete = mutation({
   },
 });
 
-/** Admin: get all active announcements */
+/** Announcements query — role-aware access control.
+ * Super admins see ALL announcements (active + inactive).
+ * Non-admin users see ONLY active/published announcements.
+ */
 export const getAnnouncements = query({
   args: {},
   handler: async (ctx) => {
-    const all = await ctx.db
+    const userId = await getAuthUserId(ctx);
+    let isAdmin = false;
+    if (userId) {
+      const user = await ctx.db.get(userId);
+      isAdmin = SUPER_ADMIN_EMAILS.includes(user?.email?.toLowerCase() ?? "") || (user as any)?.role === "admin";
+    }
+
+    let announcements = await ctx.db
       .query("announcements")
       .order("desc")
       .collect();
-    return all.map((a) => ({
+
+    // Non-admin users can only see active announcements
+    if (!isAdmin) {
+      announcements = announcements.filter((a) => a.active);
+    }
+
+    return announcements.map((a) => ({
       id: a._id,
       title: a.title,
       message: a.message,
