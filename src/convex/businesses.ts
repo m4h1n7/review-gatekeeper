@@ -154,7 +154,30 @@ export const getBySlug = query({
       heroUrl: business.heroUrl,
       promoEnabled: business.promoEnabled ?? false,
       promoText: business.promoText ?? "",
+      thankYouMessage: business.thankYouMessage ?? "",
     };
+  },
+});
+
+/** Update thank-you message for 4-5 star redirects */
+export const updateThankYou = mutation({
+  args: {
+    businessId: v.string(),
+    thankYouMessage: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Must be signed in");
+
+    const business = await ctx.db.get(args.businessId as any);
+    if (!business) throw new Error("Business not found");
+    if ((business as any).userId !== userId) throw new Error("Unauthorized");
+
+    await ctx.db.patch(args.businessId as any, {
+      thankYouMessage: args.thankYouMessage,
+    });
+
+    return { ok: true };
   },
 });
 

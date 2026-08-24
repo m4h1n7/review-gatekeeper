@@ -113,6 +113,8 @@ export default function Dashboard() {
   const overview = useQuery(api.analytics.dashboardOverview, { filter });
   const trend = useQuery(api.analytics.ratingTrend, { days: chartDays });
   const isExpired = subscription?.plan === "pro" && subscription?.status === "active" && subscription?.expiresAt !== undefined && subscription.expiresAt < Date.now();
+  const daysRemaining = subscription?.expiresAt ? Math.ceil((subscription.expiresAt - Date.now()) / (24 * 60 * 60 * 1000)) : null;
+  const showExpiryWarning = subscription?.status === "active" && daysRemaining !== null && daysRemaining <= 3 && daysRemaining > 0;
   const [showPaywall, setShowPaywall] = useState(subscription?.status === "pending" || isExpired);
   const stats = useQuery(api.analytics.businessStats, selectedBusinessId ? { businessId: selectedBusinessId, filter } : "skip");
   const feedbacks = useQuery(api.analytics.recentFeedbacks, selectedBusinessId ? { businessId: selectedBusinessId, limit: 20 } : "skip");
@@ -212,6 +214,30 @@ export default function Dashboard() {
               className="bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 cursor-pointer text-xs font-semibold"
             >
               View Status
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Subscription Expiry Warning Banner */}
+      {showExpiryWarning && (
+        <div className="bg-red-500/10 border-b border-red-500/20">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />
+              <div>
+                <p className="text-sm font-semibold text-red-300">⚠️ Your subscription expires in {daysRemaining} day{daysRemaining !== 1 ? 's' : ''}</p>
+                <p className="text-xs text-red-300/70">
+                  Please clear your renewal fee to keep service active.
+                </p>
+              </div>
+            </div>
+            <Button
+              size="sm"
+              onClick={() => navigate("/pricing")}
+              className="bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30 cursor-pointer text-xs font-semibold"
+            >
+              Renew Now
             </Button>
           </div>
         </div>
@@ -383,6 +409,45 @@ export default function Dashboard() {
               <StatCard icon={<TrendingUp className="w-5 h-5 text-[#16A34A]" />} label="Conversion Rate"
                 value={`${conversionRate}%`} sub="Positive review rate" color="bg-[#16A34A]/10" />
             </div>
+
+            {/* Funnel Conversion Metrics */}
+            <GlassPanel className="p-5 mb-6">
+              <h3 className="text-sm font-semibold text-white mb-4">Tap → Conversion Funnel</h3>
+              <div className="flex flex-col sm:flex-row items-stretch gap-0">
+                {/* Step 1: Total Scans */}
+                <div className="flex-1 p-4 rounded-xl bg-white/[0.03] border border-white/5 text-center relative">
+                  <p className="text-[10px] text-[#A1A1AA] uppercase tracking-wider mb-1">Total Scans</p>
+                  <p className="text-2xl font-extrabold text-white">{displayStats?.totalVisits ?? 0}</p>
+                  <p className="text-[10px] text-[#A1A1AA]/60 mt-1">NFC / QR / Link taps</p>
+                  {/* Arrow */}
+                  <div className="hidden sm:flex absolute -right-3 top-1/2 -translate-y-1/2 z-10 w-6 h-6 rounded-full bg-[#18181B] border border-white/10 items-center justify-center">
+                    <span className="text-[#A1A1AA] text-xs">→</span>
+                  </div>
+                </div>
+                {/* Step 2: Google Redirects */}
+                <div className="flex-1 p-4 rounded-xl bg-[#16A34A]/[0.04] border border-[#16A34A]/15 text-center relative">
+                  <p className="text-[10px] text-[#16A34A]/80 uppercase tracking-wider mb-1">Google Reviews</p>
+                  <p className="text-2xl font-extrabold text-[#16A34A]">{displayStats?.redirectCount ?? 0}</p>
+                  <p className="text-[10px] text-[#16A34A]/60 mt-1">{displayStats?.redirectPercentage ?? 0}% of scans</p>
+                  <div className="hidden sm:flex absolute -right-3 top-1/2 -translate-y-1/2 z-10 w-6 h-6 rounded-full bg-[#18181B] border border-white/10 items-center justify-center">
+                    <span className="text-[#A1A1AA] text-xs">→</span>
+                  </div>
+                </div>
+                {/* Step 3: Private Feedback */}
+                <div className="flex-1 p-4 rounded-xl bg-amber-500/[0.04] border border-amber-500/15 text-center">
+                  <p className="text-[10px] text-amber-400/80 uppercase tracking-wider mb-1">Private Feedback</p>
+                  <p className="text-2xl font-extrabold text-amber-400">{displayStats?.feedbackCount ?? 0}</p>
+                  <p className="text-[10px] text-amber-400/60 mt-1">{displayStats?.feedbackPercentage ?? 0}% of scans</p>
+                </div>
+              </div>
+              {/* Conversion rate callout */}
+              <div className="mt-4 flex items-center justify-center gap-2 p-3 rounded-lg bg-[#16A34A]/[0.06] border border-[#16A34A]/15">
+                <TrendingUp className="w-4 h-4 text-[#16A34A]" />
+                <p className="text-xs text-[#A1A1AA]">
+                  Positive conversion rate: <span className="text-[#16A34A] font-bold">{conversionRate}%</span> of all scans redirected to Google Reviews
+                </p>
+              </div>
+            </GlassPanel>
 
             {/* Chart */}
             <GlassPanel className="p-6 mb-6 relative overflow-hidden">

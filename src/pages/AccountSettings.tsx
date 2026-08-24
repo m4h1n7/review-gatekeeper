@@ -80,14 +80,38 @@ export default function AccountSettings() {
   const [promoSaved, setPromoSaved] = useState(false);
   const [promoLoading, setPromoLoading] = useState(false);
 
-  // Sync promo state from business data
+  // Thank-you message settings state
+  const [thankYouMessage, setThankYouMessage] = useState("");
+  const [thankYouSaved, setThankYouSaved] = useState(false);
+  const [thankYouLoading, setThankYouLoading] = useState(false);
+  const updateThankYou = useMutation(api.businesses.updateThankYou);
+  const isPro = subscription?.plan === "pro" && subscription?.status === "active";
+
+  // Sync promo & thankYou state from business data
   useEffect(() => {
     if (businesses && businesses.length > 0) {
       const biz = businesses[0] as any;
       setPromoEnabled(biz.promoEnabled ?? false);
       setPromoText(biz.promoText ?? "");
+      setThankYouMessage(biz.thankYouMessage ?? "");
     }
   }, [businesses]);
+
+  const handleSaveThankYou = async () => {
+    if (!businesses || businesses.length === 0) return;
+    setThankYouLoading(true);
+    try {
+      await updateThankYou({
+        businessId: (businesses[0] as any).id,
+        thankYouMessage: thankYouMessage.trim(),
+      });
+      setThankYouSaved(true);
+      setTimeout(() => setThankYouSaved(false), 3000);
+    } catch (err) {
+      console.error("Failed to save thank-you message:", err);
+    }
+    setThankYouLoading(false);
+  };
 
   // Password change state
   const [newPassword, setNewPassword] = useState("");
@@ -559,6 +583,84 @@ export default function AccountSettings() {
                   className="w-full h-10 bg-amber-500/80 hover:bg-amber-500 text-white font-semibold cursor-pointer"
                 >
                   {promoLoading ? "Saving..." : "Save Reward Settings"}
+                </Button>
+              </div>
+            </GlassPanel>
+          </motion.div>
+        )}
+
+        {/* ─── Thank-You Message Settings (Pro Feature) ─── */}
+        {businesses && businesses.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.4 }}
+            className="mt-6"
+          >
+            <GlassPanel className={`p-6 relative overflow-hidden ${!isPro ? 'opacity-70' : ''}`}>
+              {!isPro && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#0D0D0D]/70 backdrop-blur-[1px]">
+                  <div className="text-center px-4">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#16A34A]/15 border border-[#16A34A]/25 text-[#16A34A] text-xs font-semibold mb-2">
+                      <Sparkles className="w-3 h-3 fill-[#16A34A]" /> PRO FEATURE
+                    </div>
+                    <p className="text-xs text-[#A1A1AA] mb-3">Upgrade to Business Pro to set a custom thank-you message before Google redirect</p>
+                    <Button onClick={() => navigate("/pricing")} size="sm"
+                      className="bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-semibold cursor-pointer">
+                      Upgrade Now
+                    </Button>
+                  </div>
+                </div>
+              )}
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-9 h-9 rounded-xl bg-[#16A34A]/10 flex items-center justify-center">
+                  <Gift className="w-5 h-5 text-[#16A34A]" />
+                </div>
+                <div>
+                  <h2 className="text-base font-semibold text-white">Custom Thank-You Message</h2>
+                  <p className="text-xs text-[#A1A1AA]">Show a custom message before redirecting to Google (4-5 stars)</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-[#A1A1AA] mb-1.5">
+                    Thank-You Message
+                  </label>
+                  <Input
+                    value={thankYouMessage}
+                    onChange={(e) => setThankYouMessage(e.target.value)}
+                    placeholder="e.g., Thank you! Show this screen for 10% off your next visit"
+                    className="h-11 bg-white/5 border-white/10 text-white placeholder:text-[#A1A1AA]/40 focus:border-[#16A34A] focus:ring-[#16A34A]/20"
+                  />
+                  <p className="text-[10px] text-[#A1A1AA]/50 mt-1.5">
+                    When a customer taps 4-5 stars, this message appears briefly before redirecting them to your Google Review page.
+                  </p>
+                </div>
+
+                {/* Preview */}
+                <div className="p-4 rounded-xl bg-[#16A34A]/[0.04] border border-[#16A34A]/15">
+                  <p className="text-[10px] font-semibold text-[#16A34A] uppercase tracking-wider mb-2">Preview — Customer View</p>
+                  <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                    <p className="text-sm text-amber-300/90 leading-relaxed">
+                      {thankYouMessage || "Your thank-you message will appear here..."}
+                    </p>
+                  </div>
+                </div>
+
+                {thankYouSaved && (
+                  <div className="flex items-center gap-2 text-sm text-[#16A34A]">
+                    <CheckCircle2 className="w-4 h-4" />
+                    Thank-you message saved!
+                  </div>
+                )}
+
+                <Button
+                  onClick={handleSaveThankYou}
+                  disabled={thankYouLoading || !isPro}
+                  className="w-full h-10 bg-[#16A34A] hover:bg-[#16A34A]/90 text-white font-semibold cursor-pointer"
+                >
+                  {thankYouLoading ? "Saving..." : "Save Thank-You Message"}
                 </Button>
               </div>
             </GlassPanel>

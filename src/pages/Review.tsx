@@ -278,9 +278,15 @@ export default function Review() {
             <CheckCircle2 className="w-16 h-16 text-[#16A34A] mx-auto mb-5" />
           </motion.div>
           <h2 className="text-2xl font-bold text-white mb-2">Thank you for your kind rating!</h2>
-          <p className="text-[#A1A1AA] text-sm mb-4">
-            We'd love it if you shared your experience on Google.
-          </p>
+          {business.thankYouMessage ? (
+            <div className="mb-4 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
+              <p className="text-sm text-amber-300/90 leading-relaxed">{business.thankYouMessage}</p>
+            </div>
+          ) : (
+            <p className="text-[#A1A1AA] text-sm mb-4">
+              We'd love it if you shared your experience on Google.
+            </p>
+          )}
           <div className="w-48 h-1.5 mx-auto rounded-full bg-white/10 overflow-hidden mb-4">
             <motion.div
               className="h-full bg-[#16A34A] rounded-full"
