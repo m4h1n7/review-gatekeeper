@@ -188,6 +188,30 @@ export default function Dashboard() {
         reason={isExpired ? "Your Pro subscription has expired. Renew via bKash or Nagad to regain full access." : "Complete your Pro subscription to unlock full dashboard access. Pay via bKash, Nagad, or card."}
       />
 
+      {/* Pending Approval Banner */}
+      {subscription?.status === "pending" && (
+        <div className="bg-amber-500/10 border-b border-amber-500/20">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+              <div>
+                <p className="text-sm font-semibold text-amber-300">Payment Under Review</p>
+                <p className="text-xs text-amber-300/70">
+                  Your payment is being verified by our team. Access will be unlocked shortly.
+                </p>
+              </div>
+            </div>
+            <Button
+              size="sm"
+              onClick={() => navigate("/pricing")}
+              className="bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 cursor-pointer text-xs font-semibold"
+            >
+              View Status
+            </Button>
+          </div>
+        </div>
+      )}
+
       <div className="fixed inset-0 -z-10">
         <div className="absolute inset-0 bg-[#0D0D0D]" />
         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#16A34A]/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />

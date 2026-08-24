@@ -15,6 +15,8 @@ import {
 } from "@/components/ui/input-otp";
 import { useAuth } from "@/hooks/use-auth";
 import { isSuperAdmin } from "@/components/SuperAdminGuard";
+import { useMutation, useQuery } from "convex/react";
+import { api } from "../convex/_generated/api";
 import {
   Loader2,
   Mail,
@@ -24,8 +26,9 @@ import {
   ArrowLeft,
   Eye,
   EyeOff,
+  ShieldCheck,
 } from "lucide-react";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 
 interface AuthProps {
@@ -88,12 +91,79 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [otp, setOtp] = useState("");
+  const [signupEmail, setSignupEmail] = useState<string | null>(null);
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [otpError, setOtpError] = useState<string | null>(null);
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpVerified, setOtpVerified] = useState(false);
+  const sendSignupOtpMutation = useMutation(api.users.sendSignupOtp);
+  const verifySignupOtpMutation = useMutation(api.users.verifySignupOtp);
+  const isEmailVerified = useQuery(api.users.isEmailVerified);
+
+  // Send OTP after signup
+  const handleSendSignupOtp = useCallback(async () => {
+    setOtpLoading(true);
+    setOtpError(null);
+    try {
+      const result = await sendSignupOtpMutation();
+      // Send the OTP email via the HTTP endpoint
+      const siteUrl = window.location.origin;
+      await fetch(`${siteUrl}/api/send-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: signupEmail || user?.email || "",
+          otp: result.otp,
+          appName: "STAR CATCH Reviews",
+        }),
+      });
+      setOtpSent(true);
+    } catch (err) {
+      setOtpError(err instanceof Error ? err.message : "Failed to send verification code.");
+    } finally {
+      setOtpLoading(false);
+    }
+  }, [sendSignupOtpMutation, signupEmail, user?.email]);
+
+  // Verify OTP after signup
+  const handleVerifySignupOtp = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+    setOtpLoading(true);
+    setOtpError(null);
+    try {
+      await verifySignupOtpMutation({ otp });
+      setOtpVerified(true);
+      // Navigate after a short delay for the success animation
+      setTimeout(() => {
+        navigate(isSuperAdmin(user?.email) ? "/admin" : redirect);
+      }, 800);
+    } catch (err) {
+      setOtpError(err instanceof Error ? err.message : "Invalid verification code.");
+      setOtp("");
+    } finally {
+      setOtpLoading(false);
+    }
+  }, [verifySignupOtpMutation, otp, navigate, user?.email, redirect]);
+
+  // Auto-send OTP after signup
+  useEffect(() => {
+    if (signupEmail && isAuthenticated && !otpSent && !otpVerified && isEmailVerified === false) {
+      handleSendSignupOtp();
+    }
+  }, [signupEmail, isAuthenticated, otpSent, otpVerified, isEmailVerified, handleSendSignupOtp]);
 
   useEffect(() => {
     if (!authLoading && isAuthenticated && user !== undefined) {
-      navigate(getRedirect(user?.email));
+      // If email is already verified or user is super admin, redirect immediately
+      if (isEmailVerified === true || isSuperAdmin(user?.email)) {
+        navigate(getRedirect(user?.email));
+      }
+      // If not verified yet and not in signup flow, redirect anyway (existing users)
+      else if (signupEmail === null && isEmailVerified === undefined) {
+        navigate(getRedirect(user?.email));
+      }
     }
-  }, [authLoading, isAuthenticated, user?.email, user, navigate, baseRedirect]);
+  }, [authLoading, isAuthenticated, user?.email, user, navigate, baseRedirect, isEmailVerified, signupEmail]);
 
   const currentView = typeof view === "string" ? view : "emailOtp";
   const otpEmail = typeof view === "object" && "email" in view ? view.email : null;
@@ -152,7 +222,14 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
         password,
         name,
       });
-      navigate(isSuperAdmin(email) ? "/admin" : redirect);
+      // Super admins skip OTP verification
+      if (isSuperAdmin(email)) {
+        navigate("/admin");
+      } else {
+        // Set signup email to trigger OTP flow
+        setSignupEmail(email);
+        setIsLoading(false);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create account. Please try again.");
       setIsLoading(false);
@@ -508,6 +585,88 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                   </p>
                 </CardFooter>
               </form>
+            </>
+          )}
+
+          {/* ─── SIGNUP OTP VERIFICATION ─── */}
+          {signupEmail && isAuthenticated && !otpVerified && isEmailVerified === false && (
+            <>
+              <CardHeader className="text-center pb-4">
+                <div className="flex justify-center">
+                  <div className="w-14 h-14 rounded-xl bg-[#16A34A]/15 flex items-center justify-center mb-2">
+                    <ShieldCheck className="w-7 h-7 text-[#16A34A]" />
+                  </div>
+                </div>
+                <CardTitle className="text-xl text-white">Verify Your Email</CardTitle>
+                <CardDescription className="text-[#A1A1AA]">
+                  We sent a 6-digit code to {signupEmail}
+                </CardDescription>
+              </CardHeader>
+              <form onSubmit={handleVerifySignupOtp}>
+                <CardContent className="space-y-4">
+                  <div className="flex justify-center">
+                    <InputOTP value={otp} onChange={setOtp} maxLength={6} disabled={otpLoading}>
+                      <InputOTPGroup>
+                        {Array.from({ length: 6 }).map((_, i) => (
+                          <InputOTPSlot key={i} index={i} className="border-white/10 bg-white/5 text-white" />
+                        ))}
+                      </InputOTPGroup>
+                    </InputOTP>
+                  </div>
+
+                  {otpError && <p className="text-sm text-red-400 text-center">{otpError}</p>}
+
+                  <Button
+                    type="submit"
+                    className="w-full h-11 bg-[#16A34A] hover:bg-[#15803D] text-white font-semibold cursor-pointer"
+                    disabled={otpLoading || otp.length !== 6}
+                  >
+                    {otpLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                    Verify & Continue
+                  </Button>
+
+                  {!otpSent ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={handleSendSignupOtp}
+                      disabled={otpLoading}
+                      className="w-full text-[#16A34A] hover:text-[#16A34A]/80 cursor-pointer"
+                    >
+                      {otpLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                      Resend Verification Code
+                    </Button>
+                  ) : (
+                    <p className="text-xs text-center text-[#A1A1AA]">
+                      Code sent! Check your inbox.
+                    </p>
+                  )}
+
+                  <p className="text-xs text-center text-[#A1A1AA]/60">
+                    Your account is active but needs email verification to access the dashboard.
+                  </p>
+                </CardContent>
+              </form>
+            </>
+          )}
+
+          {/* ─── OTP SUCCESS ─── */}
+          {otpVerified && (
+            <>
+              <CardHeader className="text-center pb-4">
+                <div className="flex justify-center">
+                  <div className="w-14 h-14 rounded-xl bg-[#16A34A]/15 flex items-center justify-center mb-2">
+                    <ShieldCheck className="w-7 h-7 text-[#16A34A]" />
+                  </div>
+                </div>
+                <CardTitle className="text-xl text-white">Email Verified!</CardTitle>
+                <CardDescription className="text-[#16A34A]">
+                  Redirecting you now...
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex justify-center pb-6">
+                <Loader2 className="h-8 w-8 animate-spin text-[#16A34A]" />
+              </CardContent>
             </>
           )}
 

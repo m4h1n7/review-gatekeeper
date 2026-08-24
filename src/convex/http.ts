@@ -62,4 +62,63 @@ http.route({
   }),
 });
 
+/**
+ * POST /api/send-neg-feedback
+ * Sends a negative feedback alert email to the business owner's email via Nodemailer.
+ * Called from the frontend when a customer submits 1-3 star feedback.
+ */
+http.route({
+  path: "/api/send-neg-feedback",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    try {
+      const body = (await request.json()) as {
+        to?: string;
+        businessName?: string;
+        businessSlug?: string;
+        customerName?: string;
+        customerPhone?: string;
+        customerEmail?: string;
+        rating?: number;
+        message?: string;
+      };
+
+      if (!body.to || !body.businessName || !body.customerName || body.rating === undefined) {
+        return new Response(
+          JSON.stringify({ ok: false, error: "Missing required fields" }),
+          { status: 400, headers: { "Content-Type": "application/json" } },
+        );
+      }
+
+      const result = await ctx.runAction(api.email.sendNegativeFeedback, {
+        to: body.to,
+        businessName: body.businessName,
+        businessSlug: body.businessSlug || "",
+        customerName: body.customerName,
+        customerPhone: body.customerPhone,
+        customerEmail: body.customerEmail,
+        rating: body.rating,
+        message: body.message || "No feedback provided.",
+      });
+
+      return new Response(JSON.stringify(result), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (error) {
+      console.error("Negative feedback email error:", error);
+      return new Response(
+        JSON.stringify({
+          ok: false,
+          error: error instanceof Error ? error.message : String(error),
+        }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    }
+  }),
+});
+
 export default http;

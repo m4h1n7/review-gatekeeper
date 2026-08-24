@@ -174,7 +174,10 @@ export default function Review() {
       sendEmail({
         alertEmail: business.alertEmail,
         businessName: business.name,
+        businessSlug: business.slug,
         customerName: form.name,
+        customerPhone: form.phone,
+        customerEmail: form.email,
         rating: selectedRating ?? 0,
         message: fullMessage,
       }).catch(() => {});

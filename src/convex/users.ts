@@ -135,3 +135,79 @@ export const hasCompletedOnboarding = query({
     return user.onboardingCompleted === true;
   },
 });
+
+/**
+ * Check if the current user's email has been verified via OTP.
+ */
+export const isEmailVerified = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return false;
+
+    const user = await ctx.db.get(userId);
+    if (!user) return false;
+
+    // Super admin emails are auto-verified
+    if (SUPER_ADMIN_EMAILS.includes(user.email?.toLowerCase() ?? "")) return true;
+
+    return user.emailVerified === true;
+  },
+});
+
+/**
+ * Generate and store a 6-digit OTP for email verification after signup.
+ * The actual email is sent via the HTTP endpoint /api/send-otp.
+ * This mutation stores the OTP on the user record for later verification.
+ */
+export const sendSignupOtp = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Must be signed in");
+
+    const user = await ctx.db.get(userId);
+    if (!user) throw new Error("User not found");
+
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiry = Date.now() + 15 * 60 * 1000; // 15 minutes
+
+    await ctx.db.patch(userId, {
+      signupOtp: otp,
+      signupOtpExpiry: expiry,
+    });
+
+    return { ok: true, otp };
+  },
+});
+
+/**
+ * Verify the signup OTP and mark the user's email as verified.
+ */
+export const verifySignupOtp = mutation({
+  args: { otp: v.string() },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Must be signed in");
+
+    const user = await ctx.db.get(userId);
+    if (!user) throw new Error("User not found");
+
+    if (user.signupOtp !== args.otp) {
+      throw new Error("Invalid verification code");
+    }
+
+    if (!user.signupOtpExpiry || user.signupOtpExpiry < Date.now()) {
+      throw new Error("Verification code has expired. Please request a new one.");
+    }
+
+    await ctx.db.patch(userId, {
+      emailVerified: true,
+      signupOtp: undefined,
+      signupOtpExpiry: undefined,
+    });
+
+    return { ok: true };
+  },
+});

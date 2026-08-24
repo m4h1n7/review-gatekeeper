@@ -31,6 +31,9 @@ const schema = defineSchema(
 
       role: v.optional(roleValidator), // role of the user. do not remove
       onboardingCompleted: v.optional(v.boolean()),
+      emailVerified: v.optional(v.boolean()), // whether the user verified their email via OTP
+      signupOtp: v.optional(v.string()), // 6-digit OTP for email verification
+      signupOtpExpiry: v.optional(v.number()), // OTP expiry timestamp
     }).index("email", ["email"]), // index for the email. do not remove or modify
 
     businesses: defineTable({
