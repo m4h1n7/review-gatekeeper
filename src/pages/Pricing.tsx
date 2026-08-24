@@ -143,7 +143,7 @@ export default function Pricing() {
 
               <div className="p-3 rounded-xl bg-white/[0.04] border border-white/[0.06] mb-5">
                 <p className="text-xs font-semibold text-zinc-400 mb-1">📦 Hardware</p>
-                <p className="text-xs text-zinc-500">১টি প্রিমিয়াম NFC QR কার্ড</p>
+                <p className="text-xs text-zinc-500">১টি প্রিমিয়াম স্মার্ট NFC কার্ড (উইথ QR কোড)</p>
               </div>
 
               <div className="space-y-3 mb-8 flex-1">
@@ -201,7 +201,7 @@ export default function Pricing() {
 
               <div className="p-3 rounded-xl bg-[#16A34A]/[0.06] border border-[#16A34A]/15 mb-5">
                 <p className="text-xs font-semibold text-[#16A34A] mb-1">📦 Hardware</p>
-                <p className="text-xs text-zinc-400">২টি প্রিমিয়াম NFC কার্ড + ১টি অ্যাক্রিলিক টেবিল স্ট্যান্ডি</p>
+                <p className="text-xs text-zinc-400">২টি প্রিমিয়াম স্মার্ট NFC কার্ড + ১টি অ্যাক্রিলিক টেবিল স্ট্যান্ডি</p>
               </div>
 
               <div className="space-y-3 mb-8 flex-1">
