@@ -37,10 +37,10 @@ export function RequireAuth({ children }: { children: ReactNode }) {
     return <Navigate to="/dashboard" replace />;
   }
 
-  // Check subscription expiry: if Pro but expired, redirect to pricing
+  // Check subscription expiry: if any active plan but expired, redirect to pricing
   const isExpired =
-    subscription?.plan === "pro" &&
     subscription?.status === "active" &&
+    (subscription?.plan === "pro" || subscription?.plan === "starter" || subscription?.plan === "trial") &&
     subscription?.expiresAt !== undefined &&
     subscription.expiresAt < Date.now();
 

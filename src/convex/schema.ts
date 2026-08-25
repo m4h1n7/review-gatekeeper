@@ -36,6 +36,7 @@ const schema = defineSchema(
       emailVerified: v.optional(v.boolean()), // whether the user verified their email via OTP
       signupOtp: v.optional(v.string()), // 6-digit OTP for email verification
       signupOtpExpiry: v.optional(v.number()), // OTP expiry timestamp
+      hasUsedTrial: v.optional(v.boolean()), // tracks if this email has ever claimed a free trial
     }).index("email", ["email"]), // index for the email. do not remove or modify
 
     businesses: defineTable({
@@ -114,7 +115,7 @@ const schema = defineSchema(
     // Subscription plans: pending payment or active pro
     subscriptions: defineTable({
       userId: v.string(),
-      plan: v.union(v.literal("free"), v.literal("starter"), v.literal("pro")),
+      plan: v.union(v.literal("free"), v.literal("trial"), v.literal("starter"), v.literal("pro")),
       status: v.union(v.literal("active"), v.literal("pending"), v.literal("cancelled")),
       createdAt: v.number(),
       expiresAt: v.optional(v.number()),

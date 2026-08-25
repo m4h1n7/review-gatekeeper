@@ -489,7 +489,7 @@ export default function Admin() {
       const matchesSearch = !q || c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q)
         || (c.businessName && c.businessName.toLowerCase().includes(q));
       const sub = c.subscription;
-      const isPro = sub?.plan === "pro" && sub?.status === "active";
+      const isPro = (sub?.plan === "pro" || sub?.plan === "trial") && sub?.status === "active";
       const isExpired = sub?.status === "expired";
       const isPending = sub?.status === "pending";
       const isStarter = sub?.plan === "starter" && sub?.status === "active";
@@ -940,7 +940,7 @@ export default function Admin() {
                   <tbody className="divide-y divide-white/5">
                     {filteredClients.map((client: any) => {
                       const sub = client.subscription;
-                      const isPro = sub?.plan === "pro" && sub?.status === "active";
+                      const isPro = (sub?.plan === "pro" || sub?.plan === "trial") && sub?.status === "active";
                       const isStarter = sub?.plan === "starter" && sub?.status === "active";
                       const isExpired = sub?.status === "expired";
                       const isPending = sub?.status === "pending";

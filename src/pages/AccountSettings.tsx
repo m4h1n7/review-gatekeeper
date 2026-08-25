@@ -87,7 +87,7 @@ export default function AccountSettings() {
   const [thankYouSaved, setThankYouSaved] = useState(false);
   const [thankYouLoading, setThankYouLoading] = useState(false);
   const updateThankYou = useMutation(api.businesses.updateThankYou);
-  const isPro = subscription?.plan === "pro" && subscription?.status === "active";
+  const isPro = (subscription?.plan === "pro" || subscription?.plan === "trial") && subscription?.status === "active";
 
   // Sync promo & thankYou state from business data
   useEffect(() => {
@@ -237,7 +237,7 @@ export default function AccountSettings() {
     setStaffLoading(false);
   };
 
-  const planLabel = subscription?.plan === "pro" && subscription?.status === "active" ? "Business Pro" : subscription?.plan === "starter" && subscription?.status === "active" ? "Starter" : subscription?.status === "pending" ? "Pending Payment" : "Business Pro";
+  const planLabel = subscription?.plan === "trial" && subscription?.status === "active" ? "Free Trial" : subscription?.plan === "pro" && subscription?.status === "active" ? "Business Pro" : subscription?.plan === "starter" && subscription?.status === "active" ? "Starter" : subscription?.status === "pending" ? "Pending Payment" : "Business Pro";
   const planColor = subscription?.plan === "pro" && subscription?.status === "active" ? "text-[#16A34A]" : subscription?.status === "pending" ? "text-amber-400" : "text-[#16A34A]";
 
   const passwordButtonText = hasPassword === undefined
@@ -488,7 +488,7 @@ export default function AccountSettings() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 rounded-xl bg-white/[0.03] border border-white/5">
               <div className="flex items-center gap-4">
                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                  subscription?.plan === "pro" && subscription?.status === "active"
+                  isPro
                     ? "bg-[#16A34A]/15"
                     : subscription?.status === "pending"
                       ? "bg-amber-500/10"
@@ -499,8 +499,8 @@ export default function AccountSettings() {
                 <div>
                   <p className="text-sm font-semibold text-white">{planLabel} Plan</p>
                   <p className="text-xs text-[#A1A1AA] mt-0.5">
-                    {subscription?.plan === "pro" && subscription?.status === "active"
-                      ? `Active · Expires ${subscription.proExpiresAt ? new Date(subscription.proExpiresAt).toLocaleDateString() : subscription.expiresAt ? new Date(subscription.expiresAt).toLocaleDateString() : "—"}`
+                    {isPro
+                      ? `Active · Expires ${subscription?.proExpiresAt ? new Date(subscription.proExpiresAt).toLocaleDateString() : subscription?.expiresAt ? new Date(subscription.expiresAt).toLocaleDateString() : "—"}`
                       : subscription?.status === "pending"
                         ? "Complete payment to unlock full access"
                         : "Subscribe to unlock all features"}
@@ -513,7 +513,7 @@ export default function AccountSettings() {
                 size="sm"
                 className="border-[#16A34A]/30 bg-[#16A34A]/10 hover:bg-[#16A34A]/20 text-[#16A34A] cursor-pointer font-semibold"
               >
-                {subscription?.plan === "pro" && subscription?.status === "active" ? "Manage Plan" : "Choose Plan"}
+                {isPro ? "Manage Plan" : "Choose Plan"}
               </Button>
             </div>
           </GlassPanel>

@@ -108,11 +108,12 @@ export default function Dashboard() {
   const subscription = useQuery(api.subscriptions.getCurrent);
   const accountStatus = useQuery(api.users.getAccountStatus);
   const announcement = useQuery(api.users.getActiveAnnouncement);
-  const isPro = subscription?.plan === "pro" && subscription?.status === "active";
+  const isPro = (subscription?.plan === "pro" || subscription?.plan === "trial") && subscription?.status === "active";
   const isStarter = subscription?.plan === "starter" && subscription?.status === "active";
+  const isTrial = subscription?.plan === "trial" && subscription?.status === "active";
   const overview = useQuery(api.analytics.dashboardOverview, { filter });
   const trend = useQuery(api.analytics.ratingTrend, { days: chartDays });
-  const isExpired = subscription?.plan === "pro" && subscription?.status === "active" && subscription?.expiresAt !== undefined && subscription.expiresAt < Date.now();
+  const isExpired = (subscription?.plan === "pro" || subscription?.plan === "trial") && subscription?.status === "active" && subscription?.expiresAt !== undefined && subscription.expiresAt < Date.now();
   const daysRemaining = subscription?.expiresAt ? Math.ceil((subscription.expiresAt - Date.now()) / (24 * 60 * 60 * 1000)) : null;
   const showExpiryWarning = subscription?.status === "active" && daysRemaining !== null && daysRemaining <= 3 && daysRemaining > 0;
   const [showPaywall, setShowPaywall] = useState(subscription?.status === "pending" || isExpired);
@@ -182,7 +183,7 @@ export default function Dashboard() {
   // ROI calculation: blocked negative reviews x ৳750 estimated customer lifetime value
   const CUSTOMER_LTV = 750;
   const savedRevenue = (displayStats?.feedbackCount ?? 0) * CUSTOMER_LTV;
-  const subscriptionCost = subscription?.plan === "pro" ? 2499 : subscription?.plan === "starter" ? 1499 : 0;
+  const subscriptionCost = subscription?.plan === "trial" ? 0 : subscription?.plan === "pro" ? 2499 : subscription?.plan === "starter" ? 1499 : 0;
   const roiMultiple = subscriptionCost > 0 ? Math.round(savedRevenue / subscriptionCost) : 0;
 
   const unresolvedCount = feedbacks?.filter((fb) => (fb as any).status === "unresolved").length ?? 0;
