@@ -290,10 +290,10 @@ export default function Dashboard() {
             </div>
             <span className="font-bold text-sm text-white tracking-wide">STAR CATCH</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 overflow-x-auto flex-nowrap">
             {isSuperAdmin(user?.email) && (
               <Button variant="outline" size="sm" onClick={() => navigate("/admin")}
-                className="border-[#16A34A]/30 bg-[#16A34A]/10 hover:bg-[#16A34A]/20 text-[#16A34A] cursor-pointer font-semibold text-xs">
+                className="border-[#16A34A]/30 bg-[#16A34A]/10 hover:bg-[#16A34A]/20 text-[#16A34A] cursor-pointer font-semibold text-xs whitespace-nowrap">
                 <Shield className="w-3.5 h-3.5 mr-1" /> Super Admin Portal
               </Button>
             )}
@@ -336,7 +336,7 @@ export default function Dashboard() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 p-1 rounded-xl bg-white/[0.03] border border-white/5 mb-6 w-fit">
+        <div className="flex gap-1 p-1 rounded-xl bg-white/[0.03] border border-white/5 mb-6 w-fit overflow-x-auto flex-nowrap">
           {tabs.map((tab) => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer ${
@@ -356,7 +356,7 @@ export default function Dashboard() {
 
         {/* Filter (Overview only) */}
         {activeTab === "overview" && (
-          <div className="flex flex-wrap items-center gap-2 mb-6">
+          <div className="flex flex-wrap items-center gap-2 mb-6 overflow-x-auto flex-nowrap">
             <Calendar className="w-4 h-4 text-[#A1A1AA] mr-1" />
             {FILTER_OPTIONS.map((opt) => (
               <button key={opt.value}
@@ -756,25 +756,25 @@ export default function Dashboard() {
               </div>
               <span className="text-xs text-[#A1A1AA]">STAR CATCH Reviews and Feedback Agency Bd</span>
             </div>
-            <div className="flex items-center gap-4 text-xs text-[#A1A1AA]/60">
-              <button onClick={() => navigate("/terms")} className="hover:text-white transition-colors cursor-pointer">Terms of Service</button>
+            <div className="flex items-center gap-3 sm:gap-4 text-xs text-[#A1A1AA]/60 overflow-x-auto flex-nowrap">
+              <button onClick={() => navigate("/terms")} className="hover:text-white transition-colors cursor-pointer whitespace-nowrap">Terms of Service</button>
               <span className="text-[#A1A1AA]/20">·</span>
-              <button onClick={() => navigate("/privacy")} className="hover:text-white transition-colors cursor-pointer">Privacy Policy</button>
+              <button onClick={() => navigate("/privacy")} className="hover:text-white transition-colors cursor-pointer whitespace-nowrap">Privacy Policy</button>
               <span className="text-[#A1A1AA]/20">·</span>
-              <button onClick={() => navigate("/refund-policy")} className="hover:text-white transition-colors cursor-pointer">Refund Policy</button>
+              <button onClick={() => navigate("/refund-policy")} className="hover:text-white transition-colors cursor-pointer whitespace-nowrap">Refund Policy</button>
             </div>
           </div>
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-white/5">
-            <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-[10px] text-[#A1A1AA]/40">
-              <a href="mailto:starcatchbd@gmail.com" className="hover:text-white transition-colors">starcatchbd@gmail.com</a>
+          <div className="flex items-center justify-between gap-3 pt-3 border-t border-white/5">
+            <div className="flex items-center gap-2 sm:gap-4 text-[10px] text-[#A1A1AA]/40 overflow-x-auto flex-nowrap">
+              <a href="mailto:starcatchbd@gmail.com" className="hover:text-white transition-colors whitespace-nowrap">starcatchbd@gmail.com</a>
               <span className="text-[#A1A1AA]/10">·</span>
-              <span>Mahin Hossain (Founder)</span>
-              <a href="tel:+8801791130633" className="hover:text-white transition-colors">+880 1791-130633</a>
-              <a href="mailto:mahinhosen870@gmail.com" className="hover:text-white transition-colors">mahinhosen870@gmail.com</a>
+              <span className="whitespace-nowrap">Mahin Hossain (Founder)</span>
+              <a href="tel:+8801791130633" className="hover:text-white transition-colors whitespace-nowrap">+880 1791-130633</a>
+              <a href="mailto:mahinhosen870@gmail.com" className="hover:text-white transition-colors whitespace-nowrap">mahinhosen870@gmail.com</a>
               <span className="text-[#A1A1AA]/10">|</span>
-              <span>Ahnaf Tajwar Alif (Co-Founder)</span>
-              <a href="tel:+8801673903919" className="hover:text-white transition-colors">+880 1673-903919</a>
-              <a href="mailto:atazwar103@gmail.com" className="hover:text-white transition-colors">atazwar103@gmail.com</a>
+              <span className="whitespace-nowrap">Ahnaf Tajwar Alif (Co-Founder)</span>
+              <a href="tel:+8801673903919" className="hover:text-white transition-colors whitespace-nowrap">+880 1673-903919</a>
+              <a href="mailto:atazwar103@gmail.com" className="hover:text-white transition-colors whitespace-nowrap">atazwar103@gmail.com</a>
             </div>
             <a
               href={`https://wa.me/8801673903919?text=${encodeURIComponent("Hi STAR CATCH team, I need help with my review dashboard")}`}

@@ -536,13 +536,13 @@ export default function Admin() {
             </div>
             <span className="font-bold text-sm text-white tracking-wide">STAR CATCH</span>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#16A34A]/10 border border-[#16A34A]/20">
+          <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto flex-nowrap">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#16A34A]/10 border border-[#16A34A]/20 whitespace-nowrap">
               <Shield className="w-3.5 h-3.5 text-[#16A34A]" />
               <span className="text-xs font-semibold text-[#16A34A]">Super Admin Portal</span>
             </div>
             <Button variant="outline" size="sm" onClick={() => navigate("/dashboard")}
-              className="border-white/10 bg-white/5 hover:bg-white/10 text-[#A1A1AA] cursor-pointer text-xs">Dashboard</Button>
+              className="border-white/10 bg-white/5 hover:bg-white/10 text-[#A1A1AA] cursor-pointer text-xs whitespace-nowrap">Dashboard</Button>
             <Button variant="outline" size="sm" onClick={handleSignOut}
               className="border-white/10 bg-white/5 hover:bg-white/10 text-[#A1A1AA] cursor-pointer text-xs">
               <LogOut className="w-3.5 h-3.5" />
@@ -566,7 +566,7 @@ export default function Admin() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 p-1 rounded-xl bg-white/[0.03] border border-white/5 mb-6 w-fit overflow-x-auto">
+        <div className="flex gap-1 p-1 rounded-xl bg-white/[0.03] border border-white/5 mb-6 overflow-x-auto flex-nowrap">
           {tabs.map((tab) => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer whitespace-nowrap ${
@@ -892,17 +892,17 @@ export default function Admin() {
                   <UserPlus className="w-3.5 h-3.5 mr-1.5" /> Create New Client
                 </Button>
               </div>
-              <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A1A1AA]/40" />
                   <input type="text" placeholder="Search by name, email, or business..."
                     value={clientSearch} onChange={(e) => setClientSearch(e.target.value)}
                     className="w-full bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-2.5 text-sm text-white placeholder-[#A1A1AA]/40 focus:outline-none focus:border-[#16A34A]/50" />
                 </div>
-                <div className="flex items-center gap-2">
-                  <Filter className="w-4 h-4 text-[#A1A1AA]/40" />
+                <div className="flex items-center gap-2 overflow-x-auto flex-nowrap">
+                  <Filter className="w-4 h-4 text-[#A1A1AA]/40 shrink-0" />
                   <select value={clientPlanFilter} onChange={(e) => setClientPlanFilter(e.target.value as any)}
-                    className="bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#16A34A]/50 cursor-pointer">
+                    className="bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#16A34A]/50 cursor-pointer whitespace-nowrap">
                     <option value="all">All Plans</option>
                     <option value="active">Active Pro</option>
                     <option value="pending">Pending</option>
