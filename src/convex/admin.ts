@@ -4,7 +4,7 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 
 const SUPER_ADMIN_EMAILS = ["mahinhosen870@gmail.com", "atazwar103@gmail.com", "starcatchbd@gmail.com"];
 const PRO_MONTHLY_PRICE_BDT = 1000;
-const MASTER_PIN = "STAR2026";
+const MASTER_PIN = process.env.MASTER_PIN || "333877";
 
 async function requireAdmin(ctx: any) {
   const userId = await getAuthUserId(ctx);
