@@ -27,8 +27,8 @@ import {
 import { QRCodeSVG } from "qrcode.react";
 
 const DEMO_BUSINESS = {
-  name: "Cafforia Cafe",
-  slug: "cafforia-cafe",
+  name: "Sample Business",
+  slug: "sample-business",
 };
 
 const DEMO_FEEDBACKS = [
@@ -119,7 +119,7 @@ export default function DemoDashboard() {
   };
 
   const copyReplyTemplate = (customerName: string) => {
-    const template = `Dear ${customerName},\n\nThank you for sharing your feedback with us. We sincerely apologize for the inconvenience you experienced. Your input is invaluable, and we are actively working to improve.\n\nWe would love the opportunity to make things right. Please feel free to reach out to us directly so we can assist you further.\n\nWarm regards,\nCafforia Cafe`;
+    const template = `Dear ${customerName},\n\nThank you for sharing your feedback with us. We sincerely apologize for the inconvenience you experienced. Your input is invaluable, and we are actively working to improve.\n\nWe would love the opportunity to make things right. Please feel free to reach out to us directly so we can assist you further.\n\nWarm regards,\n${DEMO_BUSINESS.name}`;
     navigator.clipboard.writeText(template);
     setCopiedTemplate(true);
     setTimeout(() => setCopiedTemplate(false), 2000);

@@ -135,7 +135,7 @@ export default function Onboarding() {
                     <Input
                       value={businessName}
                       onChange={(e) => setBusinessName(e.target.value)}
-                      placeholder="e.g., Cafforia BD"
+                      placeholder="e.g., Your Business Name"
                       className="h-11 bg-white/5 border-white/10 text-white placeholder:text-[#A1A1AA]/50 focus:border-[#16A34A] focus:ring-[#16A34A]/20"
                     />
                   </div>
