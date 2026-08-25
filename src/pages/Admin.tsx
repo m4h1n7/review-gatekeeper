@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
@@ -44,6 +43,7 @@ import {
   AlertTriangle,
   Lock,
   FileDown,
+  Bell,
 } from "lucide-react";
 import { useNavigate } from "react-router";
 
@@ -1420,19 +1420,19 @@ export default function Admin() {
             </div>
             <div className="mb-4">
               <label className="text-xs font-medium text-red-400 mb-2 block">
-                Type <code className="bg-red-500/10 px-1.5 py-0.5 rounded text-red-300 font-mono">DELETE-{(archiveTarget.businessName || archiveTarget.name).toUpperCase()}</code> to confirm:
+                Type <code className="bg-red-500/10 px-1.5 py-0.5 rounded text-red-300 font-mono">DELETE-{(archiveTarget.name).toUpperCase()}</code> to confirm:
               </label>
               <input type="text" value={archiveConfirmText}
                 onChange={(e) => setArchiveConfirmText(e.target.value)}
-                placeholder={`DELETE-${(archiveTarget.businessName || archiveTarget.name).toUpperCase()}`}
+                placeholder={`DELETE-${(archiveTarget.name).toUpperCase()}`}
                 className="w-full bg-white/5 border border-red-500/30 rounded-lg px-3 py-2.5 text-sm text-white placeholder-[#A1A1AA]/30 focus:outline-none focus:border-red-500 font-mono" autoFocus />
             </div>
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => { setArchiveModalOpen(false); setArchiveTarget(null); setArchiveConfirmText(""); }}
                 className="flex-1 border-white/10 text-[#A1A1AA] hover:bg-white/5 cursor-pointer">Cancel</Button>
               <Button onClick={handleArchive}
-                disabled={archiveConfirmText !== `DELETE-${(archiveTarget.businessName || archiveTarget.name).toUpperCase()}`}
-                className={`flex-1 font-semibold cursor-pointer transition-all ${archiveConfirmText === `DELETE-${(archiveTarget.businessName || archiveTarget.name).toUpperCase()}` ? "bg-red-600 hover:bg-red-700 text-white" : "bg-red-500/20 text-red-400/40 cursor-not-allowed"}`}>
+                disabled={archiveConfirmText !== `DELETE-${(archiveTarget.name).toUpperCase()}`}
+                className={`flex-1 font-semibold cursor-pointer transition-all ${archiveConfirmText === `DELETE-${(archiveTarget.name).toUpperCase()}` ? "bg-red-600 hover:bg-red-700 text-white" : "bg-red-500/20 text-red-400/40 cursor-not-allowed"}`}>
                 <Trash2 className="w-4 h-4 mr-1.5" /> Archive Account
               </Button>
             </div>
