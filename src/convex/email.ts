@@ -333,6 +333,93 @@ export const testSmtpConnection = action({
   },
 });
 
+export const sendTrialReminder = action({
+  args: {
+    to: v.string(),
+    businessName: v.string(),
+    daysRemaining: v.number(),
+    totalScans: v.number(),
+    totalRedirects: v.number(),
+    totalFeedbacks: v.number(),
+    reviewSlug: v.string(),
+  },
+  handler: async (_ctx, args) => {
+    const transporter = await getTransporter();
+    const isUrgent = args.daysRemaining <= 2;
+    const headerColor = isUrgent ? "#DC2626" : "#F59E0B";
+    const headerIcon = isUrgent ? "\u26a0\ufe0f" : "\u23f3";
+    const headerTitle = isUrgent
+      ? "Your Free Trial Expires Tomorrow!"
+      : `Your Free Trial Has ${args.daysRemaining} Days Left`;
+    const siteBase = process.env.CONVEX_SITE_URL?.replace(/^https?:\/\//, "") || "starcatch.reviews";
+    const dashboardUrl = `https://${siteBase}/dashboard`;
+    const pricingUrl = `https://${siteBase}/pricing`;
+
+    await transporter.sendMail({
+      from: `"STAR CATCH" <${process.env.EMAIL_USER}>`,
+      to: args.to,
+      subject: `${headerIcon} ${headerTitle} — Upgrade to Keep Your Reviews Flowing`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /></head>
+        <body style="margin:0;padding:0;background:#f4f4f5;font-family:'Segoe UI',Tahoma,sans-serif;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:40px 0;">
+            <tr><td align="center">
+              <table width="480" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+                <tr><td style="background:${headerColor};padding:28px 32px;text-align:center;">
+                  <h1 style="margin:0;color:#fff;font-size:18px;font-weight:700;">${headerIcon} ${headerTitle}</h1>
+                  <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:12px;">${args.businessName} — Free Trial Summary</p>
+                </td></tr>
+                <tr><td style="padding:32px;">
+                  <p style="margin:0 0 20px;color:#3f3f46;font-size:14px;line-height:1.6;">Here's how your review gateway performed during your free trial:</p>
+
+                  <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:10px;padding:16px 20px;margin-bottom:16px;">
+                    <p style="margin:0 0 8px;color:#166534;font-size:11px;text-transform:uppercase;font-weight:600;letter-spacing:0.5px;">Trial Performance Summary</p>
+                    <table width="100%" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td style="padding:6px 0;color:#334155;font-size:13px;">Total Customer Taps</td>
+                        <td style="padding:6px 0;color:#0f172a;font-size:13px;font-weight:700;text-align:right;">${args.totalScans}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:6px 0;color:#334155;font-size:13px;">Google Reviews Redirected (4-5 \u2605)</td>
+                        <td style="padding:6px 0;color:#16A34A;font-size:13px;font-weight:700;text-align:right;">${args.totalRedirects}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:6px 0;color:#334155;font-size:13px;">Private Feedback Captured (1-3 \u2605)</td>
+                        <td style="padding:6px 0;color:#F59E0B;font-size:13px;font-weight:700;text-align:right;">${args.totalFeedbacks}</td>
+                      </tr>
+                    </table>
+                  </div>
+
+                  ${args.totalScans > 0 ? `
+                  <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:14px;margin-bottom:20px;">
+                    <p style="margin:0;color:#1E40AF;font-size:13px;line-height:1.5;">\ud83d\udca1 Your positive conversion rate: <strong>${Math.round((args.totalRedirects / args.totalScans) * 100)}%</strong> of all scans redirected to Google Reviews. Imagine how many more positive reviews you'll collect with an active subscription!</p>
+                  </div>
+                  ` : ""}
+
+                  <p style="margin:0 0 20px;color:#3f3f46;font-size:14px;line-height:1.6;">To continue receiving reviews and protecting your Google rating, upgrade to a paid plan today:</p>
+
+                  <a href="${pricingUrl}" style="display:inline-block;background:#16A34A;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;text-align:center;width:100%;box-sizing:border-box;">Upgrade Now \u2014 Choose Your Plan</a>
+
+                  <p style="margin:16px 0 0;color:#94a3b8;font-size:11px;text-align:center;line-height:1.5;">Plans start from \u09f31,499/month. No setup fees for trial-to-paid upgrades.</p>
+                </td></tr>
+                <tr><td style="background:#f8fafc;padding:20px 32px;border-top:1px solid #e2e8f0;text-align:center;">
+                  <p style="margin:0;color:#94a3b8;font-size:11px;">STAR CATCH Reviews and Feedback Agency Bd</p>
+                  <p style="margin:4px 0 0;color:#cbd5e1;font-size:10px;">\u00a9 ${new Date().getFullYear()} All rights reserved</p>
+                </td></tr>
+              </table>
+            </td></tr>
+          </table>
+        </body>
+        </html>
+      `,
+      text: `${headerTitle}\n\nBusiness: ${args.businessName}\nTotal Taps: ${args.totalScans}\nGoogle Redirects: ${args.totalRedirects}\nPrivate Feedback: ${args.totalFeedbacks}\n\nUpgrade now: ${pricingUrl}`,
+    });
+    return { ok: true };
+  },
+});
+
 export const sendTestEmail = action({
   args: {},
   handler: async () => {

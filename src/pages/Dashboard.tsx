@@ -5,6 +5,8 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { PrintableQR } from "@/components/PrintableQR";
 import { PaywallModal } from "@/components/PaywallModal";
+import { TrialExpiredModal } from "@/components/TrialExpiredModal";
+import { MonthlyReport } from "@/components/MonthlyReport";
 import { isSuperAdmin } from "@/components/SuperAdminGuard";
 import { motion } from "framer-motion";
 import {
@@ -117,6 +119,7 @@ export default function Dashboard() {
   const daysRemaining = subscription?.expiresAt ? Math.ceil((subscription.expiresAt - Date.now()) / (24 * 60 * 60 * 1000)) : null;
   const showExpiryWarning = subscription?.status === "active" && daysRemaining !== null && daysRemaining <= 3 && daysRemaining > 0;
   const [showPaywall, setShowPaywall] = useState(subscription?.status === "pending" || isExpired);
+  const [showTrialExpired, setShowTrialExpired] = useState(isTrial && isExpired);
   const stats = useQuery(api.analytics.businessStats, selectedBusinessId ? { businessId: selectedBusinessId, filter } : "skip");
   const feedbacks = useQuery(api.analytics.recentFeedbacks, selectedBusinessId ? { businessId: selectedBusinessId, limit: 20 } : "skip");
 
@@ -201,6 +204,15 @@ export default function Dashboard() {
         onClose={() => setShowPaywall(false)}
         reason={isExpired ? "Your Pro subscription has expired. Renew via bKash or Nagad to regain full access." : "Complete your Pro subscription to unlock full dashboard access. Pay via bKash, Nagad, or card."}
       />
+
+      {/* Trial Expired Payment Modal */}
+      {isTrial && (
+        <TrialExpiredModal
+          open={showTrialExpired}
+          onClose={() => setShowTrialExpired(false)}
+          onSuccess={() => setShowTrialExpired(false)}
+        />
+      )}
 
       {/* Pending Approval Banner */}
       {subscription?.status === "pending" && (
@@ -550,6 +562,43 @@ export default function Dashboard() {
                   <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
                   <span className="text-xs text-[#A1A1AA]">Private Feedback ({displayStats?.feedbackPercentage ?? 0}%)</span>
                 </div>
+              </div>
+            </GlassPanel>
+
+            {/* Monthly Report Export */}
+            <GlassPanel className="p-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-semibold text-white">Monthly Performance Report</h3>
+                  <p className="text-xs text-[#A1A1AA] mt-0.5">Export a detailed PDF summary with feedback breakdown</p>
+                </div>
+                <MonthlyReport
+                  data={{
+                    businessName,
+                    totalScans: displayStats?.totalVisits ?? 0,
+                    totalRedirects: displayStats?.redirectCount ?? 0,
+                    totalFeedbacks: displayStats?.feedbackCount ?? 0,
+                    conversionRate,
+                    feedbacks: feedbacks?.map((fb) => ({
+                      customerName: fb.customerName,
+                      rating: fb.rating,
+                      message: fb.message,
+                      createdAt: fb.createdAt,
+                      status: (fb as any).status ?? "unresolved",
+                    })) ?? [],
+                    starDistribution: (() => {
+                      const dist: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+                      feedbacks?.forEach((fb) => {
+                        dist[fb.rating] = (dist[fb.rating] || 0) + 1;
+                      });
+                      // Also count redirects as 5-star
+                      dist[5] += displayStats?.redirectCount ?? 0;
+                      return dist;
+                    })(),
+                  }}
+                  isPro={!!isPro}
+                  filterLabel={FILTER_OPTIONS.find((f) => f.value === filter)?.label ?? "All Time"}
+                />
               </div>
             </GlassPanel>
           </>

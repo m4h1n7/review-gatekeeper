@@ -282,6 +282,7 @@ export default function Admin() {
   const createClient = useMutation(api.admin.createClient);
   const suspendClient = useMutation(api.admin.suspendClient);
   const activateClient = useMutation(api.admin.activateClient);
+  const sendTrialReminders = useMutation(api.trialReminders.sendTrialReminders);
   const archiveClient = useMutation(api.admin.archiveClient);
   const restoreClient = useMutation(api.admin.restoreClient);
   const createAnnouncement = useMutation(api.admin.createAnnouncement);
@@ -603,6 +604,27 @@ export default function Admin() {
               <KpiCard icon={<Activity className="w-5 h-5 text-[#16A34A]" />} label="Reviews Routed"
                 value={kpis?.totalReviewsRouted ?? "—"} sub="All time" color="bg-[#16A34A]/10" />
             </div>
+
+            {/* Trial Reminder Actions */}
+            <GlassPanel className="p-5 mb-8">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-white">Free Trial Reminders</h3>
+                  <p className="text-xs text-[#A1A1AA] mt-0.5">Send Day 8 & Day 10 upgrade reminder emails to trial accounts</p>
+                </div>
+                <Button size="sm" onClick={async () => {
+                  try {
+                    await sendTrialReminders();
+                    toast.success("Trial reminders sent!");
+                  } catch (e: unknown) {
+                    toast.error(e instanceof Error ? e.message : "Failed to send reminders");
+                  }
+                }}
+                  className="bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 border border-amber-500/30 cursor-pointer text-xs font-semibold whitespace-nowrap">
+                  <Bell className="w-3.5 h-3.5 mr-1.5" /> Send Trial Reminders
+                </Button>
+              </div>
+            </GlassPanel>
 
             <GlassPanel className="p-6 mb-8">
               <div className="flex items-center justify-between mb-4">
