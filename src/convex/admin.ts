@@ -185,6 +185,7 @@ export const allClients = query({
         email: user.email ?? "No email",
         accountStatus: (user as any).accountStatus ?? "active",
         archivedAt: (user as any).archivedAt ?? null,
+        hasUsedTrial: user.hasUsedTrial === true,
         onboardingCompleted: user.onboardingCompleted ?? false,
         businessCount: businesses.length,
         businessCategory: businesses[0]?.category ?? null,

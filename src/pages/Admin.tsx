@@ -156,7 +156,7 @@ export default function Admin() {
 
   // Client search & filter
   const [clientSearch, setClientSearch] = useState("");
-  const [clientPlanFilter, setClientPlanFilter] = useState<"all" | "active" | "pending" | "expired">("all");
+  const [clientPlanFilter, setClientPlanFilter] = useState<"all" | "active" | "pending" | "expired" | "inactive" | "trial_active" | "trial_expired" | "paid">("all");
 
   // Reject modal
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
@@ -495,8 +495,13 @@ export default function Admin() {
       const isStarter = sub?.plan === "starter" && sub?.status === "active";
       const isActiveClient = c.lastScanAt && c.lastScanAt > Date.now() - 7 * 24 * 60 * 60 * 1000;
       const isInactive = (isPro || isStarter) && !isActiveClient && c.totalInteractions === 0;
+      const isTrialActive = sub?.plan === "trial" && sub?.status === "active";
+      const isTrialExpired = sub?.plan === "trial" && isExpired;
       const matchesPlan = clientPlanFilter === "all"
         || (clientPlanFilter === "active" && isPro)
+        || (clientPlanFilter === "trial_active" && isTrialActive)
+        || (clientPlanFilter === "trial_expired" && isTrialExpired)
+        || (clientPlanFilter === "paid" && (sub?.plan === "pro" || sub?.plan === "starter") && sub?.status === "active")
         || (clientPlanFilter === "pending" && isPending)
         || (clientPlanFilter === "expired" && isExpired)
         || (clientPlanFilter === "inactive" && isInactive);
@@ -904,7 +909,10 @@ export default function Admin() {
                   <select value={clientPlanFilter} onChange={(e) => setClientPlanFilter(e.target.value as any)}
                     className="bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#16A34A]/50 cursor-pointer whitespace-nowrap">
                     <option value="all">All Plans</option>
-                    <option value="active">Active Pro</option>
+                    <option value="active">All Active</option>
+                    <option value="paid">Paid Clients Only</option>
+                    <option value="trial_active">🎉 Active Trials</option>
+                    <option value="trial_expired">⏰ Expired Trials</option>
                     <option value="pending">Pending</option>
                     <option value="expired">Expired</option>
                     <option value="inactive">⚠️ Inactive (7d+)</option>
@@ -940,11 +948,15 @@ export default function Admin() {
                   <tbody className="divide-y divide-white/5">
                     {filteredClients.map((client: any) => {
                       const sub = client.subscription;
-                      const isPro = (sub?.plan === "pro" || sub?.plan === "trial") && sub?.status === "active";
+                      const isTrial = sub?.plan === "trial" && sub?.status === "active";
+                      const isPro = (sub?.plan === "pro" || isTrial) && sub?.status === "active";
+                      const isPaidPro = sub?.plan === "pro" && sub?.status === "active";
                       const isStarter = sub?.plan === "starter" && sub?.status === "active";
                       const isExpired = sub?.status === "expired";
                       const isPending = sub?.status === "pending";
                       const daysLeft = sub?.daysRemaining;
+                      const trialDaysElapsed = isTrial && sub?.createdAt ? Math.floor((Date.now() - sub.createdAt) / (1000 * 60 * 60 * 24)) : null;
+                      const trialExpiredDaysAgo = (isExpired && sub?.plan === "trial" && sub?.expiresAt) ? Math.ceil((Date.now() - sub.expiresAt) / (1000 * 60 * 60 * 24)) : null;
 
                       const isActiveClient = client.lastScanAt && client.lastScanAt > Date.now() - 7 * 24 * 60 * 60 * 1000;
                       const isInactive = (isPro || isStarter) && !isActiveClient && client.totalInteractions === 0;
@@ -965,26 +977,50 @@ export default function Admin() {
                           </td>
                           <td className="px-5 py-4">
                             <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-                              isPro ? "bg-[#16A34A]/15 text-[#16A34A]"
+                              isTrial ? "bg-purple-500/15 text-purple-400"
+                              : isPaidPro ? "bg-[#16A34A]/15 text-[#16A34A]"
                               : isStarter ? "bg-blue-500/15 text-blue-400"
+                              : isExpired && sub?.plan === "trial" ? "bg-red-500/15 text-red-400"
                               : isExpired ? "bg-red-500/15 text-red-400"
                               : isPending ? "bg-amber-500/15 text-amber-400"
                               : "bg-white/5 text-[#A1A1AA]"
                             }`}>
-                              {isPro ? "★ Pro" : isStarter ? "Starter" : isExpired ? "Expired" : isPending ? "Pending" : "Free"}
+                              {isTrial ? "🎉 Free Trial"
+                              : isPaidPro ? "★ Pro"
+                              : isStarter ? "Starter"
+                              : isExpired && sub?.plan === "trial" ? "Trial Expired"
+                              : isExpired ? "Expired"
+                              : isPending ? "Pending"
+                              : "Free"}
                             </span>
+                            {isTrial && trialDaysElapsed !== null && (
+                              <span className="block text-[10px] text-purple-300/70 mt-1">
+                                Day {trialDaysElapsed + 1} of 10
+                              </span>
+                            )}
+                            {(isExpired && sub?.plan === "trial" && trialExpiredDaysAgo !== null) && (
+                              <span className="block text-[10px] text-red-400/70 mt-1">
+                                Expired {trialExpiredDaysAgo}d ago
+                              </span>
+                            )}
                           </td>
                           <td className="px-5 py-4 hidden lg:table-cell">
                             {(isPro || isStarter) ? (
                               <div className="flex items-center gap-1.5">
                                 <CalendarPlus className={`w-3.5 h-3.5 ${
-                                  daysLeft !== null && daysLeft !== undefined && daysLeft <= 7 ? "text-red-400" : "text-[#A1A1AA]/60"
+                                  daysLeft !== null && daysLeft !== undefined && ((isTrial && daysLeft <= 2) || (!isTrial && daysLeft <= 7)) ? "text-red-400"
+                                  : isTrial && daysLeft !== null && daysLeft !== undefined && daysLeft <= 5 ? "text-amber-400"
+                                  : "text-[#A1A1AA]/60"
                                 }`} />
                                 <span className={`text-xs ${
-                                  daysLeft !== null && daysLeft !== undefined && daysLeft <= 7 ? "text-red-400 font-semibold" : "text-[#A1A1AA]"
+                                  daysLeft !== null && daysLeft !== undefined && ((isTrial && daysLeft <= 2) || (!isTrial && daysLeft <= 7)) ? "text-red-400 font-semibold"
+                                  : isTrial && daysLeft !== null && daysLeft !== undefined && daysLeft <= 5 ? "text-amber-400 font-semibold"
+                                  : "text-[#A1A1AA]"
                                 }`}>
                                   {daysLeft !== null && daysLeft !== undefined
-                                    ? daysLeft === 0 ? "Expires today" : `${daysLeft}d left`
+                                    ? daysLeft === 0 ? "Expires today"
+                                    : isTrial ? `${daysLeft}d left`
+                                    : `${daysLeft}d left`
                                     : "—"}
                                 </span>
                               </div>
