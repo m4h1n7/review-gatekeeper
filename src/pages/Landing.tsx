@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/use-auth";
 import { isSuperAdmin } from "@/components/SuperAdminGuard";
+import { PricingCards } from "@/components/PricingCards";
 import {
   Star,
   Shield,
@@ -462,100 +463,8 @@ export default function Landing() {
             <p className="mt-3 text-[#A1A1AA] text-base max-w-lg mx-auto">One-time setup fee + monthly subscription. Pay via bKash or Nagad.</p>
           </motion.div>
 
-          <div className="grid sm:grid-cols-2 gap-6 sm:gap-8 max-w-3xl mx-auto">
-            {/* Starter Plan */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 0.5 }}
-            >
-              <div className="rounded-3xl border border-white/[0.1] bg-white/[0.04] backdrop-blur-2xl p-8 h-full flex flex-col relative overflow-hidden">
-                <h3 className="text-lg font-bold text-white mb-1">Starter Plan</h3>
-                <p className="text-sm text-[#A1A1AA] mb-1">ছোট ক্যাফে / দোকান</p>
-                <div className="mt-4 mb-1">
-                  <span className="text-xs text-zinc-500 line-through">Setup Fee</span>
-                </div>
-                <div className="mb-1">
-                  <span className="text-3xl font-extrabold text-white">৳১,৪৯৯</span>
-                  <span className="text-xs text-zinc-500 ml-1">one-time</span>
-                </div>
-                <div className="mb-1">
-                  <span className="text-xs text-zinc-500 line-through">Monthly</span>
-                </div>
-                <div className="mb-4">
-                  <span className="text-3xl font-extrabold text-white">৳১,৪৯৯</span>
-                  <span className="text-sm text-[#A1A1AA] ml-1">/month</span>
-                </div>
-                <div className="p-3 rounded-xl bg-white/[0.04] border border-white/[0.06] mb-5">
-                  <p className="text-xs font-semibold text-[#16A34A] mb-1">📦 Hardware Included</p>
-                  <p className="text-xs text-zinc-400">১টি প্রিমিয়াম স্মার্ট NFC কার্ড (উইথ QR কোড)</p>
-                </div>
-                <ul className="space-y-2.5 mb-8 flex-1">
-                  {["প্রাইভেট ফিডব্যাক ফিল্টার (১-৩ স্টার ব্লক)", "গ্যাপ রিয়েল-টাইম চার্ট", "বেসিক ড্যাশবোর্ড"].map((f) => (
-                    <li key={f} className="flex items-start gap-2 text-sm text-[#A1A1AA]">
-                      <CheckCircle2 className="w-4 h-4 text-zinc-500 shrink-0 mt-0.5" />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                <Button
-                  onClick={() => navigate(isAuthenticated ? "/pricing" : "/auth")}
-                  className="w-full h-11 bg-white/10 hover:bg-white/15 text-white font-semibold cursor-pointer border border-white/10"
-                >
-                  Get Started
-                </Button>
-              </div>
-            </motion.div>
-
-            {/* Business Pro Plan */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-            >
-              <div className="rounded-3xl border border-[#16A34A]/30 bg-white/[0.04] backdrop-blur-2xl p-8 h-full flex flex-col relative overflow-hidden ring-1 ring-[#16A34A]/20">
-                <div className="absolute top-0 right-0 px-3 py-1 bg-[#16A34A] text-white text-[10px] font-bold uppercase tracking-wider rounded-bl-lg">
-                  ★ Most Popular
-                </div>
-                <h3 className="text-lg font-bold text-white mb-1">Business Pro Plan</h3>
-                <p className="text-sm text-[#A1A1AA] mb-1">জনপ্রিয় রেস্তোরাঁ / সেলুন</p>
-                <div className="mt-4 mb-1">
-                  <span className="text-xs text-zinc-500 line-through">Setup Fee</span>
-                </div>
-                <div className="mb-1">
-                  <span className="text-3xl font-extrabold text-white">৳১,৬৯৯</span>
-                  <span className="text-xs text-zinc-500 ml-1">one-time</span>
-                </div>
-                <div className="mb-1">
-                  <span className="text-xs text-zinc-500 line-through">Monthly</span>
-                </div>
-                <div className="mb-4">
-                  <span className="text-3xl font-extrabold text-white">৳২,৪৯৯</span>
-                  <span className="text-sm text-[#A1A1AA] ml-1">/month</span>
-                </div>
-                <div className="p-3 rounded-xl bg-[#16A34A]/[0.06] border border-[#16A34A]/15 mb-5">
-                  <p className="text-xs font-semibold text-[#16A34A] mb-1">📦 Hardware Included</p>
-                  <p className="text-xs text-zinc-400">২টি প্রিমিয়াম স্মার্ট NFC কার্ড + ১টি অ্যাক্রিলিক টেবিল স্ট্যান্ডি</p>
-                </div>
-                <ul className="space-y-2.5 mb-8 flex-1">
-                  {["ডায়নামিক পারফরম্যান্স লাইন চার্ট", "হোয়াটসঅ্যাপ মেসেজ জেনারেটর", "কাস্টম কাস্টমার অফার ব্যানার", "প্রাইওরিটি সাপোর্ট"].map((f) => (
-                    <li key={f} className="flex items-start gap-2 text-sm text-[#A1A1AA]">
-                      <CheckCircle2 className="w-4 h-4 text-[#16A34A] shrink-0 mt-0.5" />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                <Button
-                  onClick={() => navigate(isAuthenticated ? "/pricing" : "/auth")}
-                  className="w-full h-11 bg-[#16A34A] hover:bg-[#15803D] text-white font-semibold cursor-pointer shadow-lg shadow-[#16A34A]/25"
-                >
-                  <Zap className="w-4 h-4 mr-2" />
-                  Choose Plan
-                </Button>
-              </div>
-            </motion.div>
+          <div className="max-w-3xl mx-auto">
+            <PricingCards fullPage={false} showTrial={true} />
           </div>
         </div>
       </section>
