@@ -53,6 +53,10 @@ const schema = defineSchema(
       thankYouMessage: v.optional(v.string()),
       createdAt: v.number(),
       userId: v.string(), // owner of this business profile
+      // Subscription tracking (synced from subscriptions table)
+      subscriptionStatus: v.optional(v.union(v.literal("active"), v.literal("trialing"), v.literal("inactive"), v.literal("canceled"))),
+      trialEndsAt: v.optional(v.number()), // timestamp when trial expires
+      planType: v.optional(v.union(v.literal("basic"), v.literal("pro"), v.literal("none"))),
     })
       .index("by_slug", ["slug"])
       .index("by_createdAt", ["createdAt"])

@@ -87,7 +87,7 @@ export function TrialExpiredModal({ open, onClose, onSuccess }: TrialExpiredModa
                 <span className="text-3xl">⏰</span>
               </div>
               <h2 className="text-2xl font-bold text-white mb-2">Free Trial Expired</h2>
-              <p className="text-white/70 text-sm">Your 10-day free trial has ended. Upgrade now to keep your review gateway active.</p>
+              <p className="text-white/70 text-sm">Your 14-day free trial has ended. Upgrade now to keep your review gateway active.</p>
             </div>
             <div className="p-6 sm:p-8">
               {submitted ? (

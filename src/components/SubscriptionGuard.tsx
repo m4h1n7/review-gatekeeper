@@ -60,7 +60,14 @@ export function SubscriptionGuard({
 
   const active = hasAccess(subscription?.plan, subscription?.status, requiredTier);
 
-  if (active) {
+  // Check if trial has expired (plan is trial but expiresAt is in the past)
+  const isTrialExpired =
+    subscription?.plan === "trial" &&
+    subscription?.status === "active" &&
+    subscription?.expiresAt !== undefined &&
+    subscription.expiresAt < Date.now();
+
+  if (active && !isTrialExpired) {
     return <>{children}</>;
   }
 
@@ -72,7 +79,12 @@ export function SubscriptionGuard({
         ? "Starter"
         : "Active Plan";
 
-  const defaultMessage = `Subscribe to ${planLabel} to unlock this feature.`;
+  // Trial expired has its own specific messaging
+  const isTrialLock = isTrialExpired || (subscription?.plan === "trial" && !active);
+  const lockTitle = isTrialLock ? "Your 14-Day Free Trial Has Expired" : "Upgrade Required";
+  const lockMessage = isTrialLock
+    ? "Your free trial has ended. Subscribe to a plan to continue receiving Google reviews and accessing your dashboard."
+    : message || `Subscribe to ${planLabel} to unlock this feature.`;
 
   return (
     <div className="relative">
@@ -82,19 +94,21 @@ export function SubscriptionGuard({
       {/* Lock overlay */}
       <div className="absolute inset-0 flex items-center justify-center bg-[#0D0D0D]/60 backdrop-blur-[1px] rounded-2xl z-10">
         <div className="text-center px-6 py-8 max-w-sm">
-          <div className="w-14 h-14 mx-auto rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-4">
-            <Lock className="w-7 h-7 text-amber-400" />
+          <div className={`w-14 h-14 mx-auto rounded-2xl flex items-center justify-center mb-4 ${
+            isTrialLock ? "bg-red-500/10 border border-red-500/20" : "bg-amber-500/10 border border-amber-500/20"
+          }`}>
+            <Lock className={`w-7 h-7 ${isTrialLock ? "text-red-400" : "text-amber-400"}`} />
           </div>
-          <h3 className="text-lg font-bold text-white mb-1">Upgrade Required</h3>
+          <h3 className="text-lg font-bold text-white mb-1">{lockTitle}</h3>
           <p className="text-sm text-[#A1A1AA] mb-5 leading-relaxed">
-            {message || defaultMessage}
+            {lockMessage}
           </p>
           <Button
             onClick={() => navigate("/pricing")}
-            className="bg-[#16A34A] hover:bg-[#15803D] text-white font-semibold px-6 cursor-pointer"
+            className={`${isTrialLock ? "bg-red-600 hover:bg-red-700" : "bg-[#16A34A] hover:bg-[#15803D]"} text-white font-semibold px-6 cursor-pointer`}
           >
             <Zap className="w-4 h-4 mr-2" />
-            Upgrade Subscription
+            {isTrialLock ? "Upgrade Now" : "Upgrade Subscription"}
             <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
         </div>
@@ -110,11 +124,12 @@ export function useHasAccess(requiredTier: RequiredTier = "starter"): {
   plan: string | undefined;
   status: string | undefined;
   isExpired: boolean;
+  isTrialExpired: boolean;
 } {
   const subscription = useQuery(api.subscriptions.getCurrent);
 
   if (subscription === undefined) {
-    return { hasAccess: false, isLoading: true, plan: undefined, status: undefined, isExpired: false };
+    return { hasAccess: false, isLoading: true, plan: undefined, status: undefined, isExpired: false, isTrialExpired: false };
   }
 
   const plan = subscription?.plan;
@@ -125,7 +140,13 @@ export function useHasAccess(requiredTier: RequiredTier = "starter"): {
     subscription?.expiresAt !== undefined &&
     subscription.expiresAt < Date.now();
 
+  const isTrialExpired =
+    subscription?.plan === "trial" &&
+    subscription?.status === "active" &&
+    subscription?.expiresAt !== undefined &&
+    subscription.expiresAt < Date.now();
+
   const active = hasAccess(plan, status, requiredTier) && !isExpired;
 
-  return { hasAccess: active, isLoading: false, plan, status, isExpired };
+  return { hasAccess: active, isLoading: false, plan, status, isExpired, isTrialExpired };
 }

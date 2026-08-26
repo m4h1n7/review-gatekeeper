@@ -254,21 +254,55 @@ export default function Review() {
     );
   }
 
-  // Subscription Inactive — business has no active plan
+  // Subscription Inactive — business has no active plan or trial expired
   if (subStatus && !subStatus.active) {
+    const isTrialExpired = subStatus.reason === "expired" && subStatus.plan === "trial";
+    const isCancelled = subStatus.reason === "cancelled";
+    const isPending = subStatus.reason === "pending_payment";
+    const noSubscription = subStatus.reason === "no_subscription";
+
+    let title = "Account Temporarily Inactive";
+    let message = "This business's subscription is currently inactive. Please contact the business owner or try again later.";
+    let iconColor = "bg-amber-500/10";
+    let iconText = "text-amber-400";
+    let glowColor = "bg-amber-500/5";
+
+    if (isTrialExpired) {
+      title = "Free Trial Expired";
+      message = "This business's 14-day free trial has ended. The business owner needs to subscribe to a plan to continue accepting reviews.";
+      iconColor = "bg-red-500/10";
+      iconText = "text-red-400";
+      glowColor = "bg-red-500/5";
+    } else if (isCancelled) {
+      title = "Subscription Cancelled";
+      message = "This business's subscription has been cancelled. Please contact the business owner for more information.";
+      iconColor = "bg-red-500/10";
+      iconText = "text-red-400";
+      glowColor = "bg-red-500/5";
+    } else if (isPending) {
+      title = "Payment Under Review";
+      message = "This business's payment is being verified. Review submission will be available shortly.";
+      iconColor = "bg-amber-500/10";
+      iconText = "text-amber-400";
+      glowColor = "bg-amber-500/5";
+    } else if (noSubscription) {
+      title = "No Active Subscription";
+      message = "This business has not set up a subscription yet. Please contact the business owner to get started with STAR CATCH.";
+    }
+
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
         <div className="fixed inset-0 -z-10">
           <div className="absolute inset-0 bg-[#0D0D0D]" />
-          <div className="absolute top-1/4 left-1/3 w-[400px] h-[400px] bg-amber-500/5 rounded-full blur-3xl" />
+          <div className={`absolute top-1/4 left-1/3 w-[400px] h-[400px] ${glowColor} rounded-full blur-3xl`} />
         </div>
         <GlassPanel className="p-8 sm:p-10 text-center max-w-md w-full">
-          <div className="w-16 h-16 mx-auto rounded-2xl bg-amber-500/10 flex items-center justify-center mb-5">
-            <Clock className="w-8 h-8 text-amber-400" />
+          <div className={`w-16 h-16 mx-auto rounded-2xl ${iconColor} flex items-center justify-center mb-5`}>
+            <Clock className={`w-8 h-8 ${iconText}`} />
           </div>
-          <h1 className="text-2xl font-bold text-white mb-2">Account Inactive</h1>
+          <h1 className="text-2xl font-bold text-white mb-2">{title}</h1>
           <p className="text-[#A1A1AA] text-sm leading-relaxed">
-            This business's subscription is currently inactive. Please contact the business owner or try again later.
+            {message}
           </p>
         </GlassPanel>
       </div>

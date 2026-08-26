@@ -84,7 +84,7 @@ export function PricingCards({
 
   return (
     <div className={`space-y-6 sm:space-y-8 ${fullPage ? "" : ""}`}>
-      {/* 10-Day Free Trial Card */}
+      {/* 14-Day Free Trial Card */}
       {showTrial && (
         <motion.div
           initial={fullPage ? { opacity: 0, y: 20 } : undefined}
@@ -101,14 +101,14 @@ export function PricingCards({
                   <Gift className="w-6 h-6 text-[#16A34A]" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-white">10-Day Free Trial</h3>
+                  <h3 className="text-lg font-bold text-white">14-Day Free Trial</h3>
                   <p className="text-xs text-[#A1A1AA]">No credit card required</p>
                 </div>
               </div>
 
               <div className="flex items-baseline gap-2 mb-3">
                 <span className="text-3xl font-extrabold text-[#16A34A]">৳0</span>
-                <span className="text-sm text-[#A1A1AA]">for 10 days</span>
+                <span className="text-sm text-[#A1A1AA]">for 14 days</span>
               </div>
 
               <div className="flex flex-wrap gap-2 mb-4">
@@ -170,7 +170,7 @@ export function PricingCards({
                       Starting...
                     </div>
                   ) : (
-                    "Start 10-Day Free Trial"
+                    "Start 14-Day Free Trial"
                   )}
                 </Button>
               )}

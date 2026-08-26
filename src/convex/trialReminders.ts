@@ -34,7 +34,7 @@ export const sendTrialReminders = mutation({
 
       const daysRemaining = Math.ceil((sub.expiresAt - now) / (1000 * 60 * 60 * 24));
 
-      // Only send on Day 8 (2 days left) or Day 10 (0 days left)
+      // Only send on Day 12 (2 days left) or Day 14 (0 days left)
       if (daysRemaining !== 2 && daysRemaining !== 0) {
         skipped++;
         continue;

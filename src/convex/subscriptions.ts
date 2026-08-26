@@ -73,7 +73,7 @@ export const hasTrialUsed = query({
   },
 });
 
-/** Claim the 10-day free trial — one per email, no payment required */
+/** Claim the 14-day free trial — one per email, no payment required */
 export const claimTrial = mutation({
   args: {},
   handler: async (ctx) => {
@@ -86,7 +86,7 @@ export const claimTrial = mutation({
     // Enforce strict one-trial-per-email
     if (user.hasUsedTrial) {
       throw new Error(
-        "This Gmail account has already redeemed a 10-Day Free Trial. Please upgrade to Starter or Business Pro plan."
+        "This Gmail account has already redeemed a 14-Day Free Trial. Please upgrade to Starter or Business Pro plan."
       );
     }
 
@@ -97,7 +97,7 @@ export const claimTrial = mutation({
       .first();
 
     const now = Date.now();
-    const trialExpiresAt = now + 10 * 24 * 60 * 60 * 1000; // 10 days
+    const trialExpiresAt = now + 14 * 24 * 60 * 60 * 1000; // 14 days
 
     if (existingSub && (existingSub.status === "active" || existingSub.plan === "trial")) {
       // If they already have an active trial or paid sub, don't allow another
@@ -131,13 +131,26 @@ export const claimTrial = mutation({
       });
     }
 
+    // Sync trialEndsAt to all business profiles owned by this user
+    const businesses = await ctx.db
+      .query("businesses")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .collect();
+    for (const biz of businesses) {
+      await ctx.db.patch(biz._id, {
+        subscriptionStatus: "trialing",
+        trialEndsAt: trialExpiresAt,
+        planType: "pro",
+      });
+    }
+
     // Audit log
     await ctx.db.insert("auditLogs", {
       adminEmail: "system",
       action: "TRIAL_CLAIMED",
       targetUser: userId,
       targetEmail: user.email ?? "unknown",
-      details: `Free trial activated, expires: ${new Date(trialExpiresAt).toISOString()}`,
+      details: `Free 14-day trial activated, expires: ${new Date(trialExpiresAt).toISOString()}`,
       createdAt: now,
     });
 
@@ -180,6 +193,52 @@ export const isBusinessActive = query({
   },
 });
 
+/** Sync subscription status and trialEndsAt to a business profile */
+export const syncBusinessSubscription = mutation({
+  args: {
+    businessId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    const business = await ctx.db.get(args.businessId as any) as any;
+    if (!business || business.userId !== userId) {
+      throw new Error("Business not found or unauthorized");
+    }
+
+    const sub = await ctx.db
+      .query("subscriptions")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .first();
+
+    let subscriptionStatus: "active" | "trialing" | "inactive" | "canceled" = "inactive";
+    let trialEndsAt: number | undefined;
+    let planType: "basic" | "pro" | "none" = "none";
+
+    if (sub) {
+      if (sub.status === "active" && sub.plan === "trial") {
+        subscriptionStatus = sub.expiresAt && sub.expiresAt > Date.now() ? "trialing" : "inactive";
+        trialEndsAt = sub.expiresAt;
+        planType = "pro"; // trial gets pro-level features
+      } else if (sub.status === "active" && (sub.plan === "pro" || sub.plan === "starter")) {
+        subscriptionStatus = "active";
+        planType = sub.plan === "pro" ? "pro" : "basic";
+      } else if (sub.status === "cancelled") {
+        subscriptionStatus = "canceled";
+      }
+    }
+
+    await ctx.db.patch(args.businessId as any, {
+      subscriptionStatus,
+      trialEndsAt,
+      planType,
+    });
+
+    return { ok: true, subscriptionStatus, trialEndsAt, planType };
+  },
+});
+
 /** Check if user can receive more feedback (free trial: 15 max) */
 export const canReceiveFeedback = query({
   args: { businessId: v.string() },
@@ -207,7 +266,7 @@ export const canReceiveFeedback = query({
       return { allowed: false, reason: "Pending payment", currentCount: 0, maxCount: 0 };
     }
 
-    // Trial plan: full Pro features for 10 days
+    // Trial plan: full Pro features for 14 days
     if (sub && sub.plan === "trial" && sub.status === "active") {
       return { allowed: true, plan: "trial" };
     }
