@@ -269,7 +269,7 @@ export default function Review() {
 
     if (isTrialExpired) {
       title = "Free Trial Expired";
-      message = "This business's 14-day free trial has ended. The business owner needs to subscribe to a plan to continue accepting reviews.";
+      message = "This business's 10-day free trial has ended. The business owner needs to subscribe to a plan to continue accepting reviews.";
       iconColor = "bg-red-500/10";
       iconText = "text-red-400";
       glowColor = "bg-red-500/5";

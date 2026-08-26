@@ -81,7 +81,7 @@ export function SubscriptionGuard({
 
   // Trial expired has its own specific messaging
   const isTrialLock = isTrialExpired || (subscription?.plan === "trial" && !active);
-  const lockTitle = isTrialLock ? "Your 14-Day Free Trial Has Expired" : "Upgrade Required";
+  const lockTitle = isTrialLock ? "Your 10-Day Free Trial Has Expired" : "Upgrade Required";
   const lockMessage = isTrialLock
     ? "Your free trial has ended. Subscribe to a plan to continue receiving Google reviews and accessing your dashboard."
     : message || `Subscribe to ${planLabel} to unlock this feature.`;

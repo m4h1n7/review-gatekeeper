@@ -73,7 +73,7 @@ export const hasTrialUsed = query({
   },
 });
 
-/** Claim the 14-day free trial — one per email, no payment required */
+/** Claim the 10-day free trial — one per email, no payment required */
 export const claimTrial = mutation({
   args: {},
   handler: async (ctx) => {
@@ -86,7 +86,7 @@ export const claimTrial = mutation({
     // Enforce strict one-trial-per-email
     if (user.hasUsedTrial) {
       throw new Error(
-        "This Gmail account has already redeemed a 14-Day Free Trial. Please upgrade to Starter or Business Pro plan."
+        "This Gmail account has already redeemed a 10-Day Free Trial. Please upgrade to Starter or Business Pro plan."
       );
     }
 
@@ -97,7 +97,7 @@ export const claimTrial = mutation({
       .first();
 
     const now = Date.now();
-    const trialExpiresAt = now + 14 * 24 * 60 * 60 * 1000; // 14 days
+    const trialExpiresAt = now + 10 * 24 * 60 * 60 * 1000; // 10 days
 
     if (existingSub && (existingSub.status === "active" || existingSub.plan === "trial")) {
       // If they already have an active trial or paid sub, don't allow another
@@ -150,7 +150,7 @@ export const claimTrial = mutation({
       action: "TRIAL_CLAIMED",
       targetUser: userId,
       targetEmail: user.email ?? "unknown",
-      details: `Free 14-day trial activated, expires: ${new Date(trialExpiresAt).toISOString()}`,
+      details: `Free 10-day trial activated, expires: ${new Date(trialExpiresAt).toISOString()}`,
       createdAt: now,
     });
 
@@ -266,7 +266,7 @@ export const canReceiveFeedback = query({
       return { allowed: false, reason: "Pending payment", currentCount: 0, maxCount: 0 };
     }
 
-    // Trial plan: full Pro features for 14 days
+    // Trial plan: full Pro features for 10 days
     if (sub && sub.plan === "trial" && sub.status === "active") {
       return { allowed: true, plan: "trial" };
     }
