@@ -49,6 +49,7 @@ export default function Onboarding() {
 
   const [businessName, setBusinessName] = useState("");
   const [category, setCategory] = useState("");
+  const [logoUrl, setLogoUrl] = useState("");
   const [reviewUrl, setReviewUrl] = useState("");
   const [customSlug, setCustomSlug] = useState("");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
@@ -63,6 +64,7 @@ export default function Onboarding() {
         phone: "",
         reviewUrl,
         slug: customSlug || undefined,
+        logoUrl: logoUrl.trim() || undefined,
       });
       navigate("/dashboard");
     } catch (err) {
@@ -130,6 +132,22 @@ export default function Onboarding() {
                 </div>
 
                 <div className="space-y-4">
+                  {/* Logo Preview */}
+                  {logoUrl.trim() && (
+                    <div className="flex justify-center">
+                      <div className="relative">
+                        <img
+                          src={logoUrl.trim()}
+                          alt="Business Logo Preview"
+                          className="w-20 h-20 rounded-2xl object-cover border-2 border-white/10 shadow-lg"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = "none";
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
                   <div>
                     <label className="block text-xs font-medium text-[#A1A1AA] mb-1.5">Business Name</label>
                     <Input
@@ -138,6 +156,19 @@ export default function Onboarding() {
                       placeholder="e.g., Your Business Name"
                       className="h-11 bg-white/5 border-white/10 text-white placeholder:text-[#A1A1AA]/50 focus:border-[#16A34A] focus:ring-[#16A34A]/20"
                     />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-[#A1A1AA] mb-1.5">Business Logo URL <span className="text-[#A1A1AA]/50">(Optional)</span></label>
+                    <Input
+                      value={logoUrl}
+                      onChange={(e) => setLogoUrl(e.target.value)}
+                      placeholder="https://example.com/logo.png"
+                      className="h-11 bg-white/5 border-white/10 text-white placeholder:text-[#A1A1AA]/50 focus:border-[#16A34A] focus:ring-[#16A34A]/20"
+                    />
+                    <p className="mt-1 text-[10px] text-[#A1A1AA]/60">
+                      Paste a direct link to your business logo image. You can update this later.
+                    </p>
                   </div>
 
                   <div>

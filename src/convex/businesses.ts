@@ -18,6 +18,7 @@ export const completeOnboarding = mutation({
     phone: v.string(),
     reviewUrl: v.string(),
     slug: v.optional(v.string()),
+    logoUrl: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -46,7 +47,7 @@ export const completeOnboarding = mutation({
     const businessId = await ctx.db.insert("businesses", {
       name: args.businessName,
       slug: finalSlug,
-      logoUrl: "",
+      logoUrl: args.logoUrl || "",
       reviewUrl: args.reviewUrl,
       alertEmail: user.email || "",
       category: args.category,
@@ -199,6 +200,28 @@ export const updatePromo = mutation({
     await ctx.db.patch(args.businessId as any, {
       promoEnabled: args.promoEnabled,
       promoText: args.promoText ?? "",
+    });
+
+    return { ok: true };
+  },
+});
+
+/** Update business logo URL */
+export const updateLogo = mutation({
+  args: {
+    businessId: v.string(),
+    logoUrl: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Must be signed in");
+
+    const business = await ctx.db.get(args.businessId as any);
+    if (!business) throw new Error("Business not found");
+    if ((business as any).userId !== userId) throw new Error("Unauthorized");
+
+    await ctx.db.patch(args.businessId as any, {
+      logoUrl: args.logoUrl,
     });
 
     return { ok: true };

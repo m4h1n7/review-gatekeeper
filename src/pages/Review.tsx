@@ -113,6 +113,7 @@ export default function Review() {
   const [submitted, setSubmitted] = useState(false);
   const [redirectToGoogle, setRedirectToGoogle] = useState(false);
   const [redirectCountdown, setRedirectCountdown] = useState(10);
+  const [logoFailed, setLogoFailed] = useState(false);
 
   // 1-second countdown for Google redirect
   useEffect(() => {
@@ -378,19 +379,29 @@ export default function Review() {
           {selectedRating === null && (
             <motion.div key="rating" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.4 }}>
               <GlassPanel className="p-8 sm:p-10 text-center">
-                {/* Business Logo */}
-                <motion.img
-                  src={business.logoUrl}
-                  alt={business.name}
-                  className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover mx-auto mb-6 shadow-xl border-2 border-white/10 bg-white/5"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.1 }}
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src =
-                      "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'%3E%3Crect fill='%2318181B' width='96' height='96' rx='16'/%3E%3Ctext x='48' y='58' text-anchor='middle' fill='%23A1A1AA' font-size='28'%3E%F0%9F%8F%BA%3C/text%3E%3C/svg%3E";
-                  }}
-                />
+                {/* Business Logo with first-letter fallback */}
+                {business.logoUrl && !logoFailed ? (
+                  <motion.img
+                    src={business.logoUrl}
+                    alt={business.name}
+                    className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover mx-auto mb-6 shadow-xl border-2 border-white/10 bg-white/5"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.1 }}
+                    onError={() => setLogoFailed(true)}
+                  />
+                ) : (
+                  <motion.div
+                    className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl mx-auto mb-6 shadow-xl border-2 border-white/10 bg-gradient-to-br from-[#16A34A] to-[#0D9668] flex items-center justify-center"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.1 }}
+                  >
+                    <span className="text-white font-bold text-4xl sm:text-5xl select-none">
+                      {business.name?.charAt(0)?.toUpperCase() || "B"}
+                    </span>
+                  </motion.div>
+                )}
 
                 <motion.h1
                   initial={{ opacity: 0, y: 10 }}
