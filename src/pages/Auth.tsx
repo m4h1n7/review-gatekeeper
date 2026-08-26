@@ -348,11 +348,9 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     setIsLoading(true);
     setError(null);
     try {
-      await signIn("anonymous");
-      // Guest/Google users go to dashboard; useEffect handles role check
-      navigate(baseRedirect);
+      await signIn("google", { redirectTo: baseRedirect });
     } catch (err) {
-      setError("Google sign-in is not yet configured. Signed in as guest instead.");
+      setError(err instanceof Error ? err.message : "Google sign-in failed. Please try again.");
       setIsLoading(false);
     }
   };

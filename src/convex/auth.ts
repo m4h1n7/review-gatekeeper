@@ -3,6 +3,7 @@ import { convexAuth } from "@convex-dev/auth/server";
 import { Anonymous } from "@convex-dev/auth/providers/Anonymous";
 import { Password } from "@convex-dev/auth/providers/Password";
 import { Email } from "@convex-dev/auth/providers/Email";
+import Google from "@auth/core/providers/google";
 import { RandomReader, generateRandomString } from "@oslojs/crypto/random";
 
 /** Custom password requirements: 8+ chars, 1 uppercase, 1 number, 1 special char */
@@ -94,6 +95,7 @@ const passwordResetEmail = Email({
 
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   providers: [
+    Google,
     Password({
       validatePasswordRequirements,
       reset: passwordResetEmail,
