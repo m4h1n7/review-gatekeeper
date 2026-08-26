@@ -165,12 +165,17 @@ export default function Review() {
         ? `[${tagLabels}] ${form.message || "No additional details provided."}`
         : form.message || "No details provided.";
 
+      // Anonymous fallback — use default values when fields are left blank
+      const customerName = form.name.trim() || "Anonymous Customer";
+      const customerPhone = form.phone.trim() || "N/A";
+      const customerEmail = form.email.trim() || "N/A";
+
       await submitFeedback({
         businessId: business.id,
         businessSlug: business.slug,
-        customerName: form.name,
-        phone: form.phone,
-        email: form.email,
+        customerName,
+        phone: customerPhone,
+        email: customerEmail,
         message: fullMessage,
         rating: selectedRating ?? 0,
       });
@@ -179,9 +184,9 @@ export default function Review() {
         alertEmail: business.alertEmail,
         businessName: business.name,
         businessSlug: business.slug,
-        customerName: form.name,
-        customerPhone: form.phone,
-        customerEmail: form.email,
+        customerName,
+        customerPhone,
+        customerEmail,
         rating: selectedRating ?? 0,
         message: fullMessage,
       }).catch(() => {});
@@ -194,8 +199,8 @@ export default function Review() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             clientEmail: business.alertEmail,
-            customerName: form.name,
-            customerPhone: form.phone,
+            customerName,
+            customerPhone,
             feedbackMessage: fullMessage,
             businessName: business.name,
           }),
@@ -505,41 +510,38 @@ export default function Review() {
                 <form onSubmit={handleFeedbackSubmit} className="space-y-4">
                   <div className="space-y-1.5">
                     <Label className="flex items-center gap-2 text-[#A1A1AA] font-medium text-sm">
-                      <User className="w-4 h-4 text-[#16A34A]" /> Your Name
+                      <User className="w-4 h-4 text-[#16A34A]" /> Your Name <span className="text-xs text-[#A1A1AA]/50 font-normal">(Optional)</span>
                     </Label>
                     <Input
-                      placeholder="John Doe"
+                      placeholder="e.g. John Doe (or leave blank to stay anonymous)"
                       value={form.name}
                       onChange={(e) => setForm({ ...form, name: e.target.value })}
                       className={inputClass}
-                      required
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
                       <Label className="flex items-center gap-2 text-[#A1A1AA] font-medium text-sm">
-                        <Phone className="w-4 h-4 text-[#16A34A]" /> Phone
+                        <Phone className="w-4 h-4 text-[#16A34A]" /> Phone <span className="text-xs text-[#A1A1AA]/50 font-normal">(Optional)</span>
                       </Label>
                       <Input
-                        placeholder="(555) 123-4567"
+                        placeholder="e.g. 01700-000000"
                         value={form.phone}
                         onChange={(e) => setForm({ ...form, phone: e.target.value })}
                         className={inputClass}
-                        required
                       />
                     </div>
                     <div className="space-y-1.5">
                       <Label className="flex items-center gap-2 text-[#A1A1AA] font-medium text-sm">
-                        <Mail className="w-4 h-4 text-[#16A34A]" /> Email
+                        <Mail className="w-4 h-4 text-[#16A34A]" /> Email <span className="text-xs text-[#A1A1AA]/50 font-normal">(Optional)</span>
                       </Label>
                       <Input
-                        placeholder="you@email.com"
+                        placeholder="e.g. you@email.com"
                         type="email"
                         value={form.email}
                         onChange={(e) => setForm({ ...form, email: e.target.value })}
                         className={inputClass}
-                        required
                       />
                     </div>
                   </div>
@@ -549,7 +551,7 @@ export default function Review() {
                       <MessageSquare className="w-4 h-4 text-[#16A34A]" /> Additional Details
                     </Label>
                     <Textarea
-                      placeholder="Anything else you'd like us to know? (optional)"
+                      placeholder="Tell us more if you'd like (or skip this step)"
                       value={form.message}
                       onChange={(e) => setForm({ ...form, message: e.target.value })}
                       className="min-h-[80px] bg-white/5 border-white/10 text-white placeholder:text-[#A1A1AA]/40 focus:border-[#16A34A] focus:ring-[#16A34A]/20 transition-all resize-none"
