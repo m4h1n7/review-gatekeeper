@@ -145,6 +145,41 @@ export const claimTrial = mutation({
   },
 });
 
+/** Check if a business's owner has an active paid/trial subscription (used by public review page) */
+export const isBusinessActive = query({
+  args: { userId: v.string() },
+  handler: async (ctx, args) => {
+    const sub = await ctx.db
+      .query("subscriptions")
+      .withIndex("by_userId", (q) => q.eq("userId", args.userId))
+      .first();
+
+    if (!sub) {
+      return { active: false, plan: "none" as const, reason: "no_subscription" };
+    }
+
+    // Free plan with pending: not active
+    if (sub.plan === "free" && sub.status === "pending") {
+      return { active: false, plan: "free" as const, reason: "pending_payment" };
+    }
+
+    // Cancelled: not active
+    if (sub.status === "cancelled") {
+      return { active: false, plan: sub.plan, reason: "cancelled" };
+    }
+
+    // Active trial/pro/starter — check expiry
+    if (sub.status === "active" && (sub.plan === "pro" || sub.plan === "starter" || sub.plan === "trial")) {
+      if (sub.expiresAt && sub.expiresAt < Date.now()) {
+        return { active: false, plan: sub.plan, reason: "expired" };
+      }
+      return { active: true, plan: sub.plan };
+    }
+
+    return { active: false, plan: sub.plan, reason: "inactive" };
+  },
+});
+
 /** Check if user can receive more feedback (free trial: 15 max) */
 export const canReceiveFeedback = query({
   args: { businessId: v.string() },

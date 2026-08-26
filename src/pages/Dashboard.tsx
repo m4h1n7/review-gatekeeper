@@ -7,6 +7,7 @@ import { PrintableQR } from "@/components/PrintableQR";
 import { PaywallModal } from "@/components/PaywallModal";
 import { TrialExpiredModal } from "@/components/TrialExpiredModal";
 import { MonthlyReport } from "@/components/MonthlyReport";
+import { SubscriptionGuard, useHasAccess } from "@/components/SubscriptionGuard";
 import { isSuperAdmin } from "@/components/SuperAdminGuard";
 import { motion } from "framer-motion";
 import {
@@ -116,6 +117,8 @@ export default function Dashboard() {
   const overview = useQuery(api.analytics.dashboardOverview, { filter });
   const trend = useQuery(api.analytics.ratingTrend, { days: chartDays });
   const isExpired = (subscription?.plan === "pro" || subscription?.plan === "trial") && subscription?.status === "active" && subscription?.expiresAt !== undefined && subscription.expiresAt < Date.now();
+  const hasPaidAccess = useHasAccess("starter");
+  const hasProAccess = useHasAccess("pro");
   const daysRemaining = subscription?.expiresAt ? Math.ceil((subscription.expiresAt - Date.now()) / (24 * 60 * 60 * 1000)) : null;
   const showExpiryWarning = subscription?.status === "active" && daysRemaining !== null && daysRemaining <= 3 && daysRemaining > 0;
   const [showPaywall, setShowPaywall] = useState(subscription?.status === "pending" || isExpired);
@@ -606,6 +609,11 @@ export default function Dashboard() {
 
         {/* ─── GET REVIEWS TAB ─── */}
         {activeTab === "reviews" && overview && (
+          <SubscriptionGuard
+            requiredTier="starter"
+            message="Subscribe to a plan to unlock your custom review link, QR code, and start capturing reviews from customers."
+            enabled={!hasPaidAccess.hasAccess}
+          >
           <div className="grid sm:grid-cols-2 gap-6">
             {/* Copy Link Card */}
             <GlassPanel className="p-6">
@@ -698,10 +706,16 @@ export default function Dashboard() {
               </div>
             </GlassPanel>
           </div>
+          </SubscriptionGuard>
         )}
 
         {/* ─── PRIVATE INBOX TAB ─── */}
         {activeTab === "inbox" && overview && (
+          <SubscriptionGuard
+            requiredTier="starter"
+            message="Subscribe to a plan to access your private feedback inbox and capture negative reviews before they go public."
+            enabled={!hasPaidAccess.hasAccess}
+          >
           <GlassPanel className="overflow-hidden">
             <div className="p-5 flex items-center justify-between border-b border-white/5">
               <div>
@@ -793,6 +807,7 @@ export default function Dashboard() {
               </div>
             )}
           </GlassPanel>
+          </SubscriptionGuard>
         )}
       </div>
 

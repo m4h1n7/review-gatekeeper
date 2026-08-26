@@ -104,6 +104,10 @@ export default function Review() {
     api.users.isBusinessOwnerSuspended,
     business && "userId" in business ? { userId: (business as any).userId } : "skip",
   );
+  const subStatus = useQuery(
+    api.subscriptions.isBusinessActive,
+    business && "userId" in business ? { userId: (business as any).userId } : "skip",
+  );
 
   const [hoveredStar, setHoveredStar] = useState<number | null>(null);
   const [selectedRating, setSelectedRating] = useState<number | null>(null);
@@ -244,6 +248,27 @@ export default function Review() {
           <h1 className="text-2xl font-bold text-white mb-2">Business Not Found</h1>
           <p className="text-[#A1A1AA] text-sm leading-relaxed">
             This review link is invalid or has been deactivated. Please contact the business directly.
+          </p>
+        </GlassPanel>
+      </div>
+    );
+  }
+
+  // Subscription Inactive — business has no active plan
+  if (subStatus && !subStatus.active) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="fixed inset-0 -z-10">
+          <div className="absolute inset-0 bg-[#0D0D0D]" />
+          <div className="absolute top-1/4 left-1/3 w-[400px] h-[400px] bg-amber-500/5 rounded-full blur-3xl" />
+        </div>
+        <GlassPanel className="p-8 sm:p-10 text-center max-w-md w-full">
+          <div className="w-16 h-16 mx-auto rounded-2xl bg-amber-500/10 flex items-center justify-center mb-5">
+            <Clock className="w-8 h-8 text-amber-400" />
+          </div>
+          <h1 className="text-2xl font-bold text-white mb-2">Account Inactive</h1>
+          <p className="text-[#A1A1AA] text-sm leading-relaxed">
+            This business's subscription is currently inactive. Please contact the business owner or try again later.
           </p>
         </GlassPanel>
       </div>
