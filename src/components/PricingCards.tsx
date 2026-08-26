@@ -213,7 +213,7 @@ export function PricingCards({
             <div className="p-3 rounded-xl bg-white/[0.04] border border-white/[0.06] mb-5">
               <p className="text-xs font-semibold text-zinc-400 mb-1">📦 Hardware</p>
               <p className="text-xs text-zinc-500">
-                ১টি প্রিমিয়াম স্মার্ট NFC কার্ড (উইথ QR কোড)
+                ১টি প্রিমিয়াম স্মার্ট NFC কার্ড
               </p>
             </div>
 
