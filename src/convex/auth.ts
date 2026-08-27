@@ -3,34 +3,20 @@
 // ACTIVE CONVEX DEPLOYMENT: vibrant-chickadee-257
 // CONVEX_SITE_URL (auto-set): https://vibrant-chickadee-257.convex.site
 //
-// The Google OAuth callback URL is constructed by @convex-dev/auth as:
-//   ${CUSTOM_AUTH_SITE_URL ?? CONVEX_SITE_URL}/api/auth/callback/google
-//
-// This MUST point to the Convex backend (NOT the frontend), because
-// auth.addHttpRoutes(http) in http.ts handles the OAuth callback there.
-//
-// Expected Google Cloud Console callback URI:
-//   https://vibrant-chickadee-257.convex.site/api/auth/callback/google
+// Authentication: Email/Password only (no Google OAuth).
 //
 // Convex Environment Variables (set in Dashboard → Settings → Env Vars):
 //   CUSTOM_AUTH_SITE_URL = https://vibrant-chickadee-257.convex.site
 //   SITE_URL            = https://vibrant-chickadee-257.convex.site
-//   AUTH_GOOGLE_ID      = <Google Cloud Console OAuth Client ID>
-//   AUTH_GOOGLE_SECRET   = <Google Cloud Console OAuth Client Secret>
 import { convexAuth } from "@convex-dev/auth/server";
 import { Anonymous } from "@convex-dev/auth/providers/Anonymous";
 import { Password } from "@convex-dev/auth/providers/Password";
 import { Email } from "@convex-dev/auth/providers/Email";
-import Google from "@auth/core/providers/google";
 import { RandomReader, generateRandomString } from "@oslojs/crypto/random";
 
 /**
  * Hardcoded active Convex deployment site URL.
- * The Convex Auth library reads CUSTOM_AUTH_SITE_URL (or falls back to
- * CONVEX_SITE_URL) to construct the OAuth callback redirect_uri.
- *
- * This MUST match the live Convex deployment so the callback URL is valid:
- *   https://vibrant-chickadee-257.convex.site/api/auth/callback/google
+ * Used for constructing internal callback URLs (OTP email endpoint, etc.)
  */
 const ACTIVE_CONVEX_SITE_URL = "https://vibrant-chickadee-257.convex.site";
 
@@ -165,7 +151,6 @@ const passwordResetEmail = Email({
 
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   providers: [
-    Google,
     Password({
       validatePasswordRequirements,
       reset: passwordResetEmail,

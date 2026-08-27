@@ -205,7 +205,7 @@ export default function AccountSettings() {
           "A password reset code has been sent to your email. Please use the Sign In page → Forgot Password to complete the change.",
         );
       } else {
-        // User signed up via Google/OAuth and has no password yet — create one
+        // User has no password yet — create one
         await signIn("password", {
           flow: "signUp",
           email: user?.email ?? "",
@@ -398,7 +398,7 @@ export default function AccountSettings() {
                   {hasPassword ? (
                     <><CheckCircle2 className="w-3.5 h-3.5" /> Password configured — you can sign in with email and password</>
                   ) : (
-                    <><AlertTriangle className="w-3.5 h-3.5" /> No password set — you signed up via Google. Set a password for email login.</>
+                    <><AlertTriangle className="w-3.5 h-3.5" /> No password set. Set a password for email login.</>
                   )}
                 </div>
               )}

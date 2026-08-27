@@ -22,12 +22,6 @@ export default {
       domain: process.env.CONVEX_SITE_URL!,
       applicationID: "convex",
     },
-    // Google OAuth — validates tokens issued after Google sign-in.
-    // Requires AUTH_GOOGLE_ID and AUTH_GOOGLE_SECRET env vars in Convex.
-    {
-      domain: "accounts.google.com",
-      applicationID: "google",
-    },
     {
       type: "customJwt",
       issuer: freebuffIssuer,
