@@ -4,17 +4,17 @@ import type { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router";
 import { useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
-import { isSuperAdmin } from "@/components/SuperAdminGuard";
+import { isAdminEmail } from "@/lib/routing";
 
 /**
  * RequireAuth — the single auth gate for all protected routes.
  *
- * Routing logic:
+ * Routing priority:
  *  1. Unauthenticated → /auth?returnTo=...
- *  2. Super admin on /dashboard → redirect to /admin
- *  3. Suspended account → /pricing (blocked banner)
- *  4. Onboarding already done + on /onboarding → /dashboard
- *  5. Expired subscription → /pricing
+ *  2. Suspended / deleted → blocked page
+ *  3. Super admin on /dashboard or /onboarding → /admin
+ *  4. Onboarding done + on /onboarding → /dashboard
+ *  5. Subscription expired → /pricing
  *  6. Otherwise → render children
  */
 export function RequireAuth({ children }: { children: ReactNode }) {
@@ -36,7 +36,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
     );
   }
 
-  // ── Unauthenticated → send to login ──
+  // ── 1. Unauthenticated → send to login ──
   if (!isAuthenticated) {
     const returnTo = `${location.pathname}${location.search}`;
     return (
@@ -47,15 +47,9 @@ export function RequireAuth({ children }: { children: ReactNode }) {
     );
   }
 
-  // ── Super Admin auto-redirect: if an admin lands on /dashboard, send to /admin ──
-  if (
-    isSuperAdmin(user?.email) &&
-    location.pathname === "/dashboard"
-  ) {
-    return <Navigate to="/admin" replace />;
-  }
+  const admin = isAdminEmail(user?.email) || user?.role === "admin";
 
-  // ── Suspended / Archived account → block access ──
+  // ── 2. Suspended / Archived / Deleted → block access ──
   if (
     accountStatus === "suspended" ||
     accountStatus === "deleted"
@@ -79,21 +73,45 @@ export function RequireAuth({ children }: { children: ReactNode }) {
     );
   }
 
-  // ── Redirect away from onboarding if already completed ──
-  if (onboardingDone && location.pathname === "/onboarding") {
+  // ── 3. Super admin: /dashboard and /onboarding → /admin ──
+  if (admin && (location.pathname === "/dashboard" || location.pathname === "/onboarding")) {
+    return <Navigate to="/admin" replace />;
+  }
+
+  // ── 4. Onboarding done but on /onboarding → /dashboard ──
+  if (onboardingDone === true && location.pathname === "/onboarding") {
     return <Navigate to="/dashboard" replace />;
   }
 
-  // ── Subscription expiry: if active plan but expired, redirect to pricing ──
-  const isExpired =
-    subscription?.status === "active" &&
-    (subscription?.plan === "pro" || subscription?.plan === "starter" || subscription?.plan === "trial") &&
-    subscription?.expiresAt !== undefined &&
-    subscription.expiresAt < Date.now();
-
-  if (isExpired && location.pathname !== "/pricing") {
-    return <Navigate to="/pricing" replace />;
+  // ── 5. Subscription expired → /pricing (allow /pricing page even when expired) ──
+  if (location.pathname === "/pricing") {
+    return children;
   }
 
-  return children;
+  const now = Date.now();
+  const plan = subscription?.plan;
+  const status = subscription?.status;
+  const expiresAt = subscription?.expiresAt;
+
+  // Active paid subscription (starter/pro) — not expired → full access
+  const isActivePaid =
+    (plan === "starter" || plan === "pro") &&
+    status === "active" &&
+    (expiresAt === undefined || expiresAt === null || expiresAt > now);
+
+  // Active trial — not expired → full access
+  const isActiveTrial =
+    plan === "trial" &&
+    status === "active" &&
+    (expiresAt === undefined || expiresAt === null || expiresAt > now);
+
+  // Pending payment → allow dashboard (shows pending banner)
+  const isPending = status === "pending";
+
+  if (isActivePaid || isActiveTrial || isPending) {
+    return children;
+  }
+
+  // Expired / no subscription / cancelled → redirect to pricing
+  return <Navigate to="/pricing" replace />;
 }

@@ -4,11 +4,11 @@ import { useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { useNavigate } from "react-router";
 import { Shield, Star } from "lucide-react";
+import { isAdminEmail } from "@/lib/routing";
 
-const SUPER_ADMIN_EMAILS = ["mahinhosen870@gmail.com", "atazwar103@gmail.com", "starcatchbd@gmail.com"];
-
+/** Re-export for backward compatibility — prefer isAdminEmail from @/lib/routing */
 export function isSuperAdmin(email?: string | null): boolean {
-  return SUPER_ADMIN_EMAILS.includes(email?.toLowerCase() ?? "");
+  return isAdminEmail(email);
 }
 
 export function SuperAdminGuard({ children }: { children: React.ReactNode }) {

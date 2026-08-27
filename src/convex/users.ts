@@ -2,6 +2,7 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 import { mutation, query, QueryCtx } from "./_generated/server";
 import { v } from "convex/values";
 
+// Mirror of src/lib/constants.ts — backend can't import client code
 const SUPER_ADMIN_EMAILS = ["mahinhosen870@gmail.com", "atazwar103@gmail.com", "starcatchbd@gmail.com"];
 
 /**
@@ -230,6 +231,30 @@ export const sendSignupOtp = mutation({
     });
 
     return { ok: true, otp };
+  },
+});
+
+/**
+ * Get the current user's role and routing info.
+ * Returns: { role, isAdmin, email } for role-based redirect decisions.
+ */
+export const getUserRole = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return { role: null, isAdmin: false, email: null };
+
+    const user = await ctx.db.get(userId);
+    if (!user) return { role: null, isAdmin: false, email: null };
+
+    const email = user.email?.toLowerCase() ?? "";
+    const isAdmin = SUPER_ADMIN_EMAILS.includes(email) || user.role === "admin";
+
+    return {
+      role: user.role ?? (isAdmin ? "admin" : "client"),
+      isAdmin,
+      email: user.email ?? null,
+    };
   },
 });
 

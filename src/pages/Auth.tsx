@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/input-otp";
 import { useAuth } from "@/hooks/use-auth";
 import { isSuperAdmin } from "@/components/SuperAdminGuard";
+import { isAdminEmail } from "@/lib/routing";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 import {
@@ -74,15 +75,20 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const returnTo = searchParams.get("returnTo");
-  // If there's an explicit returnTo, use it. Otherwise check onboarding.
+  // Determine the base redirect destination:
+  //  1. Explicit returnTo (from RequireAuth) takes priority
+  //  2. Then redirectAfterAuth prop (defaults to /dashboard from main.tsx)
+  //  3. Fallback to /dashboard
   const baseRedirect = returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//")
     ? returnTo
-    : (redirectAfterAuth || "/");
+    : (redirectAfterAuth || "/dashboard");
 
   // Compute redirect with role-based routing
   const getRedirect = (email?: string | null) => {
-    const target = isSuperAdmin(email) && baseRedirect !== "/admin" ? "/admin" : baseRedirect;
-    return target;
+    if (isAdminEmail(email) && baseRedirect !== "/admin") {
+      return "/admin";
+    }
+    return baseRedirect;
   };
   const redirect = getRedirect(user?.email);
 
@@ -154,12 +160,18 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
 
   useEffect(() => {
     if (!authLoading && isAuthenticated && user !== undefined) {
-      // If email is already verified or user is super admin, redirect immediately
-      if (isEmailVerified === true || isSuperAdmin(user?.email)) {
-        navigate(getRedirect(user?.email));
+      // Super admin: always redirect immediately (skip OTP)
+      if (isAdminEmail(user?.email)) {
+        navigate("/admin");
+        return;
       }
-      // If not verified yet and not in signup flow, redirect anyway (existing users)
-      else if (signupEmail === null && isEmailVerified === undefined) {
+      // If email is already verified, redirect to destination
+      if (isEmailVerified === true) {
+        navigate(getRedirect(user?.email));
+        return;
+      }
+      // Existing user (no signup flow, email verification status unknown) → redirect anyway
+      if (signupEmail === null && isEmailVerified === undefined) {
         navigate(getRedirect(user?.email));
       }
     }
@@ -348,11 +360,10 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     setIsLoading(true);
     setError(null);
     try {
-      // After Google OAuth, always redirect back through the Auth page so
+      // After Google OAuth, redirect back through the Auth page so
       // the role-based redirect useEffect can route admin → /admin, client → /dashboard.
-      const authReturnUrl = returnTo
-        ? `/auth?returnTo=${encodeURIComponent(returnTo)}`
-        : "/auth";
+      const dest = returnTo || "/dashboard";
+      const authReturnUrl = `/auth?returnTo=${encodeURIComponent(dest)}`;
       await signIn("google", { redirectTo: authReturnUrl });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Google sign-in failed. Please try again.");

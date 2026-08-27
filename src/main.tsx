@@ -134,11 +134,11 @@ createRoot(document.getElementById("root")!).render(
               <Route path="/" element={<Landing />} />
               <Route
                 path="/auth"
-                element={<AuthPage redirectAfterAuth="/" />}
+                element={<AuthPage redirectAfterAuth="/dashboard" />}
               />
               <Route
                 path="/login"
-                element={<AuthPage redirectAfterAuth="/" />}
+                element={<AuthPage redirectAfterAuth="/dashboard" />}
               />
               <Route
                 path="/onboarding"

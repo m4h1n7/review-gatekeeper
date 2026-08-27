@@ -2,6 +2,7 @@ import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
+// Mirror of src/lib/routing.ts SUPER_ADMIN_EMAILS — backend can't import client code
 const SUPER_ADMIN_EMAILS = ["mahinhosen870@gmail.com", "atazwar103@gmail.com", "starcatchbd@gmail.com"];
 const PRO_MONTHLY_PRICE_BDT = 1000;
 const MASTER_PIN = process.env.MASTER_PIN || "333877";

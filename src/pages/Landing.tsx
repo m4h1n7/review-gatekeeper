@@ -186,10 +186,10 @@ export default function Landing() {
   const handleNavClick = () => {
     if (!isAuthenticated) return navigate("/auth");
     if (admin) return navigate("/admin");
-    return navigate("/pricing");
+    return navigate("/dashboard");
   };
 
-  const navLabel = !isAuthenticated ? "Login / Sign Up" : admin ? "Admin Portal" : "My Account";
+  const navLabel = !isAuthenticated ? "Login / Sign Up" : admin ? "Admin Portal" : "Dashboard";
 
   return (
     <div className="min-h-screen overflow-hidden">
