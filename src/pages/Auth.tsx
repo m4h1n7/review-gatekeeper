@@ -348,7 +348,12 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     setIsLoading(true);
     setError(null);
     try {
-      await signIn("google", { redirectTo: baseRedirect });
+      // After Google OAuth, always redirect back through the Auth page so
+      // the role-based redirect useEffect can route admin → /admin, client → /dashboard.
+      const authReturnUrl = returnTo
+        ? `/auth?returnTo=${encodeURIComponent(returnTo)}`
+        : "/auth";
+      await signIn("google", { redirectTo: authReturnUrl });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Google sign-in failed. Please try again.");
       setIsLoading(false);
