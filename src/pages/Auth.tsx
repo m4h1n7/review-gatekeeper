@@ -16,6 +16,7 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { isSuperAdmin } from "@/components/SuperAdminGuard";
 import { isAdminEmail } from "@/lib/routing";
+import { getAuthOrigin, getAuthUrl } from "@/lib/auth";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 import {
@@ -113,8 +114,8 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     try {
       const result = await sendSignupOtpMutation();
       // Send the OTP email via the HTTP endpoint
-      const siteUrl = window.location.origin;
-      await fetch(`${siteUrl}/api/send-otp`, {
+      const authOrigin = getAuthOrigin();
+      await fetch(`${authOrigin}/api/send-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -363,7 +364,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       // After Google OAuth, redirect back through the Auth page so
       // the role-based redirect useEffect can route admin → /admin, client → /dashboard.
       const dest = returnTo || "/dashboard";
-      const authReturnUrl = `/auth?returnTo=${encodeURIComponent(dest)}`;
+      const authReturnUrl = getAuthUrl(`/auth?returnTo=${encodeURIComponent(dest)}`);
       await signIn("google", { redirectTo: authReturnUrl });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Google sign-in failed. Please try again.");

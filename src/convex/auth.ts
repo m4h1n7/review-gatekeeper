@@ -1,10 +1,18 @@
 // Auth providers for Review Gatekeeper
 //
+// PRODUCTION BASE DOMAIN: https://starcatchreviews.freebuff.app
+//
 // Google OAuth callback URL is constructed automatically by Convex Auth as:
-//   ${process.env.CONVEX_SITE_URL}/api/auth/callback/google
-// This must be registered as an Authorized Redirect URI in Google Cloud Console.
-// The CONVEX_SITE_URL env var is set by Convex (e.g. https://patient-nightingale-401.convex.site)
-// and is available server-side in Convex functions.
+//   ${process.env.CUSTOM_AUTH_SITE_URL ?? process.env.CONVEX_SITE_URL}/api/auth/callback/google
+//
+// For production, set these Convex environment variables:
+//   CUSTOM_AUTH_SITE_URL = https://starcatchreviews.freebuff.app
+//   SITE_URL            = https://starcatchreviews.freebuff.app
+//   AUTH_GOOGLE_ID      = <Google Cloud Console OAuth Client ID>
+//   AUTH_GOOGLE_SECRET   = <Google Cloud Console OAuth Client Secret>
+//
+// The Google callback URL in Google Cloud Console must be:
+//   https://starcatchreviews.freebuff.app/api/auth/callback/google
 import { convexAuth } from "@convex-dev/auth/server";
 import { Anonymous } from "@convex-dev/auth/providers/Anonymous";
 import { Password } from "@convex-dev/auth/providers/Password";
@@ -13,10 +21,15 @@ import Google from "@auth/core/providers/google";
 import { RandomReader, generateRandomString } from "@oslojs/crypto/random";
 
 /**
- * Returns the Convex site URL used for OAuth callback construction.
+ * Returns the canonical auth site URL used for OAuth callbacks and redirects.
+ * Uses CUSTOM_AUTH_SITE_URL (production) if set, otherwise falls back to CONVEX_SITE_URL.
  * Available server-side only (inside Convex functions/actions).
  */
-export function getConvexSiteUrl(): string {
+export function getAuthSiteUrl(): string {
+  return process.env.CUSTOM_AUTH_SITE_URL || requireEnvUrl();
+}
+
+function requireEnvUrl(): string {
   const url = process.env.CONVEX_SITE_URL;
   if (!url) throw new Error("CONVEX_SITE_URL environment variable is not set");
   return url;
@@ -24,10 +37,15 @@ export function getConvexSiteUrl(): string {
 
 /**
  * Returns the full Google OAuth callback URL for this deployment.
- * e.g. https://patient-nightingale-401.convex.site/api/auth/callback/google
+ * Production: https://starcatchreviews.freebuff.app/api/auth/callback/google
  */
 export function getGoogleCallbackUrl(): string {
-  return `${getConvexSiteUrl()}/api/auth/callback/google`;
+  return `${getAuthSiteUrl()}/api/auth/callback/google`;
+}
+
+// Legacy alias
+export function getConvexSiteUrl(): string {
+  return getAuthSiteUrl();
 }
 
 /** Custom password requirements: 8+ chars, 1 uppercase, 1 number, 1 special char */
@@ -52,8 +70,7 @@ async function generateAndSendOTP(
   token: string,
   appName: string,
 ) {
-  const siteUrl = process.env.CONVEX_SITE_URL;
-  if (!siteUrl) throw new Error("CONVEX_SITE_URL not configured");
+  const siteUrl = getAuthSiteUrl();
 
   const res = await fetch(`${siteUrl}/api/send-otp`, {
     method: "POST",
