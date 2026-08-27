@@ -1,10 +1,34 @@
 // Auth providers for Review Gatekeeper
+//
+// Google OAuth callback URL is constructed automatically by Convex Auth as:
+//   ${process.env.CONVEX_SITE_URL}/api/auth/callback/google
+// This must be registered as an Authorized Redirect URI in Google Cloud Console.
+// The CONVEX_SITE_URL env var is set by Convex (e.g. https://patient-nightingale-401.convex.site)
+// and is available server-side in Convex functions.
 import { convexAuth } from "@convex-dev/auth/server";
 import { Anonymous } from "@convex-dev/auth/providers/Anonymous";
 import { Password } from "@convex-dev/auth/providers/Password";
 import { Email } from "@convex-dev/auth/providers/Email";
 import Google from "@auth/core/providers/google";
 import { RandomReader, generateRandomString } from "@oslojs/crypto/random";
+
+/**
+ * Returns the Convex site URL used for OAuth callback construction.
+ * Available server-side only (inside Convex functions/actions).
+ */
+export function getConvexSiteUrl(): string {
+  const url = process.env.CONVEX_SITE_URL;
+  if (!url) throw new Error("CONVEX_SITE_URL environment variable is not set");
+  return url;
+}
+
+/**
+ * Returns the full Google OAuth callback URL for this deployment.
+ * e.g. https://patient-nightingale-401.convex.site/api/auth/callback/google
+ */
+export function getGoogleCallbackUrl(): string {
+  return `${getConvexSiteUrl()}/api/auth/callback/google`;
+}
 
 /** Custom password requirements: 8+ chars, 1 uppercase, 1 number, 1 special char */
 function validatePasswordRequirements(password: string) {
