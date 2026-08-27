@@ -1,23 +1,23 @@
 /**
  * Auth Base URL Configuration
  *
+ * ACTIVE CONVEX DEPLOYMENT: vibrant-chickadee-257
+ * CONVEX_SITE_URL: https://vibrant-chickadee-257.convex.site
+ *
  * Google OAuth involves two distinct URLs:
  *
  * 1. OAUTH CALLBACK URL (redirect_uri sent to Google):
- *    Constructed SERVER-SIDE by Convex Auth using:
- *      ${process.env.CUSTOM_AUTH_SITE_URL ?? process.env.CONVEX_SITE_URL}/api/auth/callback/google
- *    This is what Google redirects to after the user consents.
- *    Set CUSTOM_AUTH_SITE_URL = https://starcatchreviews.freebuff.app in Convex env.
+ *    Constructed SERVER-SIDE by @convex-dev/auth using:
+ *      ${CUSTOM_AUTH_SITE_URL ?? CONVEX_SITE_URL}/api/auth/callback/google
+ *    This MUST point to the Convex backend where auth.addHttpRoutes handles it.
+ *    Exact URL: https://vibrant-chickadee-257.convex.site/api/auth/callback/google
  *
  * 2. POST-LOGIN REDIRECT (redirectTo parameter):
  *    Passed as a RELATIVE PATH from the client signIn() call.
  *    The server validates it against the SITE_URL env var and prepends SITE_URL.
  *    Example: redirectTo = "/auth?returnTo=/dashboard"
- *    → server resolves to: ${SITE_URL}/auth?returnTo=/dashboard
  *
- * This module provides helpers for constructing auth-related URLs on the client.
- *
- * Production: https://starcatchreviews.freebuff.app
+ * Production frontend: https://starcatchreviews.freebuff.app
  */
 
 const PRODUCTION_AUTH_ORIGIN = "https://starcatchreviews.freebuff.app";
@@ -66,15 +66,16 @@ export function getAuthUrl(path: string): string {
 }
 
 /**
- * The Google OAuth callback URL that must be registered in Google Cloud Console.
- * This is the Convex backend's callback endpoint — Google redirects here after
- * the user consents.
+ * The Google OAuth callback URL — must match exactly what Convex Auth sends to Google.
  *
- * This is constructed server-side by Convex Auth using:
- *   ${process.env.CUSTOM_AUTH_SITE_URL ?? process.env.CONVEX_SITE_URL}/api/auth/callback/google
+ * Constructed server-side by @convex-dev/auth:
+ *   ${CUSTOM_AUTH_SITE_URL ?? CONVEX_SITE_URL}/api/auth/callback/google
  *
- * For production, the Convex env var `CUSTOM_AUTH_SITE_URL` should be set to:
- *   https://starcatchreviews.freebuff.app
+ * For this deployment (vibrant-chickadee-257):
+ *   https://vibrant-chickadee-257.convex.site/api/auth/callback/google
+ *
+ * Register this exact URL in Google Cloud Console → Credentials → OAuth 2.0:
+ *   https://vibrant-chickadee-257.convex.site/api/auth/callback/google
  */
 export const GOOGLE_CALLBACK_URL =
-  `${PRODUCTION_AUTH_ORIGIN}/api/auth/callback/google`;
+  "https://vibrant-chickadee-257.convex.site/api/auth/callback/google";

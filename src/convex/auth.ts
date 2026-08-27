@@ -1,18 +1,22 @@
 // Auth providers for Review Gatekeeper
 //
-// PRODUCTION BASE DOMAIN: https://starcatchreviews.freebuff.app
+// ACTIVE CONVEX DEPLOYMENT: vibrant-chickadee-257
+// CONVEX_SITE_URL (auto-set): https://vibrant-chickadee-257.convex.site
 //
-// Google OAuth callback URL is constructed automatically by Convex Auth as:
-//   ${process.env.CUSTOM_AUTH_SITE_URL ?? process.env.CONVEX_SITE_URL}/api/auth/callback/google
+// The Google OAuth callback URL is constructed by @convex-dev/auth as:
+//   ${CUSTOM_AUTH_SITE_URL ?? CONVEX_SITE_URL}/api/auth/callback/google
 //
-// For production, set these Convex environment variables:
-//   CUSTOM_AUTH_SITE_URL = https://starcatchreviews.freebuff.app
-//   SITE_URL            = https://starcatchreviews.freebuff.app
+// This MUST point to the Convex backend (NOT the frontend), because
+// auth.addHttpRoutes(http) in http.ts handles the OAuth callback there.
+//
+// Expected Google Cloud Console callback URI:
+//   https://vibrant-chickadee-257.convex.site/api/auth/callback/google
+//
+// Convex Environment Variables (set in Dashboard → Settings → Env Vars):
+//   CUSTOM_AUTH_SITE_URL = https://vibrant-chickadee-257.convex.site
+//   SITE_URL            = https://vibrant-chickadee-257.convex.site
 //   AUTH_GOOGLE_ID      = <Google Cloud Console OAuth Client ID>
 //   AUTH_GOOGLE_SECRET   = <Google Cloud Console OAuth Client Secret>
-//
-// The Google callback URL in Google Cloud Console must be:
-//   https://starcatchreviews.freebuff.app/api/auth/callback/google
 import { convexAuth } from "@convex-dev/auth/server";
 import { Anonymous } from "@convex-dev/auth/providers/Anonymous";
 import { Password } from "@convex-dev/auth/providers/Password";
@@ -21,35 +25,50 @@ import Google from "@auth/core/providers/google";
 import { RandomReader, generateRandomString } from "@oslojs/crypto/random";
 
 /**
- * Returns the canonical auth site URL used for OAuth callbacks and redirects.
- * Uses CUSTOM_AUTH_SITE_URL (production) if set, otherwise falls back to CONVEX_SITE_URL.
- * Trailing slashes are stripped to prevent double-slash in constructed URLs.
- * Available server-side only (inside Convex functions/actions).
+ * Hardcoded active Convex deployment site URL.
+ * The Convex Auth library reads CUSTOM_AUTH_SITE_URL (or falls back to
+ * CONVEX_SITE_URL) to construct the OAuth callback redirect_uri.
+ *
+ * This MUST match the live Convex deployment so the callback URL is valid:
+ *   https://vibrant-chickadee-257.convex.site/api/auth/callback/google
+ */
+const ACTIVE_CONVEX_SITE_URL = "https://vibrant-chickadee-257.convex.site";
+
+/**
+ * Returns the canonical Convex site URL used for OAuth callback construction.
+ *
+ * Priority:
+ *  1. CUSTOM_AUTH_SITE_URL env var (if explicitly set in Convex dashboard)
+ *  2. Hardcoded ACTIVE_CONVEX_SITE_URL (always correct for this deployment)
+ *  3. CONVEX_SITE_URL env var (auto-set by Convex, but may lag after migration)
+ *
+ * Trailing slashes are stripped.
  */
 export function getAuthSiteUrl(): string {
-  const raw = process.env.CUSTOM_AUTH_SITE_URL || requireEnvUrl();
+  const raw =
+    process.env.CUSTOM_AUTH_SITE_URL ||
+    ACTIVE_CONVEX_SITE_URL ||
+    process.env.CONVEX_SITE_URL;
+  if (!raw) {
+    throw new Error(
+      "No Convex site URL configured. Set CUSTOM_AUTH_SITE_URL env var.",
+    );
+  }
   return raw.replace(/\/$/, "");
 }
 
-function requireEnvUrl(): string {
-  const url = process.env.CONVEX_SITE_URL;
-  if (!url) throw new Error("CONVEX_SITE_URL environment variable is not set");
-  return url;
-}
-
 /**
- * Returns the full Google OAuth callback URL for this deployment.
+ * Returns the EXACT Google OAuth callback URL for this deployment.
  *
- * This is the EXACT redirect_uri sent to Google during the OAuth flow.
+ * This is the redirect_uri sent to Google during the OAuth flow.
  * It must be registered as an "Authorized redirect URI" in Google Cloud Console:
- *   https://starcatchreviews.freebuff.app/api/auth/callback/google
+ *   https://vibrant-chickadee-257.convex.site/api/auth/callback/google
  *
  * Constructed as: ${getAuthSiteUrl()}/api/auth/callback/google
- * No trailing slashes or extra query parameters are appended.
+ * No trailing slashes, no extra query parameters.
  */
 export function getGoogleCallbackUrl(): string {
-  // Strip any trailing slash from the base URL to prevent double-slash
-  const base = getAuthSiteUrl().replace(/\/$/, "");
+  const base = getAuthSiteUrl();
   return `${base}/api/auth/callback/google`;
 }
 
