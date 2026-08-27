@@ -23,10 +23,12 @@ import { RandomReader, generateRandomString } from "@oslojs/crypto/random";
 /**
  * Returns the canonical auth site URL used for OAuth callbacks and redirects.
  * Uses CUSTOM_AUTH_SITE_URL (production) if set, otherwise falls back to CONVEX_SITE_URL.
+ * Trailing slashes are stripped to prevent double-slash in constructed URLs.
  * Available server-side only (inside Convex functions/actions).
  */
 export function getAuthSiteUrl(): string {
-  return process.env.CUSTOM_AUTH_SITE_URL || requireEnvUrl();
+  const raw = process.env.CUSTOM_AUTH_SITE_URL || requireEnvUrl();
+  return raw.replace(/\/$/, "");
 }
 
 function requireEnvUrl(): string {
@@ -37,10 +39,18 @@ function requireEnvUrl(): string {
 
 /**
  * Returns the full Google OAuth callback URL for this deployment.
- * Production: https://starcatchreviews.freebuff.app/api/auth/callback/google
+ *
+ * This is the EXACT redirect_uri sent to Google during the OAuth flow.
+ * It must be registered as an "Authorized redirect URI" in Google Cloud Console:
+ *   https://starcatchreviews.freebuff.app/api/auth/callback/google
+ *
+ * Constructed as: ${getAuthSiteUrl()}/api/auth/callback/google
+ * No trailing slashes or extra query parameters are appended.
  */
 export function getGoogleCallbackUrl(): string {
-  return `${getAuthSiteUrl()}/api/auth/callback/google`;
+  // Strip any trailing slash from the base URL to prevent double-slash
+  const base = getAuthSiteUrl().replace(/\/$/, "");
+  return `${base}/api/auth/callback/google`;
 }
 
 // Legacy alias

@@ -361,11 +361,14 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     setIsLoading(true);
     setError(null);
     try {
-      // After Google OAuth, redirect back through the Auth page so
-      // the role-based redirect useEffect can route admin → /admin, client → /dashboard.
+      // Pass a RELATIVE path as redirectTo — never a full URL.
+      // The Convex Auth server validates redirectTo against the SITE_URL env var.
+      // A relative path (starting with "/") is always safe: the server prepends SITE_URL.
+      // After Google OAuth → Convex callback → redirect to /auth?returnTo=...
+      // so the role-based useEffect can route admin → /admin, client → /dashboard.
       const dest = returnTo || "/dashboard";
-      const authReturnUrl = getAuthUrl(`/auth?returnTo=${encodeURIComponent(dest)}`);
-      await signIn("google", { redirectTo: authReturnUrl });
+      const redirectTo = `/auth?returnTo=${encodeURIComponent(dest)}`;
+      await signIn("google", { redirectTo });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Google sign-in failed. Please try again.");
       setIsLoading(false);

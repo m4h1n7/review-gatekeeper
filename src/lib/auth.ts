@@ -1,12 +1,21 @@
 /**
  * Auth Base URL Configuration
  *
- * All authentication redirects (Google OAuth callback, password reset, post-login
- * routing) must originate from the production frontend domain — NOT the Convex
- * backend URL (patient-nightingale-401.convex.site).
+ * Google OAuth involves two distinct URLs:
  *
- * This module centralises the canonical origin so every caller uses the same
- * value. During local dev (localhost) it falls back to window.location.origin.
+ * 1. OAUTH CALLBACK URL (redirect_uri sent to Google):
+ *    Constructed SERVER-SIDE by Convex Auth using:
+ *      ${process.env.CUSTOM_AUTH_SITE_URL ?? process.env.CONVEX_SITE_URL}/api/auth/callback/google
+ *    This is what Google redirects to after the user consents.
+ *    Set CUSTOM_AUTH_SITE_URL = https://starcatchreviews.freebuff.app in Convex env.
+ *
+ * 2. POST-LOGIN REDIRECT (redirectTo parameter):
+ *    Passed as a RELATIVE PATH from the client signIn() call.
+ *    The server validates it against the SITE_URL env var and prepends SITE_URL.
+ *    Example: redirectTo = "/auth?returnTo=/dashboard"
+ *    → server resolves to: ${SITE_URL}/auth?returnTo=/dashboard
+ *
+ * This module provides helpers for constructing auth-related URLs on the client.
  *
  * Production: https://starcatchreviews.freebuff.app
  */
@@ -42,6 +51,10 @@ export function getAuthOrigin(): string {
 
 /**
  * Build a full auth URL path on the canonical origin.
+ *
+ * Use this for any client-side navigation that must land on the production domain
+ * (e.g. OTP email links). Do NOT use for the signIn() redirectTo parameter —
+ * that should always be a relative path.
  *
  * Example:
  *   getAuthUrl("/auth?returnTo=/dashboard")
