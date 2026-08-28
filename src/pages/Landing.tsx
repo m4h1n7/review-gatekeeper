@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/use-auth";
 import { isSuperAdmin } from "@/components/SuperAdminGuard";
 import { PricingCards } from "@/components/PricingCards";
+import { InteractivePlanDemo } from "@/components/InteractivePlanDemo";
 import {
   Star,
   Shield,
@@ -468,6 +469,9 @@ export default function Landing() {
           </div>
         </div>
       </section>
+
+      {/* Interactive Plan Demo */}
+      <InteractivePlanDemo />
 
       {/* CTA */}
       <section className="relative z-10 px-4 sm:px-6 py-16 sm:py-24">
