@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { isSuperAdmin } from "@/components/SuperAdminGuard";
 import { PricingCards } from "@/components/PricingCards";
 import { InteractivePlanDemo } from "@/components/InteractivePlanDemo";
+import { CustomerExperienceSimulation } from "@/components/CustomerExperienceSimulation";
 import {
   Star,
   Shield,
@@ -472,6 +473,9 @@ export default function Landing() {
 
       {/* Interactive Plan Demo */}
       <InteractivePlanDemo />
+
+      {/* Customer Experience Simulation */}
+      <CustomerExperienceSimulation />
 
       {/* CTA */}
       <section className="relative z-10 px-4 sm:px-6 py-16 sm:py-24">
