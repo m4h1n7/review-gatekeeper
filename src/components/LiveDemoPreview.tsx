@@ -81,10 +81,27 @@ export default function LiveDemoPreview() {
     showQR: false,
   });
   const [feedbackName, setFeedbackName] = useState("");
-  const [feedbackEmail, setFeedbackEmail] = useState("");
+  const [feedbackWhatsapp, setFeedbackWhatsapp] = useState("");
   const [feedbackMessage, setFeedbackMessage] = useState("");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [showAlert, setShowAlert] = useState(false);
   const [platformIcon, setPlatformIcon] = useState<string>("");
+
+  /* ─── Quick Feedback Tags ─── */
+  const QUICK_TAGS = [
+    { label: "Service Quality", emoji: "🏷️" },
+    { label: "Staff Behavior", emoji: "🏷️" },
+    { label: "Pricing / Value", emoji: "🏷️" },
+    { label: "Wait Time", emoji: "🏷️" },
+    { label: "Cleanliness", emoji: "🏷️" },
+    { label: "Product Issue", emoji: "🏷️" },
+  ];
+
+  const toggleTag = useCallback((tag: string) => {
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
+    );
+  }, []);
 
   /* ─── Derived ─── */
   const platformCount = [config.showGoogle, config.showFacebook, config.showTrustpilot].filter(Boolean).length;
@@ -101,8 +118,9 @@ export default function LiveDemoPreview() {
   const resetDemo = useCallback(() => {
     setStep("welcome");
     setFeedbackName("");
-    setFeedbackEmail("");
+    setFeedbackWhatsapp("");
     setFeedbackMessage("");
+    setSelectedTags([]);
     setShowAlert(false);
     setPlatformIcon("");
   }, []);
@@ -475,7 +493,7 @@ export default function LiveDemoPreview() {
                         </p>
                       </div>
 
-                      <form onSubmit={handleFeedbackSubmit} className="space-y-2.5">
+                      <form onSubmit={handleFeedbackSubmit} className="space-y-3">
                         <input
                           value={feedbackName}
                           onChange={(e) => setFeedbackName(e.target.value)}
@@ -483,11 +501,44 @@ export default function LiveDemoPreview() {
                           className="w-full h-9 px-3 rounded-xl bg-white/[0.03] border border-white/[0.08] text-white text-xs placeholder:text-white/20 focus:border-white/20 transition-all"
                         />
                         <input
-                          value={feedbackEmail}
-                          onChange={(e) => setFeedbackEmail(e.target.value)}
-                          placeholder="Phone/Email (optional)"
+                          value={feedbackWhatsapp}
+                          onChange={(e) => setFeedbackWhatsapp(e.target.value)}
+                          placeholder="WhatsApp Number (optional)"
                           className="w-full h-9 px-3 rounded-xl bg-white/[0.03] border border-white/[0.08] text-white text-xs placeholder:text-white/20 focus:border-white/20 transition-all"
                         />
+
+                        {/* Quick Selection Tags */}
+                        <div>
+                          <p className="text-[9px] text-white/25 uppercase tracking-widest font-medium mb-1.5">
+                            What can we improve?
+                          </p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {QUICK_TAGS.map((tag) => {
+                              const isActive = selectedTags.includes(tag.label);
+                              return (
+                                <button
+                                  key={tag.label}
+                                  type="button"
+                                  onClick={() => toggleTag(tag.label)}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all cursor-pointer border"
+                                  style={{
+                                    backgroundColor: isActive
+                                      ? `${config.brandColor}18`
+                                      : "rgba(255,255,255,0.02)",
+                                    borderColor: isActive
+                                      ? `${config.brandColor}35`
+                                      : "rgba(255,255,255,0.06)",
+                                    color: isActive ? config.brandColor : "rgba(255,255,255,0.35)",
+                                  }}
+                                >
+                                  <span>{tag.emoji}</span>
+                                  <span>{tag.label}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
                         <textarea
                           value={feedbackMessage}
                           onChange={(e) => setFeedbackMessage(e.target.value)}
