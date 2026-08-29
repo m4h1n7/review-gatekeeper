@@ -7,8 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/use-auth";
 import { isSuperAdmin } from "@/components/SuperAdminGuard";
 import { PricingCards } from "@/components/PricingCards";
-import { InteractivePlanDemo } from "@/components/InteractivePlanDemo";
-import { CustomerExperienceSimulation } from "@/components/CustomerExperienceSimulation";
+import LiveDemoPreview from "@/components/LiveDemoPreview";
 import {
   Star,
   Shield,
@@ -30,6 +29,7 @@ import {
   Link2,
   MessageCircle,
   LogIn,
+  Sparkles,
 } from "lucide-react";
 
 function Logo({ size = "normal" }: { size?: "normal" | "small" }) {
@@ -471,11 +471,21 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Interactive Plan Demo */}
-      <InteractivePlanDemo />
-
-      {/* Customer Experience Simulation */}
-      <CustomerExperienceSimulation />
+      <section className="relative z-10 px-4 sm:px-6 py-16 sm:py-24">
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#16A34A]/10 border border-[#16A34A]/20 text-[#16A34A] text-xs font-semibold mb-4">
+            <Sparkles className="w-3 h-3" /> Live Interactive Demo
+          </div>
+          <h2 className="text-2xl sm:text-4xl font-bold text-white mb-3">
+            Experience It <span className="text-[#16A34A]">Before You Buy</span>
+          </h2>
+          <p className="text-sm sm:text-base text-[#A1A1AA] max-w-xl mx-auto">
+            Customize the dashboard, watch the customer experience update in real-time.
+            See exactly how STAR CATCH works for your business.
+          </p>
+        </div>
+        <LiveDemoPreview />
+      </section>
 
       {/* CTA */}
       <section className="relative z-10 px-4 sm:px-6 py-16 sm:py-24">
