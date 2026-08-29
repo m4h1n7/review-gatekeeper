@@ -251,7 +251,7 @@ export default function Landing() {
                 transition={{ duration: 0.5 }}
               >                  <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#16A34A]/10 backdrop-blur-sm border border-[#16A34A]/20 text-[#16A34A] text-sm font-medium mb-6">
                   <TrendingUp className="w-4 h-4" />
-                  Join hundreds of businesses protecting their reputation
+                  Google ToS Compliant · Non-Gated Review System
                 </div>
               </motion.div>
 
@@ -261,11 +261,11 @@ export default function Landing() {
                 transition={{ duration: 0.6, delay: 0.1 }}
                 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.1]"
               >
-                Get More 5-Star{" "}
+                Smart Review Gatekeeper
+                <br />That Keeps You{' '}
                 <span className="bg-gradient-to-r from-[#16A34A] via-emerald-400 to-green-300 bg-clip-text text-transparent">
-                  Google Reviews
-                </span>{" "}
-                on Autopilot
+                  100% Compliant
+                </span>
               </motion.h1>
 
               <motion.p
@@ -274,9 +274,9 @@ export default function Landing() {
                 transition={{ duration: 0.6, delay: 0.2 }}
                 className="mt-5 sm:mt-6 text-lg text-[#A1A1AA] max-w-xl leading-relaxed"
               >
-                Happy customers are automatically sent to leave a public Google review.
-                Unhappy ones are redirected to a private feedback form — so your public
-                rating stays protected.
+                Give customers a seamless choice to leave a public Google review or send
+                private feedback directly to management — protecting your reputation while
+                staying 100% Google ToS Compliant.
               </motion.p>
 
               <motion.div
@@ -305,7 +305,7 @@ export default function Landing() {
                 <Button
                   size="lg"
                   variant="outline"
-                  onClick={() => navigate("/demo")}
+                  onClick={() => document.getElementById("live-demo")?.scrollIntoView({ behavior: "smooth" })}
                   className="h-13 px-7 bg-white/[0.04] backdrop-blur-sm border-[#16A34A]/20 text-[#16A34A] font-semibold hover:bg-[#16A34A]/10 cursor-pointer"
                 >
                   <Eye className="w-5 h-5 mr-2" />
@@ -471,17 +471,16 @@ export default function Landing() {
         </div>
       </section>
 
-      <section className="relative z-10 px-4 sm:px-6 py-16 sm:py-24">
+      <section id="live-demo" className="relative z-10 px-4 sm:px-6 py-16 sm:py-24">
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#16A34A]/10 border border-[#16A34A]/20 text-[#16A34A] text-xs font-semibold mb-4">
-            <Sparkles className="w-3 h-3" /> Live Interactive Demo
+            <Sparkles className="w-3 h-3" /> Live Business Pro Demo
           </div>
           <h2 className="text-2xl sm:text-4xl font-bold text-white mb-3">
-            Experience It <span className="text-[#16A34A]">Before You Buy</span>
+            See the <span className="text-[#16A34A]">Non-Gated</span> Experience
           </h2>
           <p className="text-sm sm:text-base text-[#A1A1AA] max-w-xl mx-auto">
-            Customize the dashboard, watch the customer experience update in real-time.
-            See exactly how STAR CATCH works for your business.
+            Interact with the full Business Pro feature set — from customer review flow to staff analytics, QR posters, and real-time alerts.
           </p>
         </div>
         <LiveDemoPreview />
@@ -498,10 +497,10 @@ export default function Landing() {
           >
             <div className="rounded-3xl border border-white/[0.08] bg-white/[0.04] backdrop-blur-2xl p-8 sm:p-12 text-center">
               <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">
-                Ready to boost your Google reviews?
+                Ready to Protect Your Reputation?
               </h2>
               <p className="text-[#A1A1AA] text-base max-w-lg mx-auto mb-6">
-                Join businesses using STAR CATCH to automatically filter happy customers to Google and capture private feedback from the rest.
+                Join businesses using STAR CATCH's Google-Compliant system to give customers a fair choice while keeping your public rating stellar.
               </p>
               <Button
                 size="lg"

@@ -29,6 +29,7 @@ import {
   X,
   ChevronRight,
   Sparkles,
+  BarChart3,
 } from "lucide-react";
 
 /* ─── Types ─── */
@@ -861,6 +862,115 @@ export default function LiveDemoPreview() {
                 <div>
                   <p className="text-lg font-bold text-amber-400">11%</p>
                   <p className="text-[9px] text-white/40">Private Feedback</p>
+                </div>
+              </div>
+            </div>
+
+            {/* ─── AI Auto-Reply Simulator ─── */}
+            <div className="p-3 rounded-xl bg-purple-500/[0.04] border border-purple-500/15">
+              <div className="flex items-center gap-2 mb-3">
+                <Sparkles className="w-3 h-3 text-purple-400" />
+                <p className="text-[10px] font-semibold text-purple-400 uppercase tracking-wider">AI Auto-Reply Assistant</p>
+              </div>
+              <div className="space-y-2">
+                <div className="p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">
+                  <p className="text-[9px] text-white/30 mb-1">Incoming Review (5★)</p>
+                  <p className="text-[10px] text-white/60">"Amazing food and great service! Will definitely come back."</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-1 h-4 rounded-full bg-purple-500/40" />
+                  <p className="text-[9px] text-purple-300/70 italic">AI Drafting Reply...</p>
+                </div>
+                <div className="p-2.5 rounded-lg bg-purple-500/[0.06] border border-purple-500/20">
+                  <p className="text-[9px] text-purple-300/60 mb-1">Auto-Generated Response:</p>
+                  <p className="text-[10px] text-white/70">"Thank you so much for your kind words! We're thrilled you enjoyed your experience. See you soon! 🌟"</p>
+                </div>
+                <div className="flex gap-2">
+                  <button className="flex-1 h-7 rounded-lg bg-purple-500/20 border border-purple-500/30 text-[9px] font-medium text-purple-300 cursor-pointer">Approve & Post</button>
+                  <button className="flex-1 h-7 rounded-lg bg-white/[0.04] border border-white/[0.08] text-[9px] font-medium text-white/40 cursor-pointer">Edit Reply</button>
+                </div>
+              </div>
+            </div>
+
+            {/* ─── Staff Performance Leaderboard ─── */}
+            <div className="p-3 rounded-xl bg-amber-500/[0.04] border border-amber-500/15">
+              <div className="flex items-center gap-2 mb-3">
+                <Users className="w-3 h-3 text-amber-400" />
+                <p className="text-[10px] font-semibold text-amber-400 uppercase tracking-wider">Staff Leaderboard</p>
+              </div>
+              <div className="space-y-1.5">
+                {[
+                  { name: "Alex", scans: 89, reviews: 72, rank: "🥇" },
+                  { name: "Sarah", scans: 74, reviews: 58, rank: "🥈" },
+                  { name: "Rahim", scans: 61, reviews: 49, rank: "🥉" },
+                ].map((s) => (
+                  <div key={s.name} className="flex items-center gap-2 p-2 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                    <span className="text-sm">{s.rank}</span>
+                    <span className="text-[11px] font-medium text-white flex-1">{s.name}</span>
+                    <span className="text-[9px] text-white/40">{s.scans} scans</span>
+                    <span className="text-[9px] text-amber-400/80">{s.reviews} reviews</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* ─── Monthly Analytics Chart ─── */}
+            <div className="p-3 rounded-xl bg-blue-500/[0.04] border border-blue-500/15">
+              <div className="flex items-center gap-2 mb-3">
+                <BarChart3 className="w-3 h-3 text-blue-400" />
+                <p className="text-[10px] font-semibold text-blue-400 uppercase tracking-wider">Monthly Analytics</p>
+              </div>
+              {/* Simulated bar chart */}
+              <div className="flex items-end gap-1.5 h-20">
+                {[40, 65, 50, 80, 70, 95, 60, 85, 75, 90, 70, 88].map((h, i) => (
+                  <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                    <div
+                      className="w-full rounded-t-sm transition-all"
+                      style={{
+                        height: `${h}%`,
+                        backgroundColor: i === 11 ? config.brandColor : `${config.brandColor}40`,
+                      }}
+                    />
+                    <span className="text-[7px] text-white/25">{["J","F","M","A","M","J","J","A","S","O","N","D"][i]}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="grid grid-cols-3 gap-2 mt-3 pt-2 border-t border-white/[0.04]">
+                <div className="text-center">
+                  <p className="text-[11px] font-bold text-white">1,247</p>
+                  <p className="text-[8px] text-white/30">Total Reviews</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-[11px] font-bold text-[#16A34A]">+23%</p>
+                  <p className="text-[8px] text-white/30">Growth</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-[11px] font-bold text-amber-400">4.7★</p>
+                  <p className="text-[8px] text-white/30">Avg Rating</p>
+                </div>
+              </div>
+            </div>
+
+            {/* ─── WhatsApp Instant Alert Simulator ─── */}
+            <div className="p-3 rounded-xl bg-green-500/[0.04] border border-green-500/15">
+              <div className="flex items-center gap-2 mb-3">
+                <MessageCircle className="w-3 h-3 text-green-400" />
+                <p className="text-[10px] font-semibold text-green-400 uppercase tracking-wider">WhatsApp Alert Simulator</p>
+              </div>
+              <div className="p-2.5 rounded-lg bg-[#075E54]/20 border border-[#25D366]/20">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-6 h-6 rounded-full bg-[#25D366]/20 flex items-center justify-center">
+                    <Bell className="w-3 h-3 text-[#25D366]" />
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-semibold text-white">STAR CATCH Alerts</p>
+                    <p className="text-[7px] text-white/30">Business Notification</p>
+                  </div>
+                </div>
+                <div className="p-2 rounded-lg bg-white/[0.06] border border-white/[0.08]">
+                  <p className="text-[9px] text-white/60 leading-relaxed whitespace-pre-line">
+                    {"⚠️ New private feedback received!\nRating: 2★ (Private)\nTags: Service Quality, Wait Time\nCustomer: Ahmed\nMessage: \"Waited 45 minutes for our order...\"\n📱 Reply within 24h for best retention."}
+                  </p>
                 </div>
               </div>
             </div>
