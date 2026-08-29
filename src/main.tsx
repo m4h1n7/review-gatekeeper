@@ -16,6 +16,7 @@ const Landing = lazy(() => import("./pages/Landing.tsx"));
 const AuthPage = lazy(() => import("./pages/Auth.tsx"));
 const Onboarding = lazy(() => import("./pages/Onboarding.tsx"));
 const Dashboard = lazy(() => import("./pages/Dashboard.tsx"));
+const PrivateFeedbackInbox = lazy(() => import("./pages/PrivateFeedbackInbox.tsx"));
 const Admin = lazy(() => import("./pages/Admin.tsx"));
 const Review = lazy(() => import("./pages/Review.tsx"));
 const Pricing = lazy(() => import("./pages/Pricing.tsx"));
@@ -153,6 +154,14 @@ createRoot(document.getElementById("root")!).render(
                 element={
                   <RequireAuth>
                     <Dashboard />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/dashboard/feedback"
+                element={
+                  <RequireAuth>
+                    <PrivateFeedbackInbox />
                   </RequireAuth>
                 }
               />

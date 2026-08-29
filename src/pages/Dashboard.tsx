@@ -197,10 +197,10 @@ export default function Dashboard() {
 
   const unresolvedCount = feedbacks?.filter((fb) => (fb as any).status === "unresolved").length ?? 0;
 
-  const tabs: { id: TabType; label: string; icon: React.ReactNode; badge?: number }[] = [
+  const tabs: { id: TabType; label: string; icon: React.ReactNode; badge?: number; action?: () => void }[] = [
     { id: "overview", label: "Overview", icon: <BarChart3 className="w-4 h-4" /> },
     { id: "reviews", label: "Get Reviews", icon: <Star className="w-4 h-4" /> },
-    { id: "inbox", label: "Private Inbox", icon: <Inbox className="w-4 h-4" />, badge: unresolvedCount > 0 ? unresolvedCount : undefined },
+    { id: "inbox", label: "Private Inbox", icon: <Inbox className="w-4 h-4" />, badge: unresolvedCount > 0 ? unresolvedCount : undefined, action: () => navigate("/dashboard/feedback") },
     { id: "staff", label: "Staff & QR", icon: <Users className="w-4 h-4" /> },
   ];
 
@@ -358,7 +358,13 @@ export default function Dashboard() {
         {/* Tabs */}
         <div className="flex gap-1 p-1 rounded-xl bg-white/[0.03] border border-white/5 mb-6 w-fit overflow-x-auto flex-nowrap">
           {tabs.map((tab) => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+            <button key={tab.id} onClick={() => {
+              if ((tab as any).action) {
+                (tab as any).action();
+              } else {
+                setActiveTab(tab.id);
+              }
+            }}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer ${
                 activeTab === tab.id
                   ? "bg-[#16A34A] text-white shadow-md shadow-[#16A34A]/25"
