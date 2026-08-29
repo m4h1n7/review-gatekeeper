@@ -86,10 +86,12 @@ const schema = defineSchema(
       rating: v.number(),
       type: v.union(v.literal("redirect"), v.literal("feedback_submitted"), v.literal("public_review")),
       createdAt: v.number(),
+      staffId: v.optional(v.string()), // optional staff attribution
     })
       .index("by_businessId", ["businessId", "createdAt"])
       .index("by_businessSlug", ["businessSlug", "createdAt"])
-      .index("by_createdAt", ["createdAt"]),
+      .index("by_createdAt", ["createdAt"])
+      .index("by_staffId", ["staffId"]),
 
     // Manual payment submissions (bKash/Nagad)
     payments: defineTable({
@@ -150,6 +152,18 @@ const schema = defineSchema(
     })
       .index("by_ownerId", ["ownerId"])
       .index("by_staffEmail", ["staffEmail"]),
+
+    // Staff members for attribution & leaderboard tracking
+    staffMembers: defineTable({
+      businessId: v.string(),
+      name: v.string(),
+      slug: v.string(), // unique identifier used in review URL: /review/:businessSlug?sid=xxx
+      role: v.optional(v.string()), // e.g. "Server", "Cashier", "Manager"
+      createdAt: v.number(),
+      active: v.boolean(),
+    })
+      .index("by_businessId", ["businessId"])
+      .index("by_slug", ["slug"]),
 
     // System-wide settings (maintenance mode, etc.)
     systemSettings: defineTable({

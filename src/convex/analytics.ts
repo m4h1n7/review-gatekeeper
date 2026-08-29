@@ -240,6 +240,8 @@ export const dashboardOverview = query({
         id: b._id,
         name: b.name,
         slug: b.slug,
+        logoUrl: b.logoUrl,
+        brandColor: b.brandColor,
       })),
     };
   },

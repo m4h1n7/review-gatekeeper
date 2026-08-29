@@ -16,6 +16,7 @@ export const submit = mutation({
     email: v.string(),
     message: v.string(),
     rating: v.number(),
+    staffId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     // Anti-spam: check for recent submissions from this business within rate limit window
@@ -41,6 +42,7 @@ export const submit = mutation({
       rating: args.rating,
       type: "feedback_submitted",
       createdAt: Date.now(),
+      staffId: args.staffId,
     });
 
     const id = await ctx.db.insert("feedback", {
@@ -85,6 +87,7 @@ export const logPublicReview = mutation({
   args: {
     businessId: v.string(),
     businessSlug: v.string(),
+    staffId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     await ctx.db.insert("interactions", {
@@ -93,6 +96,7 @@ export const logPublicReview = mutation({
       rating: 5,
       type: "public_review",
       createdAt: Date.now(),
+      staffId: args.staffId,
     });
     return { ok: true };
   },

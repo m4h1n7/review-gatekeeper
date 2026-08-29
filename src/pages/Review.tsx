@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useParams } from "react-router";
+import { useParams, useSearchParams } from "react-router";
 import { useMutation, useAction, useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { motion, AnimatePresence } from "framer-motion";
@@ -85,6 +85,13 @@ const scaleIn = {
    ═══════════════════════════════════════════════════════════════════ */
 export default function Review() {
   const { clientSlug } = useParams<{ clientSlug: string }>();
+  const [searchParams] = useSearchParams();
+  const staffIdParam = searchParams.get("sid") || undefined;
+  const staffInfo = useQuery(
+    api.staff.getBySlug,
+    staffIdParam ? { slug: staffIdParam } : "skip",
+  );
+  const effectiveStaffId = staffInfo?.id || staffIdParam || undefined;
   const business = useQuery(
     api.businesses.getBySlug,
     clientSlug ? { slug: clientSlug } : "skip",
@@ -132,7 +139,7 @@ export default function Review() {
   const handlePublicReview = async () => {
     if (business) {
       try {
-        await logPublicReview({ businessId: business.id, businessSlug: business.slug });
+        await logPublicReview({ businessId: business.id, businessSlug: business.slug, staffId: effectiveStaffId });
       } catch (e) {
         console.error("Failed to log:", e);
       }
@@ -165,6 +172,7 @@ export default function Review() {
         email: customerEmail,
         message: fullMessage,
         rating: 3,
+        staffId: effectiveStaffId,
       });
 
       sendEmail({

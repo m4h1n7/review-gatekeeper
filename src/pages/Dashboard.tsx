@@ -4,6 +4,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { PrintableQR } from "@/components/PrintableQR";
+import QRCodeGenerator from "@/components/QRCodeGenerator";
+import StaffManager from "@/components/StaffManager";
 import { PaywallModal } from "@/components/PaywallModal";
 import { TrialExpiredModal } from "@/components/TrialExpiredModal";
 import { MonthlyReport } from "@/components/MonthlyReport";
@@ -43,10 +45,11 @@ import {
   Lock,
   Megaphone,
   AlertTriangle,
+  Users,
 } from "lucide-react";
 import { useNavigate } from "react-router";
 
-type TabType = "overview" | "reviews" | "inbox";
+type TabType = "overview" | "reviews" | "inbox" | "staff";
 type FilterRange = "today" | "week" | "month" | "all";
 
 const FILTER_OPTIONS: { value: FilterRange; label: string; days: number }[] = [
@@ -198,6 +201,7 @@ export default function Dashboard() {
     { id: "overview", label: "Overview", icon: <BarChart3 className="w-4 h-4" /> },
     { id: "reviews", label: "Get Reviews", icon: <Star className="w-4 h-4" /> },
     { id: "inbox", label: "Private Inbox", icon: <Inbox className="w-4 h-4" />, badge: unresolvedCount > 0 ? unresolvedCount : undefined },
+    { id: "staff", label: "Staff & QR", icon: <Users className="w-4 h-4" /> },
   ];
 
   return (
@@ -808,6 +812,31 @@ export default function Dashboard() {
             )}
           </GlassPanel>
           </SubscriptionGuard>
+        )}
+
+        {/* ─── STAFF & QR TAB ─── */}
+        {activeTab === "staff" && overview && (
+          <div className="space-y-6">
+            {/* QR Code Generator */}
+            <GlassPanel className="p-5">
+              <QRCodeGenerator
+                reviewUrl={`${window.location.origin}/review/${reviewSlug || overview.businesses[0]?.slug || ""}`}
+                businessName={overview.businesses[0]?.name || businessName}
+                logoUrl={overview.businesses[0]?.logoUrl}
+                brandColor={overview.businesses[0]?.brandColor}
+              />
+            </GlassPanel>
+
+            {/* Staff Management + Leaderboard */}
+            <GlassPanel className="p-5">
+              <StaffManager
+                businessId={selectedBusinessId || overview.businesses[0]?.id || ""}
+                businessSlug={reviewSlug || overview.businesses[0]?.slug || ""}
+                businessName={overview.businesses[0]?.name || businessName}
+                brandColor={overview.businesses[0]?.brandColor}
+              />
+            </GlassPanel>
+          </div>
         )}
       </div>
 
