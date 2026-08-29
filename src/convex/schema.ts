@@ -48,6 +48,8 @@ const schema = defineSchema(
       category: v.optional(v.string()),
       phone: v.optional(v.string()),
       heroUrl: v.optional(v.string()),
+      brandColor: v.optional(v.string()), // hex color e.g. "#16A34A"
+      welcomeMessage: v.optional(v.string()), // custom greeting on review page
       promoEnabled: v.optional(v.boolean()),
       promoText: v.optional(v.string()),
       thankYouMessage: v.optional(v.string()),

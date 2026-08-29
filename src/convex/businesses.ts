@@ -1,139 +1,106 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { api } from "./_generated/api";
 
-/** Generate a URL-friendly slug from a business name */
-function slugify(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-}
-
-/** Complete onboarding: create first business + mark user as onboarded */
-export const completeOnboarding = mutation({
-  args: {
-    businessName: v.string(),
-    category: v.string(),
-    phone: v.string(),
-    reviewUrl: v.string(),
-    slug: v.optional(v.string()),
-    logoUrl: v.optional(v.string()),
-  },
-  handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Must be signed in");
-
-    const user = await ctx.db.get(userId);
-    if (!user) throw new Error("User not found");
-
-    // Generate slug
-    const slug = args.slug || slugify(args.businessName);
-
-    // Ensure slug is unique
-    let finalSlug = slug;
-    let attempt = 0;
-    while (true) {
-      const existing = await ctx.db
-        .query("businesses")
-        .withIndex("by_slug", (q) => q.eq("slug", finalSlug))
-        .first();
-      if (!existing) break;
-      attempt++;
-      finalSlug = `${slug}-${attempt}`;
-    }
-
-    // Create the business profile
-    const businessId = await ctx.db.insert("businesses", {
-      name: args.businessName,
-      slug: finalSlug,
-      logoUrl: args.logoUrl || "",
-      reviewUrl: args.reviewUrl,
-      alertEmail: user.email || "",
-      category: args.category,
-      phone: args.phone,
-      createdAt: Date.now(),
-      userId,
-    });
-
-    // Create default free subscription if none exists
-    const existingSub = await ctx.db
-      .query("subscriptions")
-      .withIndex("by_userId", (q) => q.eq("userId", userId))
-      .first();
-
-    if (!existingSub) {
-      await ctx.db.insert("subscriptions", {
-        userId,
-        plan: "free",
-        status: "pending",
-        createdAt: Date.now(),
-      });
-    }
-
-    // Mark onboarding as completed
-    await ctx.db.patch(userId, { onboardingCompleted: true });
-
-    return { businessId, slug: finalSlug };
-  },
-});
-
+/**
+ * Create a new business profile after onboarding.
+ * Generates a unique slug from the business name.
+ */
 export const create = mutation({
   args: {
     name: v.string(),
     logoUrl: v.string(),
     reviewUrl: v.string(),
     alertEmail: v.string(),
+    category: v.optional(v.string()),
+    phone: v.optional(v.string()),
+    heroUrl: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Must be signed in to create a business");
+    if (!userId) throw new Error("Must be signed in");
 
-    const now = Date.now();
-    let slug = slugify(args.name);
-
-    // Ensure slug is unique by appending a suffix if needed
-    let attempt = 0;
+    // Generate unique slug
+    const baseSlug = args.name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
+    let finalSlug = baseSlug;
+    let counter = 1;
     while (true) {
       const existing = await ctx.db
         .query("businesses")
-        .withIndex("by_slug", (q) => q.eq("slug", slug))
+        .withIndex("by_slug", (q) => q.eq("slug", finalSlug))
         .first();
       if (!existing) break;
-      attempt++;
-      slug = `${slugify(args.name)}-${attempt}`;
+      finalSlug = `${baseSlug}-${counter}`;
+      counter++;
     }
 
-    // Check subscription limits
-    const userSub = await ctx.db
-      .query("subscriptions")
-      .withIndex("by_userId", (q) => q.eq("userId", userId))
-      .first();
+    const businessId = await ctx.db.insert("businesses", {
+      name: args.name,
+      slug: finalSlug,
+      logoUrl: args.logoUrl,
+      reviewUrl: args.reviewUrl,
+      alertEmail: args.alertEmail,
+      category: args.category,
+      phone: args.phone,
+      heroUrl: args.heroUrl,
+      createdAt: Date.now(),
+      userId: userId as any,
+    });
 
-    if (!userSub || userSub.plan === "free") {
-      // Free tier: max 1 business profile
-      const existingBusinesses = await ctx.db
+    // Mark onboarding as completed
+    await ctx.db.patch(userId as any, { onboardingCompleted: true });
+
+    return { businessId, slug: finalSlug };
+  },
+});
+
+/**
+ * Admin-created business: skips onboarding completion, assigns to a specific user.
+ */
+export const createAsAdmin = mutation({
+  args: {
+    userId: v.string(),
+    name: v.string(),
+    logoUrl: v.optional(v.string()),
+    reviewUrl: v.string(),
+    alertEmail: v.string(),
+    category: v.optional(v.string()),
+    phone: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const baseSlug = args.name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
+    let finalSlug = baseSlug;
+    let counter = 1;
+    while (true) {
+      const existing = await ctx.db
         .query("businesses")
-        .withIndex("by_userId", (q) => q.eq("userId", userId))
-        .collect();
-      if (existingBusinesses.length >= 1) {
-        throw new Error(
-          "Free plan limited to 1 profile. Upgrade to Pro for unlimited.",
-        );
-      }
+        .withIndex("by_slug", (q) => q.eq("slug", finalSlug))
+        .first();
+      if (!existing) break;
+      finalSlug = `${baseSlug}-${counter}`;
+      counter++;
     }
 
     const id = await ctx.db.insert("businesses", {
       name: args.name,
-      slug,
-      logoUrl: args.logoUrl,
+      slug: finalSlug,
+      logoUrl: args.logoUrl ?? "",
       reviewUrl: args.reviewUrl,
       alertEmail: args.alertEmail,
-      createdAt: now,
-      userId,
+      category: args.category,
+      phone: args.phone,
+      createdAt: Date.now(),
+      userId: args.userId,
     });
 
-    return { id, slug };
+    return { id, slug: finalSlug };
   },
 });
 
@@ -153,6 +120,8 @@ export const getBySlug = query({
       reviewUrl: business.reviewUrl,
       alertEmail: business.alertEmail,
       heroUrl: business.heroUrl,
+      brandColor: business.brandColor ?? undefined,
+      welcomeMessage: business.welcomeMessage ?? undefined,
       promoEnabled: business.promoEnabled ?? false,
       promoText: business.promoText ?? "",
       thankYouMessage: business.thankYouMessage ?? "",
@@ -182,12 +151,12 @@ export const updateThankYou = mutation({
   },
 });
 
-/** Update promo/reward settings for a business */
+/** Update promo/offer banner settings */
 export const updatePromo = mutation({
   args: {
     businessId: v.string(),
     promoEnabled: v.boolean(),
-    promoText: v.optional(v.string()),
+    promoText: v.string(),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -199,18 +168,150 @@ export const updatePromo = mutation({
 
     await ctx.db.patch(args.businessId as any, {
       promoEnabled: args.promoEnabled,
-      promoText: args.promoText ?? "",
+      promoText: args.promoText,
     });
 
     return { ok: true };
   },
 });
 
-/** Update business logo URL */
-export const updateLogo = mutation({
+/** Update business branding: hero image, brand color, and welcome message */
+export const updateBranding = mutation({
   args: {
     businessId: v.string(),
-    logoUrl: v.string(),
+    heroUrl: v.optional(v.string()),
+    brandColor: v.optional(v.string()),
+    welcomeMessage: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Must be signed in");
+
+    const business = await ctx.db.get(args.businessId as any);
+    if (!business) throw new Error("Business not found");
+    if ((business as any).userId !== userId) throw new Error("Unauthorized");
+
+    const patch: Record<string, any> = {};
+    if (args.heroUrl !== undefined) patch.heroUrl = args.heroUrl;
+    if (args.brandColor !== undefined) patch.brandColor = args.brandColor;
+    if (args.welcomeMessage !== undefined) patch.welcomeMessage = args.welcomeMessage;
+
+    await ctx.db.patch(args.businessId as any, patch);
+
+    return { ok: true };
+  },
+});
+
+/** List businesses for the current user (used by AccountSettings) */
+export const listByUser = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+
+    const businesses = await ctx.db
+      .query("businesses")
+      .withIndex("by_userId", (q: any) => q.eq("userId", userId))
+      .collect();
+
+    return businesses.map((b) => ({
+      id: b._id,
+      name: b.name,
+      slug: b.slug,
+      logoUrl: b.logoUrl,
+      reviewUrl: b.reviewUrl,
+      alertEmail: b.alertEmail,
+      heroUrl: b.heroUrl,
+      brandColor: b.brandColor,
+      welcomeMessage: b.welcomeMessage,
+      category: b.category,
+      phone: b.phone,
+      promoEnabled: b.promoEnabled ?? false,
+      promoText: b.promoText ?? "",
+      thankYouMessage: b.thankYouMessage ?? "",
+      subscriptionStatus: b.subscriptionStatus,
+      trialEndsAt: b.trialEndsAt,
+      planType: b.planType,
+      createdAt: b.createdAt,
+    }));
+  },
+});
+
+/** Complete onboarding: create a business profile and mark user as onboarded */
+export const completeOnboarding = mutation({
+  args: {
+    businessName: v.string(),
+    category: v.string(),
+    phone: v.optional(v.string()),
+    reviewUrl: v.string(),
+    slug: v.optional(v.string()),
+    logoUrl: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Must be signed in");
+
+    // Generate unique slug
+    const baseSlug = args.slug
+      || args.businessName
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
+    let finalSlug = baseSlug;
+    let counter = 1;
+    while (true) {
+      const existing = await ctx.db
+        .query("businesses")
+        .withIndex("by_slug", (q: any) => q.eq("slug", finalSlug))
+        .first();
+      if (!existing) break;
+      finalSlug = `${baseSlug}-${counter}`;
+      counter++;
+    }
+
+    // Set 10-day trial
+    const trialExpiresAt = Date.now() + 10 * 24 * 60 * 60 * 1000;
+
+    const businessId = await ctx.db.insert("businesses", {
+      name: args.businessName,
+      slug: finalSlug,
+      logoUrl: args.logoUrl ?? "",
+      reviewUrl: args.reviewUrl,
+      alertEmail: "",
+      category: args.category,
+      phone: args.phone,
+      createdAt: Date.now(),
+      userId: userId as any,
+      subscriptionStatus: "trialing",
+      trialEndsAt: trialExpiresAt,
+      planType: "pro",
+    });
+
+    // Sync trialEndsAt to all business profiles owned by this user
+    const businesses = await ctx.db
+      .query("businesses")
+      .withIndex("by_userId", (q: any) => q.eq("userId", userId))
+      .collect();
+    for (const biz of businesses) {
+      await ctx.db.patch(biz._id as any, {
+        subscriptionStatus: "trialing",
+        trialEndsAt: trialExpiresAt,
+        planType: "pro",
+      });
+    }
+
+    // Mark onboarding as completed
+    await ctx.db.patch(userId as any, { onboardingCompleted: true });
+
+    return { businessId, slug: finalSlug };
+  },
+});
+
+/** Update the Google Review URL */
+export const updateReviewUrl = mutation({
+  args: {
+    businessId: v.string(),
+    reviewUrl: v.string(),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -221,22 +322,20 @@ export const updateLogo = mutation({
     if ((business as any).userId !== userId) throw new Error("Unauthorized");
 
     await ctx.db.patch(args.businessId as any, {
-      logoUrl: args.logoUrl,
+      reviewUrl: args.reviewUrl,
     });
 
     return { ok: true };
   },
 });
 
-export const listByUser = query({
-  args: {},
-  handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return [];
-
+/** Get all businesses for a user (for multi-profile dashboard) */
+export const getByUserId = query({
+  args: { userId: v.string() },
+  handler: async (ctx, args) => {
     const businesses = await ctx.db
       .query("businesses")
-      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .withIndex("by_userId", (q) => q.eq("userId", args.userId))
       .collect();
     return businesses.map((b) => ({
       id: b._id,
@@ -245,19 +344,26 @@ export const listByUser = query({
       logoUrl: b.logoUrl,
       reviewUrl: b.reviewUrl,
       alertEmail: b.alertEmail,
+      heroUrl: b.heroUrl,
+      brandColor: b.brandColor,
+      welcomeMessage: b.welcomeMessage,
+      category: b.category,
+      phone: b.phone,
+      promoEnabled: b.promoEnabled ?? false,
+      promoText: b.promoText ?? "",
+      thankYouMessage: b.thankYouMessage ?? "",
+      subscriptionStatus: b.subscriptionStatus,
+      trialEndsAt: b.trialEndsAt,
+      planType: b.planType,
       createdAt: b.createdAt,
     }));
   },
 });
 
-// Keep old list for backward compatibility
-export const list = query({
+/** Get all businesses (admin) */
+export const getAll = query({
   handler: async (ctx) => {
-    const businesses = await ctx.db
-      .query("businesses")
-      .withIndex("by_createdAt")
-      .order("desc")
-      .collect();
+    const businesses = await ctx.db.query("businesses").collect();
     return businesses.map((b) => ({
       id: b._id,
       name: b.name,
@@ -265,7 +371,35 @@ export const list = query({
       logoUrl: b.logoUrl,
       reviewUrl: b.reviewUrl,
       alertEmail: b.alertEmail,
+      heroUrl: b.heroUrl,
+      brandColor: b.brandColor,
+      welcomeMessage: b.welcomeMessage,
+      category: b.category,
+      phone: b.phone,
+      promoEnabled: b.promoEnabled ?? false,
+      promoText: b.promoText ?? "",
+      thankYouMessage: b.thankYouMessage ?? "",
+      subscriptionStatus: b.subscriptionStatus,
+      trialEndsAt: b.trialEndsAt,
+      planType: b.planType,
       createdAt: b.createdAt,
+      userId: b.userId,
     }));
+  },
+});
+
+/** Delete a business profile */
+export const remove = mutation({
+  args: { businessId: v.string() },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Must be signed in");
+
+    const business = await ctx.db.get(args.businessId as any);
+    if (!business) throw new Error("Business not found");
+    if ((business as any).userId !== userId) throw new Error("Unauthorized");
+
+    await ctx.db.delete(args.businessId as any);
+    return { ok: true };
   },
 });
