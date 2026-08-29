@@ -82,7 +82,7 @@ const schema = defineSchema(
       businessId: v.string(),
       businessSlug: v.string(),
       rating: v.number(),
-      type: v.union(v.literal("redirect"), v.literal("feedback_submitted")),
+      type: v.union(v.literal("redirect"), v.literal("feedback_submitted"), v.literal("public_review")),
       createdAt: v.number(),
     })
       .index("by_businessId", ["businessId", "createdAt"])

@@ -76,6 +76,28 @@ export const logRedirect = mutation({
   },
 });
 
+/**
+ * Log when a customer clicks "Share Public Review" (option A).
+ * This records that the customer chose to leave a public Google review.
+ * rating is set to 5 by default since the user chose the public review path.
+ */
+export const logPublicReview = mutation({
+  args: {
+    businessId: v.string(),
+    businessSlug: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.insert("interactions", {
+      businessId: args.businessId,
+      businessSlug: args.businessSlug,
+      rating: 5,
+      type: "public_review",
+      createdAt: Date.now(),
+    });
+    return { ok: true };
+  },
+});
+
 /** Toggle feedback status between resolved and unresolved */
 export const toggleStatus = mutation({
   args: {
