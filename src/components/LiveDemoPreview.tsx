@@ -25,6 +25,7 @@ import {
   Eye,
   Store,
   Zap,
+  Heart,
   Bell,
   MessageCircle,
   X,
@@ -87,18 +88,20 @@ export default function LiveDemoPreview() {
   const [feedbackMessage, setFeedbackMessage] = useState("");
   const [logoLoaded, setLogoLoaded] = useState(false);
   const logoRef = useRef<HTMLImageElement>(null);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
+  const [submittedAt, setSubmittedAt] = useState<number | null>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [showAlert, setShowAlert] = useState(false);
   const [platformIcon, setPlatformIcon] = useState<string>("");
 
   /* ─── Quick Feedback Tags ─── */
   const QUICK_TAGS = [
-    { label: "Service Quality", emoji: "🏷️" },
-    { label: "Staff Behavior", emoji: "🏷️" },
-    { label: "Pricing / Value", emoji: "🏷️" },
-    { label: "Wait Time", emoji: "🏷️" },
-    { label: "Cleanliness", emoji: "🏷️" },
-    { label: "Product Issue", emoji: "🏷️" },
+    { label: "Service Quality", emoji: "✨" },
+    { label: "Staff Behavior", emoji: "👥" },
+    { label: "Pricing / Value", emoji: "💎" },
+    { label: "Wait Time", emoji: "⏱️" },
+    { label: "Cleanliness", emoji: "🌿" },
+    { label: "Product Issue", emoji: "⚠️" },
   ];
 
   const toggleTag = useCallback((tag: string) => {
@@ -127,6 +130,8 @@ export default function LiveDemoPreview() {
     setSelectedTags([]);
     setShowAlert(false);
     setPlatformIcon("");
+    setSubmittedAt(null);
+    setFocusedField(null);
   }, []);
 
   const handlePublicReview = useCallback(() => {
@@ -148,6 +153,7 @@ export default function LiveDemoPreview() {
   const handleFeedbackSubmit = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
+      setSubmittedAt(Date.now());
       setStep("thank-you");
       setShowAlert(true);
       setTimeout(() => setShowAlert(false), 4000);
@@ -477,36 +483,48 @@ export default function LiveDemoPreview() {
                   {step === "feedback-form" && (
                     <motion.div
                       key="feedback"
-                      initial={{ opacity: 0, y: 12 }}
+                      initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -12 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.35, ease: [0.23, 1, 0.32, 1] }}
                       className="p-5 min-h-[520px]"
                     >
+                      {/* Back button */}
                       <button
                         onClick={() => setStep("welcome")}
-                        className="flex items-center gap-1 text-white/30 text-[11px] mb-4 hover:text-white/50 transition-colors cursor-pointer"
+                        className="flex items-center gap-1 text-white/25 text-[11px] mb-5 hover:text-white/45 transition-all cursor-pointer group"
                       >
-                        ← Back to options
+                        <span className="group-hover:-translate-x-0.5 transition-transform">←</span>
+                        Back to options
                       </button>
 
-                      <div className="text-center mb-5">
-                        {/* Dynamic logo or fallback icon */}
+                      {/* ─── Animated Logo Avatar ─── */}
+                      <div className="text-center mb-6">
                         {config.logoUrl ? (
-                          <div className="relative mx-auto mb-3 w-12 h-12">
-                            {/* Skeleton pulse while loading */}
+                          <motion.div
+                            className="relative mx-auto mb-4 w-14 h-14"
+                            initial={{ scale: 0.6, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ type: "spring", stiffness: 260, damping: 20 }}
+                          >
+                            {/* Pulsing glow ring */}
+                            <div
+                              className="absolute -inset-1 rounded-full animate-pulse"
+                              style={{
+                                background: `radial-gradient(circle, ${config.brandColor}20 0%, transparent 70%)`,
+                              }}
+                            />
+                            {/* Skeleton while loading */}
                             {!logoLoaded && (
-                              <div
-                                className="absolute inset-0 rounded-full animate-pulse"
-                                style={{ backgroundColor: `${config.brandColor}15` }}
-                              />
+                              <div className="absolute inset-0 rounded-full bg-white/5 animate-pulse" />
                             )}
                             <div
-                              className="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden border-2 transition-all duration-500"
+                              className="relative w-14 h-14 rounded-full flex items-center justify-center overflow-hidden border-2 backdrop-blur-sm"
                               style={{
-                                borderColor: `${config.brandColor}30`,
-                                boxShadow: `0 0 16px ${config.brandColor}18`,
+                                borderColor: `${config.brandColor}40`,
+                                boxShadow: `0 0 24px ${config.brandColor}20, inset 0 0 12px rgba(255,255,255,0.03)`,
                                 opacity: logoLoaded ? 1 : 0,
-                                transition: "opacity 0.4s ease-in-out",
+                                transition: "opacity 0.5s ease-in-out",
                               }}
                             >
                               <img
@@ -518,81 +536,184 @@ export default function LiveDemoPreview() {
                                 onError={() => setLogoLoaded(false)}
                               />
                             </div>
-                          </div>
+                          </motion.div>
                         ) : (
-                          <div
-                            className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 border border-white/10"
-                            style={{ backgroundColor: `${config.brandColor}12` }}
+                          <motion.div
+                            className="mx-auto mb-4 w-14 h-14 rounded-full flex items-center justify-center border border-white/10 backdrop-blur-sm relative"
+                            style={{
+                              background: `linear-gradient(135deg, ${config.brandColor}10 0%, ${config.brandColor}05 100%)`,
+                            }}
+                            initial={{ scale: 0.6, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ type: "spring", stiffness: 260, damping: 20 }}
                           >
-                            <Store className="w-5 h-5 text-white/50" />
-                          </div>
+                            {/* Ambient neon glow */}
+                            <div
+                              className="absolute -inset-2 rounded-full animate-pulse opacity-40"
+                              style={{
+                                background: `radial-gradient(circle, ${config.brandColor}15 0%, transparent 70%)`,
+                              }}
+                            />
+                            <Heart
+                              className="w-6 h-6 relative z-10"
+                              style={{ color: `${config.brandColor}90` }}
+                            />
+                          </motion.div>
                         )}
-                        <h3 className="text-sm font-bold text-white mb-1">We're sorry to hear that.</h3>
-                        <p className="text-[10px] text-white/30 leading-relaxed">
+
+                        <h3 className="text-[13px] font-bold text-white mb-1.5 tracking-tight">
+                          We're sorry to hear that.
+                        </h3>
+                        <p className="text-[10px] text-white/30 leading-relaxed max-w-[220px] mx-auto">
                           Have an issue? Message management directly for a 24-hour response.
                         </p>
                       </div>
 
+                      {/* ─── Feedback Form ─── */}
                       <form onSubmit={handleFeedbackSubmit} className="space-y-3">
-                        <input
-                          value={feedbackName}
-                          onChange={(e) => setFeedbackName(e.target.value)}
-                          placeholder="Name (optional)"
-                          className="w-full h-9 px-3 rounded-xl bg-white/[0.03] border border-white/[0.08] text-white text-xs placeholder:text-white/20 focus:border-white/20 transition-all"
-                        />
-                        <input
-                          value={feedbackWhatsapp}
-                          onChange={(e) => setFeedbackWhatsapp(e.target.value)}
-                          placeholder="WhatsApp Number (optional)"
-                          className="w-full h-9 px-3 rounded-xl bg-white/[0.03] border border-white/[0.08] text-white text-xs placeholder:text-white/20 focus:border-white/20 transition-all"
-                        />
+                        {/* Name Field */}
+                        <div className="relative group">
+                          <div
+                            className="absolute -inset-[1px] rounded-2xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-500"
+                            style={{ background: `linear-gradient(135deg, ${config.brandColor}30, ${config.brandColor}10)` }}
+                          />
+                          <div className="relative flex items-center">
+                            <User className="absolute left-3 w-3.5 h-3.5 text-white/20 group-focus-within:text-white/40 transition-colors" />
+                            <input
+                              value={feedbackName}
+                              onChange={(e) => setFeedbackName(e.target.value)}
+                              onFocus={() => setFocusedField("name")}
+                              onBlur={() => setFocusedField(null)}
+                              placeholder="Name (optional)"
+                              className="relative w-full h-11 pl-9 pr-4 rounded-2xl bg-white/[0.04] border border-white/[0.06] text-white text-[11px] placeholder:text-white/20 focus:outline-none transition-all"
+                              style={
+                                focusedField === "name"
+                                  ? { borderColor: `${config.brandColor}35`, boxShadow: `0 0 20px ${config.brandColor}10` }
+                                  : {}
+                              }
+                            />
+                          </div>
+                        </div>
 
-                        {/* Quick Selection Tags */}
+                        {/* WhatsApp Field with Country Flag */}
+                        <div className="relative group">
+                          <div
+                            className="absolute -inset-[1px] rounded-2xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-500"
+                            style={{ background: `linear-gradient(135deg, ${config.brandColor}30, ${config.brandColor}10)` }}
+                          />
+                          <div className="relative flex items-center">
+                            <div className="absolute left-3 flex items-center gap-1.5">
+                              <span className="text-[13px]">🇧🇩</span>
+                              <span className="text-[10px] text-white/25 font-medium">+880</span>
+                            </div>
+                            <input
+                              value={feedbackWhatsapp}
+                              onChange={(e) => setFeedbackWhatsapp(e.target.value)}
+                              onFocus={() => setFocusedField("whatsapp")}
+                              onBlur={() => setFocusedField(null)}
+                              placeholder="WhatsApp (optional)"
+                              className="relative w-full h-11 pl-[62px] pr-4 rounded-2xl bg-white/[0.04] border border-white/[0.06] text-white text-[11px] placeholder:text-white/20 focus:outline-none transition-all"
+                              style={
+                                focusedField === "whatsapp"
+                                  ? { borderColor: `${config.brandColor}35`, boxShadow: `0 0 20px ${config.brandColor}10` }
+                                  : {}
+                              }
+                            />
+                          </div>
+                        </div>
+
+                        {/* ─── Quick Selection Tags ─── */}
                         <div>
-                          <p className="text-[9px] text-white/25 uppercase tracking-widest font-medium mb-1.5">
+                          <p className="text-[9px] text-white/25 uppercase tracking-[0.2em] font-semibold mb-2">
                             What can we improve?
                           </p>
-                          <div className="flex flex-wrap gap-1.5">
+                          <div className="flex flex-wrap gap-2">
                             {QUICK_TAGS.map((tag) => {
                               const isActive = selectedTags.includes(tag.label);
                               return (
-                                <button
+                                <motion.button
                                   key={tag.label}
                                   type="button"
                                   onClick={() => toggleTag(tag.label)}
-                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all cursor-pointer border"
+                                  whileTap={{ scale: 0.92 }}
+                                  whileHover={{ scale: 1.04 }}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-medium border backdrop-blur-sm cursor-pointer select-none"
                                   style={{
                                     backgroundColor: isActive
                                       ? `${config.brandColor}18`
-                                      : "rgba(255,255,255,0.02)",
+                                      : "rgba(255,255,255,0.03)",
                                     borderColor: isActive
-                                      ? `${config.brandColor}35`
+                                      ? `${config.brandColor}40`
                                       : "rgba(255,255,255,0.06)",
-                                    color: isActive ? config.brandColor : "rgba(255,255,255,0.35)",
+                                    color: isActive ? config.brandColor : "rgba(255,255,255,0.3)",
+                                    boxShadow: isActive
+                                      ? `0 0 12px ${config.brandColor}15, inset 0 0 8px ${config.brandColor}08`
+                                      : "none",
+                                    transition: "all 0.2s ease",
                                   }}
                                 >
-                                  <span>{tag.emoji}</span>
+                                  <span className="text-[11px]">{tag.emoji}</span>
                                   <span>{tag.label}</span>
-                                </button>
+                                  {isActive && (
+                                    <motion.span
+                                      initial={{ scale: 0 }}
+                                      animate={{ scale: 1 }}
+                                      className="ml-0.5"
+                                    >
+                                      <CheckCircle2 className="w-2.5 h-2.5" style={{ color: config.brandColor }} />
+                                    </motion.span>
+                                  )}
+                                </motion.button>
                               );
                             })}
                           </div>
                         </div>
 
-                        <textarea
-                          value={feedbackMessage}
-                          onChange={(e) => setFeedbackMessage(e.target.value)}
-                          placeholder="Tell us more..."
-                          className="w-full h-20 px-3 py-2 rounded-xl bg-white/[0.03] border border-white/[0.08] text-white text-xs placeholder:text-white/20 focus:border-white/20 transition-all resize-none"
-                        />
-                        <button
+                        {/* Message Textarea */}
+                        <div className="relative group">
+                          <div
+                            className="absolute -inset-[1px] rounded-2xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-500"
+                            style={{ background: `linear-gradient(135deg, ${config.brandColor}30, ${config.brandColor}10)` }}
+                          />
+                          <div className="relative">
+                            <textarea
+                              value={feedbackMessage}
+                              onChange={(e) => setFeedbackMessage(e.target.value)}
+                              onFocus={() => setFocusedField("message")}
+                              onBlur={() => setFocusedField(null)}
+                              placeholder="Tell us more..."
+                              className="relative w-full h-24 px-4 pt-3 pb-2 rounded-2xl bg-white/[0.04] border border-white/[0.06] text-white text-[11px] placeholder:text-white/20 focus:outline-none transition-all resize-none"
+                              style={
+                                focusedField === "message"
+                                  ? { borderColor: `${config.brandColor}35`, boxShadow: `0 0 20px ${config.brandColor}10` }
+                                  : {}
+                              }
+                            />
+                          </div>
+                        </div>
+
+                        {/* ─── Premium Submit Button ─── */}
+                        <motion.button
                           type="submit"
-                          className="w-full h-10 rounded-xl text-white text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer"
-                          style={{ backgroundColor: config.brandColor }}
+                          whileHover={{ scale: 1.015 }}
+                          whileTap={{ scale: 0.97 }}
+                          className="relative w-full h-12 rounded-2xl text-white text-[11px] font-bold flex items-center justify-center gap-2 cursor-pointer overflow-hidden group"
+                          style={{
+                            background: `linear-gradient(135deg, ${config.brandColor}, ${config.brandColor}DD)`,
+                            boxShadow: `0 4px 20px ${config.brandColor}30, 0 0 40px ${config.brandColor}10`,
+                          }}
                         >
-                          <Send className="w-3.5 h-3.5" />
-                          Submit Feedback
-                        </button>
+                          {/* Shimmer overlay */}
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out" />
+                          <Send className="w-3.5 h-3.5 relative z-10 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                          <span className="relative z-10">Submit Feedback</span>
+                        </motion.button>
+
+                        {/* Confidential badge */}
+                        <div className="flex items-center justify-center gap-1.5 pt-1">
+                          <Shield className="w-2.5 h-2.5 text-white/15" />
+                          <span className="text-[9px] text-white/15 font-medium">100% Confidential</span>
+                        </div>
                       </form>
                     </motion.div>
                   )}
@@ -600,39 +721,136 @@ export default function LiveDemoPreview() {
                   {step === "thank-you" && (
                     <motion.div
                       key="thank-you"
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="flex flex-col items-center p-6 text-center min-h-[520px] justify-center"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.4 }}
+                      className="flex flex-col items-center p-6 text-center min-h-[520px] justify-center relative overflow-hidden"
                     >
+                      {/* ─── Confetti Particles ─── */}
+                      {[...Array(18)].map((_, i) => (
+                        <motion.div
+                          key={i}
+                          className="absolute rounded-full"
+                          style={{
+                            width: Math.random() * 6 + 3,
+                            height: Math.random() * 6 + 3,
+                            left: `${15 + Math.random() * 70}%`,
+                            top: `${20 + Math.random() * 30}%`,
+                            backgroundColor: [
+                              config.brandColor,
+                              "#FBBF24",
+                              "#F87171",
+                              "#60A5FA",
+                              "#A78BFA",
+                              "#34D399",
+                              "#FB923C",
+                            ][i % 7],
+                          }}
+                          initial={{ opacity: 1, scale: 0, y: 0 }}
+                          animate={{
+                            opacity: [1, 1, 0],
+                            scale: [0, 1.2, 0.8],
+                            y: [0, -40 - Math.random() * 60, 60 + Math.random() * 40],
+                            x: [
+                              0,
+                              (Math.random() - 0.5) * 120,
+                              (Math.random() - 0.5) * 160,
+                            ],
+                            rotate: [0, Math.random() * 360, Math.random() * 720],
+                          }}
+                          transition={{
+                            duration: 1.2 + Math.random() * 0.6,
+                            delay: i * 0.04,
+                            ease: "easeOut",
+                          }}
+                        />
+                      ))}
+
+                      {/* Animated checkmark circle */}
                       <motion.div
-                        initial={{ scale: 0, rotate: -15 }}
+                        initial={{ scale: 0, rotate: -30 }}
                         animate={{ scale: 1, rotate: 0 }}
-                        transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                        transition={{ type: "spring", stiffness: 180, damping: 14, delay: 0.1 }}
+                        className="relative mb-6"
                       >
+                        {/* Glow ring */}
                         <div
-                          className="w-16 h-16 rounded-2xl flex items-center justify-center mb-5"
-                          style={{ backgroundColor: `${config.brandColor}12` }}
+                          className="absolute -inset-3 rounded-full animate-pulse"
+                          style={{
+                            background: `radial-gradient(circle, ${config.brandColor}25 0%, transparent 70%)`,
+                          }}
+                        />
+                        <div
+                          className="w-20 h-20 rounded-full flex items-center justify-center backdrop-blur-sm border"
+                          style={{
+                            borderColor: `${config.brandColor}30`,
+                            background: `linear-gradient(135deg, ${config.brandColor}12 0%, ${config.brandColor}05 100%)`,
+                            boxShadow: `0 0 30px ${config.brandColor}15`,
+                          }}
                         >
-                          <CheckCircle2 className="w-8 h-8" style={{ color: config.brandColor }} />
+                          <motion.div
+                            initial={{ pathLength: 0, opacity: 0 }}
+                            animate={{ pathLength: 1, opacity: 1 }}
+                            transition={{ delay: 0.3, duration: 0.5 }}
+                          >
+                            <CheckCircle2
+                              className="w-9 h-9"
+                              style={{ color: config.brandColor }}
+                            />
+                          </motion.div>
                         </div>
                       </motion.div>
-                      <h3 className="text-base font-bold text-white mb-2">Thank you!</h3>
-                      <p className="text-[11px] text-white/40 leading-relaxed max-w-xs mb-5">
-                        {platformIcon
-                          ? `Your review helps us improve. Thank you for choosing ${platformIcon.charAt(0).toUpperCase() + platformIcon.slice(1)}!`
-                          : "Your feedback has been sent. Our team will respond within 24 hours."}
-                      </p>
-                      <div className="flex items-center gap-1.5 text-[10px] text-white/20 mb-5">
-                        <Shield className="w-3 h-3" />
-                        Your feedback is confidential
-                      </div>
-                      <button
+
+                      <motion.h3
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3, duration: 0.4 }}
+                        className="text-base font-bold text-white mb-2 tracking-tight"
+                      >
+                        Thank you!
+                      </motion.h3>
+
+                      <motion.p
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.4, duration: 0.4 }}
+                        className="text-[11px] text-white/40 leading-relaxed max-w-[240px] mb-4"
+                      >
+                        Thank you for helping us improve! Management will reach out within 24 hours.
+                      </motion.p>
+
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.55, duration: 0.35 }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border backdrop-blur-sm mb-6"
+                        style={{
+                          borderColor: `${config.brandColor}20`,
+                          background: `${config.brandColor}08`,
+                        }}
+                      >
+                        <Shield className="w-3 h-3" style={{ color: `${config.brandColor}80` }} />
+                        <span className="text-[10px] text-white/35 font-medium">
+                          Your feedback is confidential
+                        </span>
+                      </motion.div>
+
+                      <motion.button
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.7 }}
+                        whileHover={{ scale: 1.03 }}
+                        whileTap={{ scale: 0.97 }}
                         onClick={resetDemo}
-                        className="text-[11px] font-medium transition-colors cursor-pointer"
-                        style={{ color: `${config.brandColor}90` }}
+                        className="text-[11px] font-semibold transition-all cursor-pointer px-4 py-2 rounded-xl border"
+                        style={{
+                          color: `${config.brandColor}B0`,
+                          borderColor: `${config.brandColor}20`,
+                          background: `${config.brandColor}08`,
+                        }}
                       >
                         ← Try again
-                      </button>
+                      </motion.button>
                     </motion.div>
                   )}
                 </AnimatePresence>
