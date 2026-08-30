@@ -11,20 +11,14 @@ import {
   Type,
   Image as ImageIcon,
   User,
-  Phone,
-  Mail,
   MessageSquare,
   Star,
   Globe,
-  Facebook,
   Shield,
   Users,
   QrCode,
   Download,
-  ArrowRight,
   Eye,
-  Store,
-  Zap,
   Heart,
   Bell,
   MessageCircle,
@@ -32,15 +26,13 @@ import {
   ChevronRight,
   Sparkles,
   BarChart3,
+  Link,
 } from "lucide-react";
 
 /* ─── Types ─── */
 type DemoStep =
   | "welcome"
-  | "platform-select"
   | "google-redirect"
-  | "facebook-redirect"
-  | "trustpilot-redirect"
   | "feedback-form"
   | "thank-you";
 
@@ -49,9 +41,7 @@ interface DemoConfig {
   brandColor: string;
   welcomeMessage: string;
   logoUrl: string;
-  showGoogle: boolean;
-  showFacebook: boolean;
-  showTrustpilot: boolean;
+  googleReviewUrl: string;
   staffMember: string;
   staffEnabled: boolean;
   showQR: boolean;
@@ -76,9 +66,7 @@ export default function LiveDemoPreview() {
     brandColor: "#16A34A",
     welcomeMessage: "How was your experience with us today?",
     logoUrl: "",
-    showGoogle: true,
-    showFacebook: false,
-    showTrustpilot: false,
+    googleReviewUrl: "https://g.page/r/your-google-review-link",
     staffMember: "No Staff Attribution",
     staffEnabled: false,
     showQR: false,
@@ -111,15 +99,6 @@ export default function LiveDemoPreview() {
   }, []);
 
   /* ─── Derived ─── */
-  const platformCount = [config.showGoogle, config.showFacebook, config.showTrustpilot].filter(Boolean).length;
-  const singlePlatform =
-    platformCount === 1
-      ? config.showGoogle
-        ? "google"
-        : config.showFacebook
-          ? "facebook"
-          : "trustpilot"
-      : null;
 
   /* ─── Handlers ─── */
   const resetDemo = useCallback(() => {
@@ -135,20 +114,10 @@ export default function LiveDemoPreview() {
   }, []);
 
   const handlePublicReview = useCallback(() => {
-    if (platformCount > 1) {
-      setStep("platform-select");
-    } else if (singlePlatform) {
-      setPlatformIcon(singlePlatform);
-      setStep(`${singlePlatform}-redirect` as DemoStep);
-      setTimeout(() => {
-        setStep("thank-you");
-      }, 2000);
-    } else {
-      setPlatformIcon("google");
-      setStep("google-redirect");
-      setTimeout(() => setStep("thank-you"), 2000);
-    }
-  }, [platformCount, singlePlatform]);
+    setPlatformIcon("google");
+    setStep("google-redirect");
+    setTimeout(() => setStep("thank-you"), 2000);
+  }, []);
 
   const handleFeedbackSubmit = useCallback(
     (e: React.FormEvent) => {
@@ -161,11 +130,7 @@ export default function LiveDemoPreview() {
     [],
   );
 
-  const handlePlatformSelect = useCallback((platform: string) => {
-    setPlatformIcon(platform);
-    setStep(`${platform}-redirect` as DemoStep);
-    setTimeout(() => setStep("thank-you"), 2000);
-  }, []);
+
 
   /* ─── Config Updater ─── */
   const updateConfig = useCallback((patch: Partial<DemoConfig>) => {
@@ -350,26 +315,12 @@ export default function LiveDemoPreview() {
                         </motion.button>
                       </div>
 
-                      {/* Platform Badges */}
-                      {(config.showGoogle || config.showFacebook || config.showTrustpilot) && (
-                        <div className="flex items-center gap-2 mt-5">
-                          {config.showGoogle && (
-                            <span className="px-2 py-0.5 rounded-full text-[9px] font-medium bg-white/5 border border-white/8 text-white/30">
-                              Google
-                            </span>
-                          )}
-                          {config.showFacebook && (
-                            <span className="px-2 py-0.5 rounded-full text-[9px] font-medium bg-blue-500/10 border border-blue-500/20 text-blue-400">
-                              Facebook
-                            </span>
-                          )}
-                          {config.showTrustpilot && (
-                            <span className="px-2 py-0.5 rounded-full text-[9px] font-medium bg-green-500/10 border border-green-500/20 text-green-400">
-                              Trustpilot
-                            </span>
-                          )}
-                        </div>
-                      )}
+                      {/* Google Badge */}
+                      <div className="flex items-center gap-2 mt-5">
+                        <span className="px-2 py-0.5 rounded-full text-[9px] font-medium bg-white/5 border border-white/8 text-white/30">
+                          ⭐ Google Reviews
+                        </span>
+                      </div>
 
                       {/* Staff Attribution */}
                       {config.staffEnabled && config.staffMember !== "No Staff Attribution" && (
@@ -385,65 +336,9 @@ export default function LiveDemoPreview() {
                     </motion.div>
                   )}
 
-                  {step === "platform-select" && (
-                    <motion.div
-                      key="platform-select"
-                      initial={{ opacity: 0, y: 12 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -12 }}
-                      className="flex flex-col items-center p-6 text-center min-h-[520px] justify-center"
-                    >
-                      <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center mb-4">
-                        <Globe className="w-6 h-6 text-blue-400" />
-                      </div>
-                      <h3 className="text-base font-bold text-white mb-1">Choose a Platform</h3>
-                      <p className="text-[11px] text-white/35 mb-6">Where would you like to leave your review?</p>
 
-                      <div className="w-full space-y-3">
-                        {config.showGoogle && (
-                          <button
-                            onClick={() => handlePlatformSelect("google")}
-                            className="w-full flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:border-white/15 transition-all cursor-pointer"
-                          >
-                            <div className="w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center text-lg">⭐</div>
-                            <span className="text-sm font-medium text-white flex-1 text-left">Google Reviews</span>
-                            <ChevronRight className="w-4 h-4 text-white/20" />
-                          </button>
-                        )}
-                        {config.showFacebook && (
-                          <button
-                            onClick={() => handlePlatformSelect("facebook")}
-                            className="w-full flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:border-blue-500/30 transition-all cursor-pointer"
-                          >
-                            <div className="w-9 h-9 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                              <Facebook className="w-5 h-5 text-blue-500" />
-                            </div>
-                            <span className="text-sm font-medium text-white flex-1 text-left">Facebook</span>
-                            <ChevronRight className="w-4 h-4 text-white/20" />
-                          </button>
-                        )}
-                        {config.showTrustpilot && (
-                          <button
-                            onClick={() => handlePlatformSelect("trustpilot")}
-                            className="w-full flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:border-green-500/30 transition-all cursor-pointer"
-                          >
-                            <div className="w-9 h-9 rounded-lg bg-green-500/10 flex items-center justify-center text-sm font-bold text-green-500">★</div>
-                            <span className="text-sm font-medium text-white flex-1 text-left">Trustpilot</span>
-                            <ChevronRight className="w-4 h-4 text-white/20" />
-                          </button>
-                        )}
-                      </div>
 
-                      <button
-                        onClick={() => setStep("welcome")}
-                        className="mt-4 text-[11px] text-white/30 hover:text-white/50 transition-colors cursor-pointer"
-                      >
-                        ← Back
-                      </button>
-                    </motion.div>
-                  )}
-
-                  {(step === "google-redirect" || step === "facebook-redirect" || step === "trustpilot-redirect") && (
+                  {step === "google-redirect" && (
                     <motion.div
                       key="redirect"
                       initial={{ opacity: 0, scale: 0.95 }}
@@ -463,11 +358,7 @@ export default function LiveDemoPreview() {
                         </div>
                       </motion.div>
                       <h3 className="text-lg font-bold text-white mb-2">Thank you for sharing!</h3>
-                      <p className="text-[11px] text-white/40 mb-5 max-w-xs">
-                        {step === "google-redirect" && "Redirecting to Google Reviews..."}
-                        {step === "facebook-redirect" && "Redirecting to Facebook..."}
-                        {step === "trustpilot-redirect" && "Redirecting to Trustpilot..."}
-                      </p>
+                      <p className="text-[11px] text-white/40 mb-5 max-w-xs">Redirecting to Google Reviews...</p>
                       <div className="w-32 h-1 rounded-full bg-white/[0.06] overflow-hidden">
                         <motion.div
                           className="h-full rounded-full"
@@ -971,38 +862,32 @@ export default function LiveDemoPreview() {
               </div>
             </div>
 
-            {/* Review Platforms */}
+            {/* Review Platform — Google Only */}
             <div>
               <label className="flex items-center gap-1.5 text-xs font-medium text-[#A1A1AA] mb-2">
                 <Globe className="w-3 h-3" />
-                Review Platforms
+                Review Platform
               </label>
-              <div className="space-y-2">
-                {[
-                  { key: "showGoogle" as const, label: "Google Reviews", icon: "⭐" },
-                  { key: "showFacebook" as const, label: "Facebook", icon: "📘" },
-                  { key: "showTrustpilot" as const, label: "Trustpilot", icon: "★" },
-                ].map((p) => (
-                  <button
-                    key={p.key}
-                    onClick={() => updateConfig({ [p.key]: !config[p.key] })}
-                    className={`w-full flex items-center gap-3 p-2.5 rounded-xl border transition-all cursor-pointer ${
-                      config[p.key]
-                        ? "border-[#16A34A]/30 bg-[#16A34A]/5"
-                        : "border-white/[0.06] bg-white/[0.02] hover:border-white/10"
-                    }`}
-                  >
-                    <span className="text-sm">{p.icon}</span>
-                    <span className="text-xs font-medium text-white flex-1 text-left">{p.label}</span>
-                    <div
-                      className={`w-8 h-5 rounded-full transition-all flex items-center ${
-                        config[p.key] ? "bg-[#16A34A] justify-end" : "bg-white/10 justify-start"
-                      }`}
-                    >
-                      <div className="w-4 h-4 rounded-full bg-white shadow mx-0.5" />
-                    </div>
-                  </button>
-                ))}
+              {/* Google Reviews — Active by Default */}
+              <div className="w-full flex items-center gap-3 p-2.5 rounded-xl border border-[#16A34A]/30 bg-[#16A34A]/5">
+                <span className="text-sm">⭐</span>
+                <span className="text-xs font-medium text-white flex-1 text-left">Google Reviews</span>
+                <span className="px-2 py-0.5 rounded-full text-[9px] font-semibold bg-[#16A34A]/20 text-[#16A34A] border border-[#16A34A]/30">
+                  Active by Default
+                </span>
+              </div>
+              {/* Google Review URL Input */}
+              <div className="mt-2">
+                <label className="flex items-center gap-1.5 text-[10px] text-[#A1A1AA]/60 mb-1">
+                  <Link className="w-2.5 h-2.5" />
+                  Your Google Review Link
+                </label>
+                <input
+                  value={config.googleReviewUrl}
+                  onChange={(e) => updateConfig({ googleReviewUrl: e.target.value })}
+                  placeholder="https://g.page/r/your-google-review-link"
+                  className="w-full h-9 px-3 rounded-xl bg-white/5 border border-white/10 text-white text-[11px] placeholder:text-[#A1A1AA]/40 focus:border-[#16A34A] focus:ring-1 focus:ring-[#16A34A]/20 transition-all"
+                />
               </div>
             </div>
 
