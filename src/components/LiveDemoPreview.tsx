@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { QRCodeSVG } from "qrcode.react";
 import {
@@ -23,6 +23,7 @@ import {
   Download,
   ArrowRight,
   Eye,
+  Store,
   Zap,
   Bell,
   MessageCircle,
@@ -84,6 +85,8 @@ export default function LiveDemoPreview() {
   const [feedbackName, setFeedbackName] = useState("");
   const [feedbackWhatsapp, setFeedbackWhatsapp] = useState("");
   const [feedbackMessage, setFeedbackMessage] = useState("");
+  const [logoLoaded, setLogoLoaded] = useState(false);
+  const logoRef = useRef<HTMLImageElement>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [showAlert, setShowAlert] = useState(false);
   const [platformIcon, setPlatformIcon] = useState<string>("");
@@ -169,6 +172,11 @@ export default function LiveDemoPreview() {
       resetDemo();
     }
   }, [config.brandColor, config.businessName, config.welcomeMessage]);
+
+  /* ─── Reset logo loaded state when logo URL changes ─── */
+  useEffect(() => {
+    setLogoLoaded(false);
+  }, [config.logoUrl]);
 
   return (
     <div className="w-full max-w-6xl mx-auto">
@@ -482,12 +490,43 @@ export default function LiveDemoPreview() {
                       </button>
 
                       <div className="text-center mb-5">
-                        <div
-                          className="w-10 h-10 rounded-2xl flex items-center justify-center mx-auto mb-3"
-                          style={{ backgroundColor: `${config.brandColor}12` }}
-                        >
-                          <MessageCircle className="w-5 h-5 text-white/50" />
-                        </div>
+                        {/* Dynamic logo or fallback icon */}
+                        {config.logoUrl ? (
+                          <div className="relative mx-auto mb-3 w-12 h-12">
+                            {/* Skeleton pulse while loading */}
+                            {!logoLoaded && (
+                              <div
+                                className="absolute inset-0 rounded-full animate-pulse"
+                                style={{ backgroundColor: `${config.brandColor}15` }}
+                              />
+                            )}
+                            <div
+                              className="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden border-2 transition-all duration-500"
+                              style={{
+                                borderColor: `${config.brandColor}30`,
+                                boxShadow: `0 0 16px ${config.brandColor}18`,
+                                opacity: logoLoaded ? 1 : 0,
+                                transition: "opacity 0.4s ease-in-out",
+                              }}
+                            >
+                              <img
+                                ref={logoRef}
+                                src={config.logoUrl}
+                                alt="Business logo"
+                                className="w-full h-full object-cover"
+                                onLoad={() => setLogoLoaded(true)}
+                                onError={() => setLogoLoaded(false)}
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <div
+                            className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 border border-white/10"
+                            style={{ backgroundColor: `${config.brandColor}12` }}
+                          >
+                            <Store className="w-5 h-5 text-white/50" />
+                          </div>
+                        )}
                         <h3 className="text-sm font-bold text-white mb-1">We're sorry to hear that.</h3>
                         <p className="text-[10px] text-white/30 leading-relaxed">
                           Have an issue? Message management directly for a 24-hour response.
