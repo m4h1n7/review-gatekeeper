@@ -58,11 +58,7 @@ export default function QRCodeGenerator({
     : reviewUrl;
 
   /* ─── PNG Download ─── */
-  const downloadPNG = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    // Generate a fresh high-res canvas
+  const downloadPNG = useCallback(async () => {
     const size = 1200;
     const cvs = document.createElement("canvas");
     cvs.width = size;
@@ -80,6 +76,57 @@ export default function QRCodeGenerator({
       const qrSize = size * 0.55;
       const offset = (size - qrSize) / 2;
       ctx.drawImage(hiddenCanvas, offset, 80, qrSize, qrSize);
+
+      // Bake centered logo overlay into the exported image
+      if (logoPreview) {
+        try {
+          const logoImg = new Image();
+          logoImg.crossOrigin = "anonymous";
+          await new Promise<void>((resolve, reject) => {
+            logoImg.onload = () => resolve();
+            logoImg.onerror = () => resolve(); // skip logo on failure
+            logoImg.src = logoPreview;
+          });
+          if (logoImg.complete && logoImg.naturalWidth > 0) {
+            const logoSize = qrSize * 0.22;
+            const logoX = (size - logoSize) / 2;
+            const logoY = 80 + (qrSize - logoSize) / 2;
+            const logoRadius = logoSize / 2;
+            const padding = 6;
+
+            // White circular background
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(
+              logoX + logoRadius,
+              logoY + logoRadius,
+              logoRadius + padding,
+              0,
+              Math.PI * 2
+            );
+            ctx.fillStyle = "#FFFFFF";
+            ctx.fill();
+            ctx.restore();
+
+            // Clip to circle and draw logo
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(
+              logoX + logoRadius,
+              logoY + logoRadius,
+              logoRadius,
+              0,
+              Math.PI * 2
+            );
+            ctx.closePath();
+            ctx.clip();
+            ctx.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
+            ctx.restore();
+          }
+        } catch {
+          // Logo load failed — skip overlay
+        }
+      }
     }
 
     // Business name
@@ -106,7 +153,7 @@ export default function QRCodeGenerator({
 
     setShowSuccess(true);
     setTimeout(() => setShowSuccess(false), 3000);
-  }, [businessName, customText, qrBg]);
+  }, [businessName, customText, qrBg, logoPreview]);
 
   /* ─── Print ─── */
   const handlePrint = useCallback(() => {
@@ -344,9 +391,9 @@ export default function QRCodeGenerator({
               </h3>
               <p className="text-xs text-gray-500 mb-4">{customText}</p>
 
-              {/* QR Code */}
+              {/* QR Code with optional centered logo overlay */}
               <div className="flex justify-center mb-3">
-                <div className="p-3 bg-white rounded-xl border border-gray-100 shadow-sm">
+                <div className="relative p-3 bg-white rounded-xl border border-gray-100 shadow-sm">
                   <QRCodeSVG
                     value={qrValue}
                     size={180}
@@ -355,6 +402,26 @@ export default function QRCodeGenerator({
                     level="H"
                     includeMargin={false}
                   />
+                  {/* Centered logo overlay */}
+                  {logoPreview && (
+                    <div
+                      className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                    >
+                      <div
+                        className="bg-white rounded-full flex items-center justify-center shadow-md"
+                        style={{ width: 40, height: 40 }}
+                      >
+                        <img
+                          src={logoPreview}
+                          alt="Logo"
+                          className="w-8 h-8 rounded-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = "none";
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
