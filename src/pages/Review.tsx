@@ -212,7 +212,12 @@ export default function Review() {
 
   /* ─── Derived ─── */
   const brandColor = business?.brandColor || "#16A34A";
-  const welcomeMsg = business?.welcomeMessage || `How was your experience with ${business?.name || "us"} today?`;
+  const welcomeMsg = business?.customHeadline || business?.welcomeMessage || `How was your experience with ${business?.name || "us"} today?`;
+  const subtitleMsg = business?.customSubtitle || "Choose how you'd like to share your feedback";
+  const publicLabel = business?.publicReviewLabel || "Submit Public Review";
+  const publicDesc = business?.publicReviewDesc || "Share your experience on Google";
+  const privateLabel = business?.privateFeedbackLabel || "Provide Private Feedback";
+  const privateDesc = business?.privateFeedbackDesc || "Speak directly with our management team";
 
   // Loading
   if (!clientSlug || business === undefined) {
@@ -325,6 +330,11 @@ export default function Review() {
                 business={business}
                 brandColor={brandColor}
                 welcomeMsg={welcomeMsg}
+                subtitleMsg={subtitleMsg}
+                publicLabel={publicLabel}
+                publicDesc={publicDesc}
+                privateLabel={privateLabel}
+                privateDesc={privateDesc}
                 logoFailed={logoFailed}
                 onLogoFail={() => setLogoFailed(true)}
                 onPublicReview={handlePublicReview}
@@ -413,6 +423,11 @@ function ChoiceView({
   business,
   brandColor,
   welcomeMsg,
+  subtitleMsg,
+  publicLabel,
+  publicDesc,
+  privateLabel,
+  privateDesc,
   logoFailed,
   onLogoFail,
   onPublicReview,
@@ -421,6 +436,11 @@ function ChoiceView({
   business: any;
   brandColor: string;
   welcomeMsg: string;
+  subtitleMsg: string;
+  publicLabel: string;
+  publicDesc: string;
+  privateLabel: string;
+  privateDesc: string;
   logoFailed: boolean;
   onLogoFail: () => void;
   onPublicReview: () => void;
@@ -467,7 +487,7 @@ function ChoiceView({
         transition={{ delay: 0.3 }}
         className="text-white/35 text-sm mb-8 text-center"
       >
-        Choose how you'd like to share your feedback
+        {subtitleMsg}
       </motion.p>
 
       {/* Two Choice Buttons */}
@@ -506,8 +526,8 @@ function ChoiceView({
               </svg>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[15px] font-semibold text-white mb-0.5">Submit Public Review</p>
-              <p className="text-xs text-white/35 leading-snug">Share your experience on Google</p>
+              <p className="text-[15px] font-semibold text-white mb-0.5">{publicLabel}</p>
+              <p className="text-xs text-white/35 leading-snug">{publicDesc}</p>
             </div>
             <ExternalLink className="w-4 h-4 text-white/20 group-hover:text-white/40 transition-colors shrink-0" />
           </div>
@@ -532,8 +552,8 @@ function ChoiceView({
               <MessageCircle className="w-6 h-6 text-white/40" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[15px] font-semibold text-white mb-0.5">Provide Private Feedback</p>
-              <p className="text-xs text-white/35 leading-snug">Speak directly with our management team</p>
+              <p className="text-[15px] font-semibold text-white mb-0.5">{privateLabel}</p>
+              <p className="text-xs text-white/35 leading-snug">{privateDesc}</p>
             </div>
             <MessageCircle className="w-4 h-4 text-white/15 group-hover:text-white/30 transition-colors shrink-0" />
           </div>

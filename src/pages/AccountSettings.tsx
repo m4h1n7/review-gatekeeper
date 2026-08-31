@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import BusinessCustomizer from "@/components/BusinessCustomizer";
 import {
   Card,
   CardContent,
@@ -32,6 +33,7 @@ import {
   UserPlus,
   ToggleRight,
   Sparkles,
+  Palette,
 } from "lucide-react";
 import { useNavigate } from "react-router";
 
@@ -67,6 +69,7 @@ export default function AccountSettings() {
   const businesses = useQuery(api.businesses.listByUser);
   const updateProfile = useMutation(api.users.updateProfile);
   const updatePromo = useMutation(api.businesses.updatePromo);
+  const updateBranding = useMutation(api.businesses.updateBranding);
   const hasPassword = useQuery(api.users.hasPasswordAccount);
 
   // Profile form state
@@ -518,6 +521,67 @@ export default function AccountSettings() {
             </div>
           </GlassPanel>
         </motion.div>
+
+        {/* ─── Customer Screen Customization ─── */}
+        {businesses && businesses.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.25 }}
+            className="mt-6"
+          >
+            <GlassPanel className="p-6">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-9 h-9 rounded-xl bg-[#16A34A]/10 flex items-center justify-center">
+                  <Palette className="w-5 h-5 text-[#16A34A]" />
+                </div>
+                <div>
+                  <h2 className="text-base font-semibold text-white">Customer Screen Customization</h2>
+                  <p className="text-xs text-[#A1A1AA]">Customize how your review page looks to customers</p>
+                </div>
+              </div>
+              <BusinessCustomizer
+                initialData={businesses?.[0] ? {
+                  logoUrl: businesses[0].logoUrl,
+                  brandColor: businesses[0].brandColor || undefined,
+                  themeMode: (businesses[0] as any).themeMode || "dark",
+                  welcomeMessage: businesses[0].welcomeMessage || undefined,
+                  customHeadline: (businesses[0] as any).customHeadline || "",
+                  customSubtitle: (businesses[0] as any).customSubtitle || "",
+                  publicReviewLabel: (businesses[0] as any).publicReviewLabel || "",
+                  publicReviewDesc: (businesses[0] as any).publicReviewDesc || "",
+                  privateFeedbackLabel: (businesses[0] as any).privateFeedbackLabel || "",
+                  privateFeedbackDesc: (businesses[0] as any).privateFeedbackDesc || "",
+                  thankYouMessage: businesses[0].thankYouMessage || undefined,
+                  promoEnabled: businesses[0].promoEnabled,
+                  promoText: businesses[0].promoText,
+                } : {}}
+                businessName={businesses?.[0]?.name || "Your Business"}
+                onSave={async (data) => {
+                  if (!businesses?.[0]) return;
+                  await updateBranding({
+                    businessId: businesses[0].id,
+                    brandColor: data.brandColor,
+                    welcomeMessage: data.welcomeMessage || undefined,
+                    themeMode: data.themeMode,
+                    customHeadline: data.customHeadline || undefined,
+                    customSubtitle: data.customSubtitle || undefined,
+                    publicReviewLabel: data.publicReviewLabel || undefined,
+                    publicReviewDesc: data.publicReviewDesc || undefined,
+                    privateFeedbackLabel: data.privateFeedbackLabel || undefined,
+                    privateFeedbackDesc: data.privateFeedbackDesc || undefined,
+                  });
+                  if (data.thankYouMessage !== undefined) {
+                    await updateThankYou({ businessId: businesses[0].id, thankYouMessage: data.thankYouMessage });
+                  }
+                  if (data.promoEnabled !== undefined) {
+                    await updatePromo({ businessId: businesses[0].id, promoEnabled: data.promoEnabled, promoText: data.promoText || "" });
+                  }
+                }}
+              />
+            </GlassPanel>
+          </motion.div>
+        )}
 
         {/* ─── Reward Settings ─── */}
         {businesses && businesses.length > 0 && (

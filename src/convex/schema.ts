@@ -53,6 +53,14 @@ const schema = defineSchema(
       promoEnabled: v.optional(v.boolean()),
       promoText: v.optional(v.string()),
       thankYouMessage: v.optional(v.string()),
+      // Customer screen customization
+      themeMode: v.optional(v.union(v.literal("dark"), v.literal("light"), v.literal("auto"))),
+      customHeadline: v.optional(v.string()), // e.g. "How was your experience with us?"
+      customSubtitle: v.optional(v.string()), // e.g. "Choose how you'd like to share"
+      publicReviewLabel: v.optional(v.string()), // e.g. "Submit Public Review"
+      publicReviewDesc: v.optional(v.string()), // e.g. "Share your experience on Google"
+      privateFeedbackLabel: v.optional(v.string()), // e.g. "Provide Private Feedback"
+      privateFeedbackDesc: v.optional(v.string()), // e.g. "Speak directly with our team"
       createdAt: v.number(),
       userId: v.string(), // owner of this business profile
       // Subscription tracking (synced from subscriptions table)

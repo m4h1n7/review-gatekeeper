@@ -125,6 +125,13 @@ export const getBySlug = query({
       promoEnabled: business.promoEnabled ?? false,
       promoText: business.promoText ?? "",
       thankYouMessage: business.thankYouMessage ?? "",
+      themeMode: business.themeMode ?? "dark",
+      customHeadline: business.customHeadline ?? "",
+      customSubtitle: business.customSubtitle ?? "",
+      publicReviewLabel: business.publicReviewLabel ?? "",
+      publicReviewDesc: business.publicReviewDesc ?? "",
+      privateFeedbackLabel: business.privateFeedbackLabel ?? "",
+      privateFeedbackDesc: business.privateFeedbackDesc ?? "",
     };
   },
 });
@@ -182,6 +189,13 @@ export const updateBranding = mutation({
     heroUrl: v.optional(v.string()),
     brandColor: v.optional(v.string()),
     welcomeMessage: v.optional(v.string()),
+    themeMode: v.optional(v.union(v.literal("dark"), v.literal("light"), v.literal("auto"))),
+    customHeadline: v.optional(v.string()),
+    customSubtitle: v.optional(v.string()),
+    publicReviewLabel: v.optional(v.string()),
+    publicReviewDesc: v.optional(v.string()),
+    privateFeedbackLabel: v.optional(v.string()),
+    privateFeedbackDesc: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -195,6 +209,13 @@ export const updateBranding = mutation({
     if (args.heroUrl !== undefined) patch.heroUrl = args.heroUrl;
     if (args.brandColor !== undefined) patch.brandColor = args.brandColor;
     if (args.welcomeMessage !== undefined) patch.welcomeMessage = args.welcomeMessage;
+    if (args.themeMode !== undefined) patch.themeMode = args.themeMode;
+    if (args.customHeadline !== undefined) patch.customHeadline = args.customHeadline;
+    if (args.customSubtitle !== undefined) patch.customSubtitle = args.customSubtitle;
+    if (args.publicReviewLabel !== undefined) patch.publicReviewLabel = args.publicReviewLabel;
+    if (args.publicReviewDesc !== undefined) patch.publicReviewDesc = args.publicReviewDesc;
+    if (args.privateFeedbackLabel !== undefined) patch.privateFeedbackLabel = args.privateFeedbackLabel;
+    if (args.privateFeedbackDesc !== undefined) patch.privateFeedbackDesc = args.privateFeedbackDesc;
 
     await ctx.db.patch(args.businessId as any, patch);
 
@@ -229,6 +250,13 @@ export const listByUser = query({
       promoEnabled: b.promoEnabled ?? false,
       promoText: b.promoText ?? "",
       thankYouMessage: b.thankYouMessage ?? "",
+      themeMode: b.themeMode ?? "dark",
+      customHeadline: b.customHeadline ?? "",
+      customSubtitle: b.customSubtitle ?? "",
+      publicReviewLabel: b.publicReviewLabel ?? "",
+      publicReviewDesc: b.publicReviewDesc ?? "",
+      privateFeedbackLabel: b.privateFeedbackLabel ?? "",
+      privateFeedbackDesc: b.privateFeedbackDesc ?? "",
       subscriptionStatus: b.subscriptionStatus,
       trialEndsAt: b.trialEndsAt,
       planType: b.planType,
