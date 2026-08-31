@@ -1,13 +1,13 @@
 // Auth providers for Review Gatekeeper
 //
-// ACTIVE CONVEX DEPLOYMENT: vibrant-chickadee-257
-// CONVEX_SITE_URL (auto-set): https://vibrant-chickadee-257.convex.site
+// ACTIVE CONVEX DEPLOYMENT: patient-nightingale-401
+// CONVEX_SITE_URL (auto-set): https://patient-nightingale-401.convex.site
 //
 // Authentication: Email/Password only (no Google OAuth).
 //
-// Convex Environment Variables (set in Dashboard → Settings → Env Vars):
-//   CUSTOM_AUTH_SITE_URL = https://vibrant-chickadee-257.convex.site
-//   SITE_URL            = https://vibrant-chickadee-257.convex.site
+// Convex Environment Variables (auto-set by Convex):
+//   CONVEX_SITE_URL = https://patient-nightingale-401.convex.site
+//   SITE_URL        = https://patient-nightingale-401.convex.site
 import { convexAuth } from "@convex-dev/auth/server";
 import { Anonymous } from "@convex-dev/auth/providers/Anonymous";
 import { Password } from "@convex-dev/auth/providers/Password";
@@ -15,47 +15,26 @@ import { Email } from "@convex-dev/auth/providers/Email";
 import { RandomReader, generateRandomString } from "@oslojs/crypto/random";
 
 /**
- * Hardcoded active Convex deployment site URL.
- * Used for constructing internal callback URLs (OTP email endpoint, etc.)
- */
-const ACTIVE_CONVEX_SITE_URL = "https://vibrant-chickadee-257.convex.site";
-
-/**
- * Returns the canonical Convex site URL used for OAuth callback construction.
+ * Returns the canonical Convex site URL used for constructing auth endpoints,
+ * callback URLs, and internal HTTP calls (e.g., OTP email endpoint).
  *
  * Priority:
  *  1. CUSTOM_AUTH_SITE_URL env var (if explicitly set in Convex dashboard)
- *  2. Hardcoded ACTIVE_CONVEX_SITE_URL (always correct for this deployment)
- *  3. CONVEX_SITE_URL env var (auto-set by Convex, but may lag after migration)
+ *  2. CONVEX_SITE_URL env var (auto-set by Convex — always correct)
+ *  3. Fallback error
  *
  * Trailing slashes are stripped.
  */
 export function getAuthSiteUrl(): string {
   const raw =
     process.env.CUSTOM_AUTH_SITE_URL ||
-    ACTIVE_CONVEX_SITE_URL ||
     process.env.CONVEX_SITE_URL;
   if (!raw) {
     throw new Error(
-      "No Convex site URL configured. Set CUSTOM_AUTH_SITE_URL env var.",
+      "No Convex site URL configured. Set SITE_URL env var in the Convex dashboard.",
     );
   }
   return raw.replace(/\/$/, "");
-}
-
-/**
- * Returns the EXACT Google OAuth callback URL for this deployment.
- *
- * This is the redirect_uri sent to Google during the OAuth flow.
- * It must be registered as an "Authorized redirect URI" in Google Cloud Console:
- *   https://vibrant-chickadee-257.convex.site/api/auth/callback/google
- *
- * Constructed as: ${getAuthSiteUrl()}/api/auth/callback/google
- * No trailing slashes, no extra query parameters.
- */
-export function getGoogleCallbackUrl(): string {
-  const base = getAuthSiteUrl();
-  return `${base}/api/auth/callback/google`;
 }
 
 // Legacy alias
