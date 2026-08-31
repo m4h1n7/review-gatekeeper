@@ -16,8 +16,8 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { isSuperAdmin } from "@/components/SuperAdminGuard";
 import { isAdminEmail } from "@/lib/routing";
-import { getAuthOrigin } from "@/lib/auth";
-import { useMutation, useQuery } from "convex/react";
+
+import { useAction, useMutation, useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 import {
   Loader2,
@@ -92,34 +92,42 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const [otpError, setOtpError] = useState<string | null>(null);
   const [otpSent, setOtpSent] = useState(false);
   const [otpVerified, setOtpVerified] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
   const sendSignupOtpMutation = useMutation(api.users.sendSignupOtp);
   const verifySignupOtpMutation = useMutation(api.users.verifySignupOtp);
   const isEmailVerified = useQuery(api.users.isEmailVerified);
+  const sendOtpEmailAction = useAction(api.otp.sendOtpEmail);
+  const resendOtpEmailAction = useAction(api.otp.resendOtpEmail);
 
-  // Send OTP after signup
+  // Send OTP after signup (server-side: generate + store + email, no OTP leak)
   const handleSendSignupOtp = useCallback(async () => {
     setOtpLoading(true);
     setOtpError(null);
     try {
-      const result = await sendSignupOtpMutation();
-      // Send the OTP email via the HTTP endpoint
-      const authOrigin = getAuthOrigin();
-      await fetch(`${authOrigin}/api/send-otp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: signupEmail || user?.email || "",
-          otp: result.otp,
-          appName: "STAR CATCH Reviews",
-        }),
-      });
+      await sendOtpEmailAction();
       setOtpSent(true);
+      setResendCooldown(60); // start 60s cooldown
     } catch (err) {
-      setOtpError(err instanceof Error ? err.message : "Failed to send verification code.");
+      setOtpError(err instanceof Error ? err.message : "Failed to send verification code. Please try again.");
     } finally {
       setOtpLoading(false);
     }
-  }, [sendSignupOtpMutation, signupEmail, user?.email]);
+  }, [sendOtpEmailAction]);
+
+  // Resend OTP with cooldown
+  const handleResendOtp = useCallback(async () => {
+    setOtpLoading(true);
+    setOtpError(null);
+    try {
+      await resendOtpEmailAction();
+      setOtpSent(true);
+      setResendCooldown(60); // restart 60s cooldown
+    } catch (err) {
+      setOtpError(err instanceof Error ? err.message : "Failed to resend code. Please try again.");
+    } finally {
+      setOtpLoading(false);
+    }
+  }, [resendOtpEmailAction]);
 
   // Verify OTP after signup
   const handleVerifySignupOtp = useCallback(async (e: React.FormEvent) => {
@@ -147,6 +155,15 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       handleSendSignupOtp();
     }
   }, [signupEmail, isAuthenticated, otpSent, otpVerified, isEmailVerified, handleSendSignupOtp]);
+
+  // Countdown timer for resend cooldown
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => (prev <= 1 ? 0 : prev - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
 
   useEffect(() => {
     if (!authLoading && isAuthenticated && user !== undefined) {
@@ -590,21 +607,21 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                     Verify & Continue
                   </Button>
 
-                  {!otpSent ? (
+                  {resendCooldown > 0 ? (
+                    <p className="text-xs text-center text-[#A1A1AA]">
+                      Resend code in <span className="font-semibold text-[#16A34A]">{resendCooldown}s</span>
+                    </p>
+                  ) : (
                     <Button
                       type="button"
                       variant="ghost"
-                      onClick={handleSendSignupOtp}
+                      onClick={handleResendOtp}
                       disabled={otpLoading}
                       className="w-full text-[#16A34A] hover:text-[#16A34A]/80 cursor-pointer"
                     >
                       {otpLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                       Resend Verification Code
                     </Button>
-                  ) : (
-                    <p className="text-xs text-center text-[#A1A1AA]">
-                      Code sent! Check your inbox.
-                    </p>
                   )}
 
                   <p className="text-xs text-center text-[#A1A1AA]/60">
