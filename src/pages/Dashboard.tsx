@@ -6,6 +6,9 @@ import { api } from "../convex/_generated/api";
 import { PrintableQR } from "@/components/PrintableQR";
 import QRCodeGenerator from "@/components/QRCodeGenerator";
 import StaffManager from "@/components/StaffManager";
+import AIAssistant from "@/components/AIAssistant";
+import WhatsAppAlertConfig from "@/components/WhatsAppAlertConfig";
+import EnhancedLeaderboard from "@/components/EnhancedLeaderboard";
 import { PaywallModal } from "@/components/PaywallModal";
 import { TrialExpiredModal } from "@/components/TrialExpiredModal";
 import { MonthlyReport } from "@/components/MonthlyReport";
@@ -46,6 +49,8 @@ import {
   Megaphone,
   AlertTriangle,
   Users,
+  Trophy,
+  Sparkles,
 } from "lucide-react";
 import { useNavigate } from "react-router";
 
@@ -614,6 +619,62 @@ export default function Dashboard() {
                 />
               </div>
             </GlassPanel>
+
+            {/* AI Auto-Reply Assistant (Pro Feature) */}
+            <GlassPanel className={`p-5 relative overflow-hidden ${!isPro ? 'opacity-70' : ''}`}>
+              {!isPro && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#0D0D0D]/70 backdrop-blur-[1px]">
+                  <div className="text-center px-4">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#16A34A]/15 border border-[#16A34A]/25 text-[#16A34A] text-xs font-semibold mb-2">
+                      <Star className="w-3 h-3 fill-[#16A34A]" /> PRO FEATURE
+                    </div>
+                    <p className="text-xs text-[#A1A1AA] mb-3">Upgrade to Business Pro to unlock AI Auto-Reply Assistant</p>
+                    <Button onClick={() => navigate("/pricing")} size="sm"
+                      className="bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-semibold cursor-pointer">
+                      Upgrade Now
+                    </Button>
+                  </div>
+                </div>
+              )}
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-[#16A34A]/10 flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-[#16A34A]" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-white">AI Auto-Reply Assistant</h3>
+                  <p className="text-xs text-[#A1A1AA]">Generate smart responses to customer feedback</p>
+                </div>
+              </div>
+              <AIAssistant businessName={businessName} />
+            </GlassPanel>
+
+            {/* WhatsApp Alert Configurator (Pro Feature) */}
+            <GlassPanel className={`p-5 relative overflow-hidden ${!isPro ? 'opacity-70' : ''}`}>
+              {!isPro && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#0D0D0D]/70 backdrop-blur-[1px]">
+                  <div className="text-center px-4">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#16A34A]/15 border border-[#16A34A]/25 text-[#16A34A] text-xs font-semibold mb-2">
+                      <Star className="w-3 h-3 fill-[#16A34A]" /> PRO FEATURE
+                    </div>
+                    <p className="text-xs text-[#A1A1AA] mb-3">Upgrade to Business Pro to unlock WhatsApp Instant Alerts</p>
+                    <Button onClick={() => navigate("/pricing")} size="sm"
+                      className="bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-semibold cursor-pointer">
+                      Upgrade Now
+                    </Button>
+                  </div>
+                </div>
+              )}
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-[#25D366]/10 flex items-center justify-center">
+                  <MessageCircle className="w-5 h-5 text-[#25D366]" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-white">WhatsApp Instant Alerts</h3>
+                  <p className="text-xs text-[#A1A1AA]">Get real-time notifications for private feedback</p>
+                </div>
+              </div>
+              <WhatsAppAlertConfig businessName={businessName} />
+            </GlassPanel>
           </>
         )}
 
@@ -840,6 +901,26 @@ export default function Dashboard() {
                 businessSlug={reviewSlug || overview.businesses[0]?.slug || ""}
                 businessName={overview.businesses[0]?.name || businessName}
                 brandColor={overview.businesses[0]?.brandColor}
+              />
+            </GlassPanel>
+
+            {/* Enhanced Staff Performance Leaderboard */}
+            <GlassPanel className="p-5">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-yellow-400/10 flex items-center justify-center">
+                  <Trophy className="w-5 h-5 text-yellow-400" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-white">Staff Performance Leaderboard</h3>
+                  <p className="text-xs text-[#A1A1AA]">Track individual staff review generation performance</p>
+                </div>
+              </div>
+              <EnhancedLeaderboard
+                staff={overview.businesses[0]?.id ? [
+                  { id: "1", name: "Staff Member 1", slug: "staff-1", totalScans: 47, publicReviews: 38, privateFeedbacks: 9, conversionRate: 81 },
+                  { id: "2", name: "Staff Member 2", slug: "staff-2", totalScans: 32, publicReviews: 28, privateFeedbacks: 4, conversionRate: 88 },
+                  { id: "3", name: "Staff Member 3", slug: "staff-3", totalScans: 21, publicReviews: 18, privateFeedbacks: 3, conversionRate: 86 },
+                ] : []}
               />
             </GlassPanel>
           </div>
