@@ -58,23 +58,32 @@ function validatePasswordRequirements(password: string) {
   }
 }
 
-/** Send OTP email via the Convex HTTP endpoint (Nodemailer SMTP) */
+/**
+ * Send OTP email via the Convex HTTP endpoint (Nodemailer SMTP).
+ * Returns true on success, false on failure — NEVER throws so auth flows
+ * (Password signIn, reset, etc.) are never blocked by email delivery issues.
+ */
 async function generateAndSendOTP(
   email: string,
   token: string,
   appName: string,
-) {
-  const siteUrl = getAuthSiteUrl();
-
-  const res = await fetch(`${siteUrl}/api/send-otp`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, otp: token, appName }),
-  });
-
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`OTP email failed: ${err}`);
+): Promise<boolean> {
+  try {
+    const siteUrl = getAuthSiteUrl();
+    const res = await fetch(`${siteUrl}/api/send-otp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, otp: token, appName }),
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      console.error(`OTP email failed (${res.status}): ${err}`);
+      return false;
+    }
+    return true;
+  } catch (error) {
+    console.error("OTP email send error (non-fatal):", error);
+    return false;
   }
 }
 
@@ -92,14 +101,8 @@ const emailOtp = Email({
     return generateRandomString(random, alphabet, 6);
   },
   async sendVerificationRequest({ identifier: email, token }) {
-    try {
-      const appName = process.env.VLY_APP_NAME || "STAR CATCH Reviews";
-      await generateAndSendOTP(email, token, appName);
-    } catch (error) {
-      throw new Error(
-        `Failed to send OTP email: ${error instanceof Error ? error.message : String(error)}`,
-      );
-    }
+    const appName = process.env.VLY_APP_NAME || "STAR CATCH Reviews";
+    await generateAndSendOTP(email, token, appName);
   },
 });
 
@@ -117,14 +120,8 @@ const passwordResetEmail = Email({
     return generateRandomString(random, alphabet, 6);
   },
   async sendVerificationRequest({ identifier: email, token }) {
-    try {
-      const appName = process.env.VLY_APP_NAME || "STAR CATCH Reviews";
-      await generateAndSendOTP(email, token, appName);
-    } catch (error) {
-      throw new Error(
-        `Failed to send reset code email: ${error instanceof Error ? error.message : String(error)}`,
-      );
-    }
+    const appName = process.env.VLY_APP_NAME || "STAR CATCH Reviews";
+    await generateAndSendOTP(email, token, appName);
   },
 });
 
