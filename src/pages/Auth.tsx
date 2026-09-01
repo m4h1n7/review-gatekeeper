@@ -195,9 +195,12 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     return () => clearInterval(timer);
   }, [resendCooldown]);
 
+  // ─── Post-auth redirect ───
+  // Handles: password sign-in, Google OAuth callback, OTP verification.
+  // Google OAuth users arrive here after the callback exchanges the code for tokens.
   useEffect(() => {
     if (!authLoading && isAuthenticated && user !== undefined) {
-      // Super admin: always redirect immediately (skip OTP)
+      // Super admin: always redirect to /admin immediately
       if (isAdminEmail(user?.email)) {
         navigate("/admin");
         return;
@@ -212,12 +215,14 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
         navigate(getRedirect(user?.email));
         return;
       }
-      // Existing user (no signup flow, email verification status unknown) → redirect anyway
-      if (signupEmail === null && (isEmailVerified === undefined || isEmailVerified === false)) {
+      // Google OAuth users (signupEmail is null, isEmailVerified may be undefined)
+      // or existing users returning — redirect regardless of email verification status.
+      // Google OAuth doesn't use the email verification flow.
+      if (signupEmail === null) {
         navigate(getRedirect(user?.email));
       }
     }
-  }, [authLoading, isAuthenticated, user?.email, user, navigate, baseRedirect, isEmailVerified, signupEmail, otpVerified]);
+  }, [authLoading, isAuthenticated, user?.email, user, navigate, getRedirect, isEmailVerified, signupEmail, otpVerified]);
 
   const currentView = typeof view === "string" ? view : "emailOtp";
   const otpEmail = typeof view === "object" && "email" in view ? view.email : null;
@@ -454,6 +459,19 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       </div>
 
       <div className="flex-1 flex items-center justify-center px-4 py-8">
+        {/* ─── OAuth Callback / Post-Auth Redirect Loading Screen ─── */}
+        {!authLoading && isAuthenticated && (
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="h-8 w-8 animate-spin text-[#16A34A]" />
+            <div className="text-center">
+              <p className="text-white font-medium">Signing you in...</p>
+              <p className="text-[#A1A1AA] text-sm mt-1">Please wait while we set up your session</p>
+            </div>
+          </div>
+        )}
+
+        {/* ─── Auth Form (hidden when authenticated / loading redirect) ─── */}
+        {!isAuthenticated && (
         <Card className="w-full max-w-[420px] border-white/10 bg-[#18181B]/80 backdrop-blur-xl shadow-2xl shadow-black/40">
           {/* ─── SIGN IN ─── */}
           {currentView === "signIn" && (
@@ -530,26 +548,13 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                       setIsLoading(true);
                       setError(null);
                       try {
+                        // signIn("google") redirects the browser to Google OAuth.
+                        // After Google auth, the callback returns to Convex which
+                        // redirects to SITE_URL (frontend) with ?code=.
+                        // The @convex-dev/auth client detects ?code= and exchanges
+                        // it for tokens. The useEffect above then redirects to
+                        // /dashboard or /admin.
                         await signIn("google");
-                        const waitForSession = () =>
-                          new Promise<boolean>((resolve) => {
-                            let attempts = 0;
-                            const check = () => {
-                              if (isAuthenticatedRef.current || attempts > 15) {
-                                resolve(isAuthenticatedRef.current);
-                                return;
-                              }
-                              attempts++;
-                              setTimeout(check, 50);
-                            };
-                            setTimeout(check, 100);
-                          });
-                        const sessionReady = await waitForSession();
-                        if (sessionReady) {
-                          navigate(isSuperAdmin(user?.email) ? "/admin" : redirect);
-                        } else {
-                          window.location.href = isSuperAdmin(user?.email) ? "/admin" : redirect;
-                        }
                       } catch (err) {
                         setError(err instanceof Error ? err.message : "Google sign-in failed. Please try again.");
                         setIsLoading(false);
@@ -557,7 +562,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                     }}
                   >
                     <GoogleIcon className="mr-2 h-5 w-5" />
-                    Sign in with Google
+                    {isLoading ? "Redirecting to Google..." : "Sign in with Google"}
                   </Button>
                 </CardContent>
                 <CardFooter className="flex-col gap-3 pt-0">
@@ -1035,6 +1040,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
             </span>
           </div>
         </Card>
+        )}
       </div>
     </div>
   );
