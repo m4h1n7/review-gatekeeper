@@ -8,6 +8,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { isSuperAdmin } from "@/components/SuperAdminGuard";
 import { PricingCards } from "@/components/PricingCards";
 import LiveDemoPreview from "@/components/LiveDemoPreview";
+import FeatureCard from "@/components/FeatureCard";
+import { translations, type Language } from "@/lib/translations";
 import {
   Star,
   Shield,
@@ -30,6 +32,9 @@ import {
   MessageCircle,
   LogIn,
   Sparkles,
+  Languages,
+  Wifi,
+  MessageCircleWarning,
 } from "lucide-react";
 
 function Logo({ size = "normal" }: { size?: "normal" | "small" }) {
@@ -192,6 +197,20 @@ export default function Landing() {
   };
 
   const navLabel = !isAuthenticated ? "Login / Sign Up" : admin ? "Admin Portal" : "Dashboard";
+  const [lang, setLang] = useState<Language>(() => {
+    try {
+      const saved = localStorage.getItem("sc_lang");
+      return saved === "bn" ? "bn" : "en";
+    } catch {
+      return "en";
+    }
+  });
+  const t = translations[lang];
+  const toggleLang = () => {
+    const next = lang === "en" ? "bn" : "en";
+    setLang(next);
+    try { localStorage.setItem("sc_lang", next); } catch {}
+  };
 
   return (
     <div className="min-h-screen overflow-hidden">
@@ -222,6 +241,14 @@ export default function Landing() {
             >
               Pricing
             </Button>
+            <button
+              onClick={toggleLang}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/[0.06] border border-white/[0.08] text-xs font-medium text-zinc-400 hover:text-white hover:bg-white/[0.1] transition-all cursor-pointer"
+              title={lang === "en" ? "বাংলায় পরিবর্তন করুন" : "Switch to English"}
+            >
+              <Languages className="w-3.5 h-3.5" />
+              {lang === "en" ? "বাং" : "EN"}
+            </button>
             <Button
               onClick={handleNavClick}
               className={`font-semibold shadow-lg cursor-pointer ${
@@ -417,35 +444,151 @@ export default function Landing() {
             transition={{ duration: 0.5 }}
             className="text-center mb-12 sm:mb-16"
           >
-            <p className="text-sm font-semibold text-[#16A34A] uppercase tracking-widest mb-3">Features</p>
-            <h2 className="text-3xl sm:text-4xl font-bold text-white">Everything you need</h2>
+            <p className="text-sm font-semibold text-[#16A34A] uppercase tracking-widest mb-3">
+              {t.featuresLabel}
+            </p>
+            <h2 className="text-3xl sm:text-4xl font-bold text-white">{t.featuresTitle}</h2>
           </motion.div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
-            {[
-              { icon: <StarHalf className="w-5 h-5" />, title: "Smart Star Routing", desc: "4-5 stars go to Google. 1-3 stars go to a private form. Automated and instant." },
-              { icon: <ShieldCheck className="w-5 h-5" />, title: "Private Feedback Inbox", desc: "Capture negative feedback privately before it reaches your public profile." },
-              { icon: <BarChart3 className="w-5 h-5" />, title: "Analytics Dashboard", desc: "Track visits, redirects, feedback trends, and your conversion rate over time." },
-              { icon: <QrCode className="w-5 h-5" />, title: "Printable QR Codes", desc: "Generate and download print-ready QR codes for your storefront or cards." },
-              { icon: <Share2 className="w-5 h-5" />, title: "WhatsApp & SMS Templates", desc: "One-click templates to share your review link with customers." },
-              { icon: <Smartphone className="w-5 h-5" />, title: "Mobile Optimized", desc: "Large tap targets and fluid layouts designed for customers on any device." },
-            ].map((feature, i) => (
-              <motion.div
-                key={feature.title}
-                initial={{ opacity: 0, y: 15 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-30px" }}
-                transition={{ duration: 0.4, delay: i * 0.05 }}
-              >
-                <div className="rounded-2xl border border-white/[0.08] bg-white/[0.04] backdrop-blur-2xl p-6 h-full hover:bg-white/[0.06] transition-colors group">
-                  <div className="w-10 h-10 rounded-xl bg-[#16A34A]/10 flex items-center justify-center text-[#16A34A] mb-4 group-hover:bg-[#16A34A]/20 transition-colors">
-                    {feature.icon}
+            {/* 1. Smart Star Routing */}
+            <FeatureCard
+              icon={<StarHalf className="w-5 h-5" />}
+              title={t.smartStarRoutingTitle}
+              desc={t.smartStarRoutingDesc}
+              index={0}
+              demo={
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3 p-2.5 rounded-lg bg-[#16A34A]/10 border border-[#16A34A]/20">
+                    <div className="flex gap-0.5">
+                      {[1,2,3,4,5].map(s => (
+                        <Star key={s} className={`w-4 h-4 ${s <= 4 ? 'text-[#16A34A] fill-[#16A34A]' : 'text-[#16A34A] fill-[#16A34A]'}`} />
+                      ))}
+                    </div>
+                    <ArrowRight className="w-3.5 h-3.5 text-[#16A34A]" />
+                    <span className="text-xs font-medium text-[#16A34A]">{t.starDemo45}</span>
                   </div>
-                  <h3 className="font-bold text-white mb-1.5">{feature.title}</h3>
-                  <p className="text-sm text-[#A1A1AA] leading-relaxed">{feature.desc}</p>
+                  <div className="flex items-center gap-3 p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                    <div className="flex gap-0.5">
+                      <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+                      <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+                      <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+                    </div>
+                    <ArrowRight className="w-3.5 h-3.5 text-amber-400" />
+                    <span className="text-xs font-medium text-amber-400">{t.starDemo13}</span>
+                  </div>
+                  <p className="text-[11px] text-zinc-500 pt-1">{t.starDemoInfo}</p>
                 </div>
-              </motion.div>
-            ))}
+              }
+            />
+
+            {/* 2. Private Feedback Inbox */}
+            <FeatureCard
+              icon={<ShieldCheck className="w-5 h-5" />}
+              title={t.privateFeedbackTitle}
+              desc={t.privateFeedbackDesc}
+              index={1}
+              demo={
+                <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] p-3.5 space-y-2.5">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                    <span className="text-xs font-semibold text-white">New Complaint</span>
+                    <span className="ml-auto text-[10px] text-zinc-500">2 min ago</span>
+                  </div>
+                  <p className="text-xs text-[#A1A1AA]">"Staff was rude and the food took 40 minutes..."</p>
+                  <div className="flex gap-2">
+                    <button className="text-[10px] px-2 py-1 rounded bg-[#16A34A]/10 text-[#16A34A] font-medium">Reply via WhatsApp</button>
+                    <button className="text-[10px] px-2 py-1 rounded bg-white/5 text-zinc-400 font-medium">Mark Resolved</button>
+                  </div>
+                </div>
+              }
+            />
+
+            {/* 3. Analytics Dashboard */}
+            <FeatureCard
+              icon={<BarChart3 className="w-5 h-5" />}
+              title={t.analyticsTitle}
+              desc={t.analyticsDesc}
+              index={2}
+              demo={
+                <div className="grid grid-cols-2 gap-2">
+                  {[{ label: "Total Scans", value: "1,247", color: "text-white" }, { label: "Google Redirects", value: "89%", color: "text-[#16A34A]" }, { label: "Private Captured", value: "11%", color: "text-amber-400" }, { label: "Staff Leader", value: "Rahim", color: "text-emerald-300" }].map(m => (
+                    <div key={m.label} className="rounded-lg bg-white/[0.04] border border-white/[0.06] p-2.5">
+                      <p className="text-[10px] text-zinc-500 mb-0.5">{m.label}</p>
+                      <p className={`text-sm font-bold ${m.color}`}>{m.value}</p>
+                    </div>
+                  ))}
+                </div>
+              }
+            />
+
+            {/* 4. Smart NFC Cards & Printable QR */}
+            <FeatureCard
+              icon={<Wifi className="w-5 h-5" />}
+              title={t.qrNfcTitle}
+              desc={t.qrNfcDesc}
+              index={3}
+              demo={
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-24 h-32 rounded-xl bg-white/[0.06] border border-white/[0.1] flex flex-col items-center justify-center gap-1.5">
+                    <QrCode className="w-10 h-10 text-[#16A34A]" />
+                    <span className="text-[10px] text-zinc-500">Scan Me</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-[10px] text-zinc-500">
+                    <div className="w-1.5 h-1.5 rounded-full bg-[#16A34A]" />
+                    {t.nfcDemoTitle}
+                    <span className="text-zinc-600">|</span>
+                    {t.nfcDemoSubtitle}
+                  </div>
+                  <button className="text-[10px] px-3 py-1.5 rounded-lg bg-[#16A34A]/10 text-[#16A34A] font-semibold">
+                    Download Print-Ready PDF
+                  </button>
+                </div>
+              }
+            />
+
+            {/* 5. Instant WhatsApp Alerts */}
+            <FeatureCard
+              icon={<MessageCircleWarning className="w-5 h-5" />}
+              title={t.whatsappAlertsTitle}
+              desc={t.whatsappAlertsDesc}
+              index={4}
+              demo={
+                <div className="rounded-xl bg-[#075E54] p-3.5 max-w-[220px]">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-7 h-7 rounded-full bg-[#128C7E] flex items-center justify-center">
+                      <MessageCircle className="w-3.5 h-3.5 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-semibold text-white">{t.whatsappDemoTitle}</p>
+                      <p className="text-[9px] text-white/60">{t.whatsappDemoTime}</p>
+                    </div>
+                  </div>
+                  <div className="bg-[#054640] rounded-lg p-2.5">
+                    <p className="text-[11px] text-white/90">{t.whatsappDemoBody}</p>
+                    <p className="text-[10px] text-white/40 mt-1">Star Catch Reviews</p>
+                  </div>
+                </div>
+              }
+            />
+
+            {/* 6. Mobile Optimized */}
+            <FeatureCard
+              icon={<Smartphone className="w-5 h-5" />}
+              title={t.mobileTitle}
+              desc={t.mobileDesc}
+              index={5}
+              demo={
+                <div className="flex items-center gap-3">
+                  {["📱 iPhone 15", "🤖 Samsung S24", "📱 Pixel 8"].map(device => (
+                    <div key={device} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.06]">
+                      <CheckCircle2 className="w-3 h-3 text-[#16A34A]" />
+                      <span className="text-[10px] text-zinc-400">{device}</span>
+                    </div>
+                  ))}
+                </div>
+              }
+            />
           </div>
         </div>
       </section>
