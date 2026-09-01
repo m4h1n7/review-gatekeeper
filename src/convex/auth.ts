@@ -25,6 +25,7 @@ import {
 } from "@convex-dev/auth/server";
 import { Email } from "@convex-dev/auth/providers/Email";
 import { RandomReader, generateRandomString } from "@oslojs/crypto/random";
+import { Scrypt } from "lucia";
 
 // ---------------------------------------------------------------------------
 // 1. Safe site-URL resolution
@@ -349,11 +350,9 @@ const SafePassword = ConvexCredentials({
   },
   crypto: {
     async hashSecret(password: string) {
-      const { Scrypt } = await import("lucia");
       return await new Scrypt().hash(password);
     },
     async verifySecret(password: string, hash: string) {
-      const { Scrypt } = await import("lucia");
       return await new Scrypt().verify(hash, password);
     },
   },
