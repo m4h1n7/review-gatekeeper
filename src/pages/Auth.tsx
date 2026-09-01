@@ -30,7 +30,6 @@ import {
   EyeOff,
   ShieldCheck,
 } from "lucide-react";
-import GoogleIcon from "@/components/GoogleIcon";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 
@@ -200,7 +199,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   }, [resendCooldown]);
 
   // ─── Post-auth redirect ───
-  // Handles: Google OAuth callback, OTP verification, email OTP login.
+  // Handles: OTP verification, email OTP login.
   // Password sign-in is handled separately in handlePasswordSignIn using
   // window.location.href to ensure the Convex auth state reinitializes
   // from localStorage on the destination page.
@@ -223,9 +222,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
         navigate(getRedirect(user?.email));
         return;
       }
-      // Google OAuth users (signupEmail is null, isEmailVerified may be undefined)
-      // or existing users returning — redirect regardless of email verification status.
-      // Google OAuth doesn't use the email verification flow.
+      // Existing users returning — redirect regardless of email verification status.
       if (signupEmail === null) {
         navigate(getRedirect(user?.email));
       }
@@ -508,39 +505,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                     Sign In
                   </Button>
 
-                  {/* ─── Divider ─── */}
-                  <div className="relative flex items-center py-1">
-                    <div className="flex-grow border-t border-white/10" />
-                    <span className="mx-3 text-xs text-[#A1A1AA]/50">or</span>
-                    <div className="flex-grow border-t border-white/10" />
-                  </div>
 
-                  {/* ─── Google Sign-In ─── */}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full h-11 bg-white/5 border-white/10 text-white hover:bg-white/10 font-semibold cursor-pointer"
-                    disabled={isLoading}
-                    onClick={async () => {
-                      setIsLoading(true);
-                      setError(null);
-                      try {
-                        // signIn("google") redirects the browser to Google OAuth.
-                        // After Google auth, the callback returns to Convex which
-                        // redirects to SITE_URL (frontend) with ?code=.
-                        // The @convex-dev/auth client detects ?code= and exchanges
-                        // it for tokens. The useEffect above then redirects to
-                        // /dashboard or /admin.
-                        await signIn("google");
-                      } catch (err) {
-                        setError(err instanceof Error ? err.message : "Google sign-in failed. Please try again.");
-                        setIsLoading(false);
-                      }
-                    }}
-                  >
-                    <GoogleIcon className="mr-2 h-5 w-5" />
-                    {isLoading ? "Redirecting to Google..." : "Sign in with Google"}
-                  </Button>
                 </CardContent>
                 <CardFooter className="flex-col gap-3 pt-0">
                   <button

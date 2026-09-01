@@ -4,14 +4,12 @@
  * ACTIVE CONVEX DEPLOYMENT: patient-nightingale-401
  * CONVEX_SITE_URL (auto-set): https://patient-nightingale-401.convex.site
  *
- * Authentication: Google OAuth + Email/Password.
+ * Authentication: Email/Password (auto-registers new users on sign-in).
  *
  * Env vars required (set in Convex dashboard):
  *   CUSTOM_AUTH_SITE_URL  = https://patient-nightingale-401.convex.site
  *   CONVEX_SITE_URL       = (auto-set by Convex)
  *   AUTH_SECRET           = signing secret for JWT tokens (fallback: CONVEX_SITE_URL)
- *   EMAIL_USER            = starcatchbd@gmail.com
- *   EMAIL_PASS            = <app password>
  */
 
 import { convexAuth } from "@convex-dev/auth/server";
@@ -23,7 +21,6 @@ import {
   signInViaProvider,
 } from "@convex-dev/auth/server";
 import { Email } from "@convex-dev/auth/providers/Email";
-import Google from "@auth/core/providers/google";
 import { RandomReader, generateRandomString } from "@oslojs/crypto/random";
 import { Scrypt } from "lucia";
 
@@ -387,45 +384,15 @@ const SafePassword = ConvexCredentials({
 });
 
 // ---------------------------------------------------------------------------
-// 7. Initialize convexAuth
+// 7. Build provider list
 // ---------------------------------------------------------------------------
-
-// ---------------------------------------------------------------------------
-// 7. Build provider list — conditionally include Google OAuth
-// ---------------------------------------------------------------------------
-
-const googleClientId = process.env.AUTH_GOOGLE_ID;
-const googleClientSecret = process.env.AUTH_GOOGLE_SECRET;
 
 const providers: any[] = [
-  // SafePassword wraps Password with graceful error handling
+  // SafePassword wraps Password with graceful error handling + auto-register
   SafePassword as any,
   emailOtp,
   Anonymous,
 ];
-
-// Only register Google OAuth if BOTH secrets are present.
-// If either is missing the provider would throw on callback → HTTP 500.
-if (googleClientId && googleClientSecret) {
-  providers.unshift(
-    Google({
-      clientId: googleClientId,
-      clientSecret: googleClientSecret,
-      profile(profile: Record<string, any>) {
-        return {
-          id: profile.sub,
-          name: profile.name,
-          email: profile.email,
-          image: profile.picture,
-        };
-      },
-    }),
-  );
-} else {
-  console.warn(
-    "[auth] AUTH_GOOGLE_ID or AUTH_GOOGLE_SECRET missing — Google OAuth disabled",
-  );
-}
 
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   providers,
