@@ -25,7 +25,16 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   const user = useQuery(api.users.currentUser);
   const accountStatus = useQuery(api.users.getAccountStatus);
 
-  if (isLoading || onboardingDone === undefined || subscription === undefined || user === undefined) {
+  // ── CRITICAL: Never redirect while any loading state is still true ──
+  // This prevents the auth-loop where isAuthenticated hasn't propagated yet.
+  // isLoading = isAuthLoading || user === undefined (from useAuth)
+  // We also guard on onboardingDone/subscription/user queries.
+  if (
+    isLoading ||
+    onboardingDone === undefined ||
+    subscription === undefined ||
+    user === undefined
+  ) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#0D0D0D]">
         <div className="flex flex-col items-center gap-3">
@@ -37,6 +46,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   }
 
   // ── 1. Unauthenticated → send to login ──
+  // Only reachable AFTER all loading states resolved and user data fetched.
   if (!isAuthenticated) {
     const returnTo = `${location.pathname}${location.search}`;
     return (

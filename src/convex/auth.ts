@@ -390,12 +390,27 @@ const SafePassword = ConvexCredentials({
 // 7. Initialize convexAuth
 // ---------------------------------------------------------------------------
 
-export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
-  providers: [
-    // Google OAuth — requires AUTH_GOOGLE_ID and AUTH_GOOGLE_SECRET env vars
+// ---------------------------------------------------------------------------
+// 7. Build provider list — conditionally include Google OAuth
+// ---------------------------------------------------------------------------
+
+const googleClientId = process.env.AUTH_GOOGLE_ID;
+const googleClientSecret = process.env.AUTH_GOOGLE_SECRET;
+
+const providers: any[] = [
+  // SafePassword wraps Password with graceful error handling
+  SafePassword as any,
+  emailOtp,
+  Anonymous,
+];
+
+// Only register Google OAuth if BOTH secrets are present.
+// If either is missing the provider would throw on callback → HTTP 500.
+if (googleClientId && googleClientSecret) {
+  providers.unshift(
     Google({
-      clientId: process.env.AUTH_GOOGLE_ID,
-      clientSecret: process.env.AUTH_GOOGLE_SECRET,
+      clientId: googleClientId,
+      clientSecret: googleClientSecret,
       profile(profile: Record<string, any>) {
         return {
           id: profile.sub,
@@ -405,9 +420,13 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
         };
       },
     }),
-    // SafePassword wraps Password with graceful error handling
-    SafePassword as any,
-    emailOtp,
-    Anonymous,
-  ],
+  );
+} else {
+  console.warn(
+    "[auth] AUTH_GOOGLE_ID or AUTH_GOOGLE_SECRET missing — Google OAuth disabled",
+  );
+}
+
+export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
+  providers,
 });
