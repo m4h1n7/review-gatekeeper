@@ -30,7 +30,7 @@ import {
   EyeOff,
   ShieldCheck,
 } from "lucide-react";
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 
 interface AuthProps {
@@ -93,6 +93,12 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const [otpSent, setOtpSent] = useState(false);
   const [otpVerified, setOtpVerified] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
+
+  // Ref to track latest isAuthenticated value for post-signIn polling
+  const isAuthenticatedRef = useRef(isAuthenticated);
+  useEffect(() => {
+    isAuthenticatedRef.current = isAuthenticated;
+  }, [isAuthenticated]);
   const sendSignupOtpMutation = useMutation(api.users.sendSignupOtp);
   const verifySignupOtpMutation = useMutation(api.users.verifySignupOtp);
   const isEmailVerified = useQuery(api.users.isEmailVerified);
@@ -226,14 +232,60 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     try {
       const formData = new FormData(e.currentTarget);
       const email = formData.get("email") as string;
+      const password = formData.get("password") as string;
+
+      if (!email || !password) {
+        setError("Please enter both email and password.");
+        setIsLoading(false);
+        return;
+      }
+
       await signIn("password", {
         flow: "signIn",
         email,
-        password: formData.get("password") as string,
+        password,
       });
-      navigate(isSuperAdmin(email) ? "/admin" : redirect);
+
+      // Wait for the Convex auth session to propagate to the client.
+      // signIn resolves with a token, but isAuthenticated may lag by a tick.
+      // We poll via ref to avoid RequireAuth redirecting back to /auth.
+      const waitForSession = () =>
+        new Promise<boolean>((resolve) => {
+          let attempts = 0;
+          const check = () => {
+            if (isAuthenticatedRef.current || attempts > 15) {
+              resolve(isAuthenticatedRef.current);
+              return;
+            }
+            attempts++;
+            setTimeout(check, 50);
+          };
+          // Give the first render cycle a chance to update
+          setTimeout(check, 100);
+        });
+
+      const sessionReady = await waitForSession();
+      const dest = isSuperAdmin(email) ? "/admin" : redirect;
+
+      if (sessionReady) {
+        // Session is active — safe to navigate directly
+        navigate(dest);
+      } else {
+        // Session not yet visible — force a full page reload to the destination.
+        // The Convex token is stored in a cookie/indexedDB, so reload will pick it up.
+        window.location.href = dest;
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Invalid credentials. Please try again.");
+      const msg = err instanceof Error ? err.message : "";
+      if (msg.includes("InvalidSecret") || msg.includes("Invalid credentials") || msg.includes("credentials")) {
+        setError("Incorrect email or password. Please try again.");
+      } else if (msg.includes("not found") || msg.includes("does not exist")) {
+        setError("No account found with this email. Please sign up first.");
+      } else if (msg.includes("Too many") || msg.includes("rate limit")) {
+        setError("Too many failed attempts. Please wait a few minutes and try again.");
+      } else {
+        setError(msg || "Sign-in failed. Please check your credentials and try again.");
+      }
       setIsLoading(false);
     }
   };
