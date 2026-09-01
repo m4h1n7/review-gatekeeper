@@ -18,6 +18,8 @@ import {
   Users,
   CalendarClock,
   Undo2,
+  Send,
+  Zap,
 } from "lucide-react";
 import { useNavigate } from "react-router";
 import SubscriptionExtendModal from "@/components/SubscriptionExtendModal";
@@ -65,6 +67,7 @@ export default function AdminDashboard() {
     previousProExpiresAt: number;
     timer: ReturnType<typeof setTimeout>;
   } | null>(null);
+  const [testingWebhook, setTestingWebhook] = useState(false);
 
   const openExtendModal = useCallback((sub: { _id: string; userEmail: string; expiresAt?: number; proExpiresAt?: number }) => {
     setSelectedSubId(sub._id);
@@ -161,6 +164,36 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleTestWebhook = async () => {
+    setTestingWebhook(true);
+    try {
+      const res = await fetch(
+        "YOUR_GOOGLE_WEBHOOK_URL_HERE",
+        {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            businessName: "StarCatch BD Test",
+            clientEmail: "starcatchbd@gmail.com",
+            customerName: "Test Customer",
+            customerPhone: "01700000000",
+            customerEmail: "test@example.com",
+            feedbackMessage:
+              "This is a test feedback message to check if Google Apps Script integration is working properly.",
+          }),
+        },
+      );
+      // mode: 'no-cors' always returns opaque response (status 0), treat as success
+      toast.success("Test email request sent! Check your starcatchbd@gmail.com inbox.");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error(`Webhook test failed: ${msg}`);
+    } finally {
+      setTestingWebhook(false);
+    }
+  };
+
   const displayPayments = view === "pending" ? (pendingPayments ?? []) : (allPayments ?? []);
 
   return (
@@ -229,6 +262,41 @@ export default function AdminDashboard() {
             </p>
           </GlassPanel>
         </div>
+
+        {/* Test Webhook Button */}
+        <GlassPanel className="p-4 mb-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                <Zap className="w-4.5 h-4.5 text-blue-400" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white">Google Apps Script Webhook</p>
+                <p className="text-xs text-[#A1A1AA]">
+                  Send a test POST to verify integration with your Apps Script endpoint.
+                </p>
+              </div>
+            </div>
+            <Button
+              size="sm"
+              disabled={testingWebhook}
+              onClick={handleTestWebhook}
+              className="h-9 px-4 bg-blue-500/15 hover:bg-blue-500/25 text-blue-400 text-xs font-semibold cursor-pointer border border-blue-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {testingWebhook ? (
+                <>
+                  <div className="w-3.5 h-3.5 border-2 border-blue-400/30 border-t-blue-400 rounded-full animate-spin mr-1.5" />
+                  Sending…
+                </>
+              ) : (
+                <>
+                  <Send className="w-3.5 h-3.5 mr-1.5" />
+                  Test Webhook Email
+                </>
+              )}
+            </Button>
+          </div>
+        </GlassPanel>
 
         {/* Undo Toast Banner */}
         <AnimatePresence>
