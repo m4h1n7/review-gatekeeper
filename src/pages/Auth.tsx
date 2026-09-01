@@ -30,6 +30,7 @@ import {
   EyeOff,
   ShieldCheck,
 } from "lucide-react";
+import GoogleIcon from "@/components/GoogleIcon";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 
@@ -510,6 +511,53 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                   >
                     {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                     Sign In
+                  </Button>
+
+                  {/* ─── Divider ─── */}
+                  <div className="relative flex items-center py-1">
+                    <div className="flex-grow border-t border-white/10" />
+                    <span className="mx-3 text-xs text-[#A1A1AA]/50">or</span>
+                    <div className="flex-grow border-t border-white/10" />
+                  </div>
+
+                  {/* ─── Google Sign-In ─── */}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full h-11 bg-white/5 border-white/10 text-white hover:bg-white/10 font-semibold cursor-pointer"
+                    disabled={isLoading}
+                    onClick={async () => {
+                      setIsLoading(true);
+                      setError(null);
+                      try {
+                        await signIn("google");
+                        const waitForSession = () =>
+                          new Promise<boolean>((resolve) => {
+                            let attempts = 0;
+                            const check = () => {
+                              if (isAuthenticatedRef.current || attempts > 15) {
+                                resolve(isAuthenticatedRef.current);
+                                return;
+                              }
+                              attempts++;
+                              setTimeout(check, 50);
+                            };
+                            setTimeout(check, 100);
+                          });
+                        const sessionReady = await waitForSession();
+                        if (sessionReady) {
+                          navigate(isSuperAdmin(user?.email) ? "/admin" : redirect);
+                        } else {
+                          window.location.href = isSuperAdmin(user?.email) ? "/admin" : redirect;
+                        }
+                      } catch (err) {
+                        setError(err instanceof Error ? err.message : "Google sign-in failed. Please try again.");
+                        setIsLoading(false);
+                      }
+                    }}
+                  >
+                    <GoogleIcon className="mr-2 h-5 w-5" />
+                    Sign in with Google
                   </Button>
                 </CardContent>
                 <CardFooter className="flex-col gap-3 pt-0">

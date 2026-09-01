@@ -4,7 +4,7 @@
  * ACTIVE CONVEX DEPLOYMENT: patient-nightingale-401
  * CONVEX_SITE_URL (auto-set): https://patient-nightingale-401.convex.site
  *
- * Authentication: Email/Password only (no Google OAuth).
+ * Authentication: Google OAuth + Email/Password.
  *
  * Env vars required (set in Convex dashboard):
  *   CUSTOM_AUTH_SITE_URL  = https://patient-nightingale-401.convex.site
@@ -16,7 +16,6 @@
 
 import { convexAuth } from "@convex-dev/auth/server";
 import { Anonymous } from "@convex-dev/auth/providers/Anonymous";
-import { Password } from "@convex-dev/auth/providers/Password";
 import { ConvexCredentials } from "@convex-dev/auth/providers/ConvexCredentials";
 import {
   createAccount,
@@ -24,6 +23,7 @@ import {
   signInViaProvider,
 } from "@convex-dev/auth/server";
 import { Email } from "@convex-dev/auth/providers/Email";
+import Google from "@auth/core/providers/google";
 import { RandomReader, generateRandomString } from "@oslojs/crypto/random";
 import { Scrypt } from "lucia";
 
@@ -364,6 +364,19 @@ const SafePassword = ConvexCredentials({
 
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   providers: [
+    // Google OAuth — requires AUTH_GOOGLE_ID and AUTH_GOOGLE_SECRET env vars
+    Google({
+      clientId: process.env.AUTH_GOOGLE_ID,
+      clientSecret: process.env.AUTH_GOOGLE_SECRET,
+      profile(profile: Record<string, any>) {
+        return {
+          id: profile.sub,
+          name: profile.name,
+          email: profile.email,
+          image: profile.picture,
+        };
+      },
+    }),
     // SafePassword wraps Password with graceful error handling
     SafePassword as any,
     emailOtp,

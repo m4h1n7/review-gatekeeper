@@ -51,6 +51,7 @@ import {
   Users,
   Trophy,
   Sparkles,
+  User,
 } from "lucide-react";
 import { useNavigate } from "react-router";
 
@@ -316,6 +317,25 @@ export default function Dashboard() {
             <span className="font-bold text-sm text-white tracking-wide">STAR CATCH</span>
           </div>
           <div className="flex items-center gap-2 overflow-x-auto flex-nowrap">
+            {/* User Profile Badge */}
+            <div className="hidden sm:flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10">
+              {user?.image ? (
+                <img
+                  src={user.image}
+                  alt={user.name || "User"}
+                  className="w-6 h-6 rounded-full object-cover ring-1 ring-white/20"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                />
+              ) : (
+                <div className="w-6 h-6 rounded-full bg-[#16A34A]/20 flex items-center justify-center">
+                  <User className="w-3 h-3 text-[#16A34A]" />
+                </div>
+              )}
+              <div className="flex flex-col">
+                <span className="text-xs font-medium text-white leading-none">{user?.name || "User"}</span>
+                <span className="text-[10px] text-[#A1A1AA] leading-none mt-0.5 max-w-[120px] truncate">{user?.email}</span>
+              </div>
+            </div>
             {isSuperAdmin(user?.email) && (
               <Button variant="outline" size="sm" onClick={() => navigate("/admin")}
                 className="border-[#16A34A]/30 bg-[#16A34A]/10 hover:bg-[#16A34A]/20 text-[#16A34A] cursor-pointer font-semibold text-xs whitespace-nowrap">
@@ -327,8 +347,8 @@ export default function Dashboard() {
               <Settings className="w-3.5 h-3.5" />
             </Button>
             <Button variant="outline" size="sm" onClick={handleSignOut}
-              className="border-white/10 bg-white/5 hover:bg-white/10 text-[#A1A1AA] cursor-pointer text-xs">
-              <LogOut className="w-3.5 h-3.5" />
+              className="border-white/10 bg-white/5 hover:bg-white/10 text-[#A1A1AA] cursor-pointer text-xs whitespace-nowrap">
+              <LogOut className="w-3.5 h-3.5 mr-1" /> Logout
             </Button>
           </div>
         </div>
