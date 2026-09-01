@@ -134,6 +134,7 @@ export default function Dashboard() {
   const [showTrialExpired, setShowTrialExpired] = useState(isTrial && isExpired);
   const stats = useQuery(api.analytics.businessStats, selectedBusinessId ? { businessId: selectedBusinessId, filter } : "skip");
   const feedbacks = useQuery(api.analytics.recentFeedbacks, selectedBusinessId ? { businessId: selectedBusinessId, limit: 20 } : "skip");
+  const staffLeaderboard = useQuery(api.staff.getLeaderboard, overview?.businesses?.[0]?.id ? { businessId: overview.businesses[0].id } : "skip");
 
   const handleSignOut = async () => { await signOut(); navigate("/"); };
 
@@ -936,11 +937,15 @@ export default function Dashboard() {
                 </div>
               </div>
               <EnhancedLeaderboard
-                staff={overview.businesses[0]?.id ? [
-                  { id: "1", name: "Staff Member 1", slug: "staff-1", totalScans: 47, publicReviews: 38, privateFeedbacks: 9, conversionRate: 81 },
-                  { id: "2", name: "Staff Member 2", slug: "staff-2", totalScans: 32, publicReviews: 28, privateFeedbacks: 4, conversionRate: 88 },
-                  { id: "3", name: "Staff Member 3", slug: "staff-3", totalScans: 21, publicReviews: 18, privateFeedbacks: 3, conversionRate: 86 },
-                ] : []}
+                staff={staffLeaderboard?.map((s) => ({
+                  id: String(s.staffId),
+                  name: s.name,
+                  slug: s.slug,
+                  totalScans: s.totalScans,
+                  publicReviews: s.publicReviews,
+                  privateFeedbacks: s.privateFeedbacks,
+                  conversionRate: s.conversionRate,
+                })) || []}
               />
             </GlassPanel>
           </div>

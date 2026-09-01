@@ -56,6 +56,7 @@ export default function StaffManager({
   const [expandedStaff, setExpandedStaff] = useState<string | null>(null);
   const [copiedStaffId, setCopiedStaffId] = useState<string | null>(null);
   const [copiedNfcId, setCopiedNfcId] = useState<string | null>(null);
+  const [qrPreviewStaffId, setQrPreviewStaffId] = useState<string | null>(null);
 
   /* ─── Handlers ─── */
   const handleCreate = async () => {
@@ -279,13 +280,35 @@ export default function StaffManager({
                         className="overflow-hidden"
                       >
                         <div className="p-3 pt-0 border-t border-white/[0.04] space-y-3">
-                          {/* QR URL */}
-                          <div className="mt-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.06]">
+                          {/* Contact Info */}
+                          {(staff.email || staff.phone) && (
+                            <div className="mt-3 flex flex-wrap gap-3">
+                              {staff.email && (
+                                <div className="flex items-center gap-1.5 text-[10px] text-[#A1A1AA]">
+                                  <Mail className="w-3 h-3 text-blue-400" />
+                                  <a href={`mailto:${staff.email}`} className="text-blue-400 hover:underline">
+                                    {staff.email}
+                                  </a>
+                                </div>
+                              )}
+                              {staff.phone && (
+                                <div className="flex items-center gap-1.5 text-[10px] text-[#A1A1AA]">
+                                  <Phone className="w-3 h-3 text-green-400" />
+                                  <a href={`tel:${staff.phone}`} className="text-green-400 hover:underline">
+                                    {staff.phone}
+                                  </a>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* QR URL + NFC Copy */}
+                          <div className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.06]">
                             <p className="text-[10px] text-[#A1A1AA] mb-1 font-medium">
                               <QrCode className="inline w-3 h-3 mr-1" />
                               Staff Review Link
                             </p>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 mb-2">
                               <code className="text-xs text-blue-400 break-all flex-1 font-mono">
                                 {staffUrl}
                               </code>
@@ -293,13 +316,144 @@ export default function StaffManager({
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   navigator.clipboard.writeText(staffUrl);
+                                  setCopiedStaffId(staff.id);
+                                  setTimeout(() => setCopiedStaffId(null), 2000);
                                 }}
                                 className="px-2 py-1 rounded-lg bg-white/5 border border-white/10 text-[10px] text-[#A1A1AA] hover:text-white transition-colors cursor-pointer shrink-0"
                               >
-                                Copy
+                                {copiedStaffId === staff.id ? "Copied!" : "Copy"}
+                              </button>
+                            </div>
+                            {/* NFC Link Copy */}
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1.5 text-[10px] text-cyan-400">
+                                <Wifi className="w-3 h-3" />
+                                <span className="font-medium">NFC Link</span>
+                              </div>
+                              <div className="flex-1 h-px bg-white/5" />
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigator.clipboard.writeText(staffUrl);
+                                  setCopiedNfcId(staff.id);
+                                  setTimeout(() => setCopiedNfcId(null), 2000);
+                                }}
+                                className="px-2 py-1 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-[10px] text-cyan-400 hover:bg-cyan-500/20 transition-colors cursor-pointer shrink-0 font-medium"
+                              >
+                                {copiedNfcId === staff.id ? "Copied!" : "Copy NFC Link"}
                               </button>
                             </div>
                           </div>
+
+                          {/* Inline QR Code Preview */}
+                          <div className="flex items-center gap-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.06]">
+                            <div className="shrink-0 p-2 bg-white rounded-lg">
+                              <QRCodeSVG
+                                value={staffUrl}
+                                size={80}
+                                bgColor="#FFFFFF"
+                                fgColor="#1E293B"
+                                level="H"
+                                includeMargin={false}
+                              />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[10px] text-[#A1A1AA] font-medium mb-1">
+                                QR Code Preview
+                              </p>
+                              <p className="text-[9px] text-[#A1A1AA]/60 mb-2">
+                                Scan with phone camera or NFC reader
+                              </p>
+                              <div className="flex gap-1.5">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setQrPreviewStaffId(qrPreviewStaffId === staff.id ? null : staff.id);
+                                  }}
+                                  className="flex items-center gap-1 px-2 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 text-[10px] text-blue-400 hover:bg-blue-500/20 transition-colors cursor-pointer"
+                                >
+                                  <Download className="w-3 h-3" />
+                                  {qrPreviewStaffId === staff.id ? "Hide" : "Download"}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Downloadable QR (hidden canvas for PNG export) */}
+                          {qrPreviewStaffId === staff.id && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: "auto" }}
+                              exit={{ opacity: 0, height: 0 }}
+                              className="overflow-hidden"
+                            >
+                              <div className="p-3 rounded-lg bg-white border border-white/10 text-center">
+                                <p className="text-[10px] text-gray-500 mb-2 font-medium">
+                                  {staff.name} — QR Code Card
+                                </p>
+                                <div className="inline-block p-4 bg-white rounded-xl border border-gray-100">
+                                  <QRCodeSVG
+                                    value={staffUrl}
+                                    size={160}
+                                    bgColor="#FFFFFF"
+                                    fgColor="#1E293B"
+                                    level="H"
+                                    includeMargin={false}
+                                  />
+                                </div>
+                                <p className="text-[10px] text-gray-400 mt-2">{staff.role || "Staff"}</p>
+                                <p className="text-[9px] text-gray-300 mt-1">Powered by STAR CATCH</p>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    // Download as PNG via canvas
+                                    const svgEl = document.getElementById(`staff-qr-${staff.id}`);
+                                    if (!svgEl) return;
+                                    const svgData = new XMLSerializer().serializeToString(svgEl);
+                                    const canvas = document.createElement("canvas");
+                                    canvas.width = 400;
+                                    canvas.height = 400;
+                                    const ctx = canvas.getContext("2d");
+                                    if (!ctx) return;
+                                    const img = new Image();
+                                    img.onload = () => {
+                                      ctx.fillStyle = "#FFFFFF";
+                                      ctx.fillRect(0, 0, 400, 400);
+                                      ctx.drawImage(img, 100, 50, 200, 200);
+                                      ctx.fillStyle = "#1E293B";
+                                      ctx.font = "bold 18px Inter, system-ui, sans-serif";
+                                      ctx.textAlign = "center";
+                                      ctx.fillText(staff.name, 200, 310);
+                                      ctx.fillStyle = "#64748B";
+                                      ctx.font = "13px Inter, system-ui, sans-serif";
+                                      ctx.fillText(staff.role || "Staff", 200, 340);
+                                      const link = document.createElement("a");
+                                      link.download = `${staff.name.replace(/\s+/g, "-")}-QR.png`;
+                                      link.href = canvas.toDataURL("image/png");
+                                      link.click();
+                                    };
+                                    img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
+                                  }}
+                                  className="mt-2 px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium transition-all cursor-pointer"
+                                >
+                                  <Download className="inline w-3 h-3 mr-1" />
+                                  Download PNG
+                                </button>
+                                {/* Hidden SVG for canvas rendering */}
+                                <div style={{ position: "absolute", left: -9999 }}>
+                                  <QRCodeSVG
+                                    id={`staff-qr-${staff.id}`}
+                                    value={staffUrl}
+                                    size={400}
+                                    bgColor="#FFFFFF"
+                                    fgColor="#1E293B"
+                                    level="H"
+                                    includeMargin={false}
+                                  />
+                                </div>
+                              </div>
+                            </motion.div>
+                          )}
 
                           {/* Actions */}
                           <div className="flex gap-2">
@@ -395,7 +549,7 @@ export default function StaffManager({
                 </div>
 
                 {/* Stats */}
-                <div className="flex items-center gap-4 text-center">
+                <div className="flex items-center gap-3 text-center">
                   <div>
                     <div className="flex items-center gap-1">
                       <TrendingUp className="w-3 h-3 text-[#16A34A]" />
@@ -407,23 +561,23 @@ export default function StaffManager({
                   </div>
                   <div>
                     <div className="flex items-center gap-1">
-                      <Star className="w-3 h-3 text-amber-400" />
-                      <span className="text-sm font-bold text-white">
-                        {entry.publicReviews}
+                      <Star className="w-3 h-3 text-[#16A34A]" />
+                      <span className="text-sm font-bold text-[#16A34A]">
+                        {entry.positiveReviews ?? entry.publicReviews}
                       </span>
                     </div>
-                    <p className="text-[9px] text-[#A1A1AA]">Reviews</p>
+                    <p className="text-[9px] text-[#A1A1AA]">4-5★</p>
                   </div>
                   <div>
                     <div className="flex items-center gap-1">
-                      <MessageCircle className="w-3 h-3 text-blue-400" />
-                      <span className="text-sm font-bold text-white">
-                        {entry.privateFeedbacks}
+                      <MessageCircle className="w-3 h-3 text-amber-400" />
+                      <span className="text-sm font-bold text-amber-400">
+                        {entry.negativeFeedbacks ?? entry.privateFeedbacks}
                       </span>
                     </div>
-                    <p className="text-[9px] text-[#A1A1AA]">Feedback</p>
+                    <p className="text-[9px] text-[#A1A1AA]">1-3★</p>
                   </div>
-                  <div className="w-14">
+                  <div className="w-12">
                     <span
                       className={`text-sm font-bold ${
                         entry.conversionRate >= 70
@@ -435,7 +589,7 @@ export default function StaffManager({
                     >
                       {entry.conversionRate}%
                     </span>
-                    <p className="text-[9px] text-[#A1A1AA]">Conv.</p>
+                    <p className="text-[9px] text-[#A1A1AA]">Rate</p>
                   </div>
                 </div>
               </motion.div>
