@@ -236,7 +236,7 @@ const SafePassword = ConvexCredentials({
     }
 
     // -----------------------------------------------------------------
-    // Sign In
+    // Sign In (with auto-create if account doesn't exist)
     // -----------------------------------------------------------------
     if (flow === "signIn") {
       if (!password) {
@@ -254,10 +254,38 @@ const SafePassword = ConvexCredentials({
       } catch (err: any) {
         const msg = String(err?.message || err);
 
-        // Gracefully handle library-level errors instead of crashing
+        // ── Account doesn't exist → auto-create and sign in ──
+        if (msg.includes("InvalidAccountId") || msg.includes("does not exist")) {
+          console.info(
+            `[auth] No account for ${email} — auto-creating new account`,
+          );
+          try {
+            const created = await createAccount(ctx, {
+              provider: "password",
+              account: { id: email, secret: password },
+              profile,
+              shouldLinkViaEmail: false,
+              shouldLinkViaPhone: false,
+            });
+            return { userId: created.user._id };
+          } catch (createErr: any) {
+            const createMsg = String(createErr?.message || createErr);
+            // Race condition: another request created the account between
+            // our retrieve and create. Try retrieveAccount once more.
+            if (createMsg.includes("already") || createMsg.includes("duplicate")) {
+              const retry = await retrieveAccount(ctx, {
+                provider: "password",
+                account: { id: email, secret: password },
+              });
+              if (retry) return { userId: retry.user._id };
+            }
+            throw createErr;
+          }
+        }
+
+        // Wrong password for existing account
         if (
           msg.includes("InvalidSecret") ||
-          msg.includes("InvalidAccountId") ||
           msg.includes("Invalid credentials")
         ) {
           console.warn(

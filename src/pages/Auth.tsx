@@ -274,8 +274,6 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       const msg = err instanceof Error ? err.message : "";
       if (msg.includes("InvalidSecret") || msg.includes("Invalid credentials") || msg.includes("credentials")) {
         setError("Incorrect email or password. Please try again.");
-      } else if (msg.includes("not found") || msg.includes("does not exist")) {
-        setError("No account found with this email. Please sign up first.");
       } else if (msg.includes("Too many") || msg.includes("rate limit")) {
         setError("Too many failed attempts. Please wait a few minutes and try again.");
       } else {
