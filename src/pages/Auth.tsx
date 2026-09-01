@@ -100,6 +100,10 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   useEffect(() => {
     isAuthenticatedRef.current = isAuthenticated;
   }, [isAuthenticated]);
+
+  // Prevent the redirect useEffect from firing when handlePasswordSignIn
+  // or handlePasswordSignUp already navigates via window.location.href.
+  const navigatingRef = useRef(false);
   const sendSignupOtpMutation = useMutation(api.users.sendSignupOtp);
   const verifySignupOtpMutation = useMutation(api.users.verifySignupOtp);
   const isEmailVerified = useQuery(api.users.isEmailVerified);
@@ -196,9 +200,13 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   }, [resendCooldown]);
 
   // ─── Post-auth redirect ───
-  // Handles: password sign-in, Google OAuth callback, OTP verification.
-  // Google OAuth users arrive here after the callback exchanges the code for tokens.
+  // Handles: Google OAuth callback, OTP verification, email OTP login.
+  // Password sign-in is handled separately in handlePasswordSignIn using
+  // window.location.href to ensure the Convex auth state reinitializes
+  // from localStorage on the destination page.
   useEffect(() => {
+    // Skip if handlePasswordSignUp/SignIn already triggered a page reload
+    if (navigatingRef.current) return;
     if (!authLoading && isAuthenticated && user !== undefined) {
       // Super admin: always redirect to /admin immediately
       if (isAdminEmail(user?.email)) {
@@ -252,35 +260,16 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
         password,
       });
 
-      // Wait for the Convex auth session to propagate to the client.
-      // signIn resolves with a token, but isAuthenticated may lag by a tick.
-      // We poll via ref to avoid RequireAuth redirecting back to /auth.
-      const waitForSession = () =>
-        new Promise<boolean>((resolve) => {
-          let attempts = 0;
-          const check = () => {
-            if (isAuthenticatedRef.current || attempts > 15) {
-              resolve(isAuthenticatedRef.current);
-              return;
-            }
-            attempts++;
-            setTimeout(check, 50);
-          };
-          // Give the first render cycle a chance to update
-          setTimeout(check, 100);
-        });
-
-      const sessionReady = await waitForSession();
+      // signIn() stores the JWT token in localStorage, but the in-memory
+      // Convex auth state (isAuthenticated) may not have propagated yet.
+      // If we use navigate(), RequireAuth on /dashboard can still see
+      // isAuthenticated=false during the same React render cycle → auth loop.
+      //
+      // Force a full page reload so the ConvexAuthProvider re-reads the
+      // token from localStorage on mount and initializes isAuthenticated=true.
+      navigatingRef.current = true;
       const dest = isSuperAdmin(email) ? "/admin" : redirect;
-
-      if (sessionReady) {
-        // Session is active — safe to navigate directly
-        navigate(dest);
-      } else {
-        // Session not yet visible — force a full page reload to the destination.
-        // The Convex token is stored in a cookie/indexedDB, so reload will pick it up.
-        window.location.href = dest;
-      }
+      window.location.href = dest;
     } catch (err) {
       const msg = err instanceof Error ? err.message : "";
       if (msg.includes("InvalidSecret") || msg.includes("Invalid credentials") || msg.includes("credentials")) {
@@ -327,9 +316,10 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
         password,
         name,
       });
-      // Super admins skip OTP verification
+      // Super admins skip OTP verification — full page reload to persist session
       if (isSuperAdmin(email)) {
-        navigate("/admin");
+        navigatingRef.current = true;
+        window.location.href = "/admin";
       } else {
         // Set signup email to trigger OTP flow
         setSignupEmail(email);
