@@ -239,6 +239,113 @@ export const syncBusinessSubscription = mutation({
   },
 });
 
+/** List all subscriptions for admin panel */
+export const listAll = query({
+  args: {},
+  handler: async (ctx) => {
+    const allSubs = await ctx.db.query("subscriptions").collect();
+    const result = [];
+    for (const sub of allSubs) {
+      const user = await ctx.db.get(sub.userId as any);
+      result.push({
+        ...sub,
+        userEmail: (user as any)?.email ?? "unknown",
+        userName: (user as any)?.name ?? "",
+      });
+    }
+    return result;
+  },
+});
+
+/** Admin-only: extend a client's subscription by N days */
+export const extendSubscription = mutation({
+  args: {
+    subscriptionId: v.id("subscriptions"),
+    days: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const sub = await ctx.db.get(args.subscriptionId);
+    if (!sub) throw new Error("Subscription not found");
+
+    const now = Date.now();
+    const DAY_MS = 24 * 60 * 60 * 1000;
+    const addMs = Math.max(1, Math.round(args.days)) * DAY_MS;
+
+    // Base: use the later of (now) or (current expiry) so we never shrink
+    const base = Math.max(now, sub.expiresAt ?? now, sub.proExpiresAt ?? now);
+    const newExpiry = base + addMs;
+
+    const previousExpiresAt = sub.expiresAt;
+    const previousProExpiresAt = sub.proExpiresAt;
+
+    await ctx.db.patch(args.subscriptionId, {
+      expiresAt: newExpiry,
+      proExpiresAt: newExpiry,
+    });
+
+    // Sync to all businesses owned by this user
+    const businesses = await ctx.db
+      .query("businesses")
+      .withIndex("by_userId", (q) => q.eq("userId", sub.userId))
+      .collect();
+    for (const biz of businesses) {
+      await ctx.db.patch(biz._id, {
+        subscriptionStatus: "active",
+        trialEndsAt: newExpiry,
+        planType: sub.plan === "pro" ? "pro" : "basic",
+      });
+    }
+
+    // Audit log
+    await ctx.db.insert("auditLogs", {
+      adminEmail: (await getAuthUserId(ctx)) as string,
+      action: "SUBSCRIPTION_EXTENDED",
+      targetUser: sub.userId,
+      targetEmail: "unknown",
+      details: `Extended by ${args.days} days. Was: ${previousExpiresAt ? new Date(previousExpiresAt).toISOString() : "N/A"}, Now: ${new Date(newExpiry).toISOString()}`,
+      createdAt: now,
+    });
+
+    return {
+      ok: true,
+      previousExpiresAt,
+      newExpiresAt: newExpiry,
+      daysAdded: args.days,
+    };
+  },
+});
+
+/** Admin-only: revert a subscription extension (for undo within 10s) */
+export const revertSubscription = mutation({
+  args: {
+    subscriptionId: v.id("subscriptions"),
+    previousExpiresAt: v.number(),
+    previousProExpiresAt: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const sub = await ctx.db.get(args.subscriptionId);
+    if (!sub) throw new Error("Subscription not found");
+
+    await ctx.db.patch(args.subscriptionId, {
+      expiresAt: args.previousExpiresAt,
+      proExpiresAt: args.previousProExpiresAt,
+    });
+
+    // Sync to businesses
+    const businesses = await ctx.db
+      .query("businesses")
+      .withIndex("by_userId", (q) => q.eq("userId", sub.userId))
+      .collect();
+    for (const biz of businesses) {
+      await ctx.db.patch(biz._id, {
+        trialEndsAt: args.previousExpiresAt,
+      });
+    }
+
+    return { ok: true };
+  },
+});
+
 /** Check if user can receive more feedback (free trial: 15 max) */
 export const canReceiveFeedback = query({
   args: { businessId: v.string() },

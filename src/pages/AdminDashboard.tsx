@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useMutation } from "convex/react";
@@ -15,8 +15,12 @@ import {
   ArrowUpRight,
   LogOut,
   CreditCard,
+  Users,
+  CalendarClock,
+  Undo2,
 } from "lucide-react";
 import { useNavigate } from "react-router";
+import SubscriptionExtendModal from "@/components/SubscriptionExtendModal";
 
 function GlassPanel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
@@ -44,7 +48,30 @@ export default function AdminDashboard() {
   const approvePayment = useMutation(api.payments.approve);
   const rejectPayment = useMutation(api.payments.reject);
   const [processingId, setProcessingId] = useState<string | null>(null);
-  const [view, setView] = useState<"pending" | "history">("pending");
+  const [view, setView] = useState<"pending" | "history" | "clients">("pending");
+
+  // Subscription management
+  const allSubscriptions = useQuery(api.subscriptions.listAll);
+  const extendSubscription = useMutation(api.subscriptions.extendSubscription);
+  const revertSubscription = useMutation(api.subscriptions.revertSubscription);
+  const [extendModalOpen, setExtendModalOpen] = useState(false);
+  const [selectedSubId, setSelectedSubId] = useState<string | null>(null);
+  const [selectedClientEmail, setSelectedClientEmail] = useState("");
+  const [selectedCurrentExpiry, setSelectedCurrentExpiry] = useState<number | null>(null);
+  const [extendProcessing, setExtendProcessing] = useState(false);
+  const [undoData, setUndoData] = useState<{
+    subId: string;
+    previousExpiresAt: number;
+    previousProExpiresAt: number;
+    timer: ReturnType<typeof setTimeout>;
+  } | null>(null);
+
+  const openExtendModal = useCallback((sub: { _id: string; userEmail: string; expiresAt?: number; proExpiresAt?: number }) => {
+    setSelectedSubId(sub._id);
+    setSelectedClientEmail(sub.userEmail);
+    setSelectedCurrentExpiry(sub.expiresAt ?? sub.proExpiresAt ?? null);
+    setExtendModalOpen(true);
+  }, []);
 
   const handleApprove = async (paymentId: string) => {
     setProcessingId(paymentId);
@@ -79,6 +106,59 @@ export default function AdminDashboard() {
   const handleSignOut = async () => {
     await signOut();
     navigate("/");
+  };
+
+  const handleExtend = async (days: number) => {
+    if (!selectedSubId) return;
+    setExtendProcessing(true);
+    try {
+      // Capture current expiry before mutation (for undo)
+      const currentSub = allSubscriptions?.find((s) => s._id === selectedSubId);
+      const prevExpires = currentSub?.expiresAt ?? 0;
+      const prevProExpires = currentSub?.proExpiresAt ?? 0;
+
+      await extendSubscription({
+        subscriptionId: selectedSubId as any,
+        days,
+      });
+      setExtendModalOpen(false);
+
+      // Store undo data with 10s timer
+      const timer = setTimeout(() => setUndoData(null), 10_000);
+      setUndoData({
+        subId: selectedSubId,
+        previousExpiresAt: prevExpires,
+        previousProExpiresAt: prevProExpires,
+        timer,
+      });
+
+      const newExpiry = prevExpires > 0 ? new Date(prevExpires + days * 86400000).toLocaleDateString() : "set";
+      toast.success(`Subscription extended by ${days} days`, {
+        description: `New expiry: ${newExpiry}`,
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to extend";
+      toast.error(msg);
+    } finally {
+      setExtendProcessing(false);
+    }
+  };
+
+  const handleUndo = async () => {
+    if (!undoData) return;
+    clearTimeout(undoData.timer);
+    try {
+      await revertSubscription({
+        subscriptionId: undoData.subId as any,
+        previousExpiresAt: undoData.previousExpiresAt,
+        previousProExpiresAt: undoData.previousProExpiresAt,
+      });
+      setUndoData(null);
+      toast.success("Extension reverted successfully");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to revert";
+      toast.error(msg);
+    }
   };
 
   const displayPayments = view === "pending" ? (pendingPayments ?? []) : (allPayments ?? []);
@@ -150,6 +230,32 @@ export default function AdminDashboard() {
           </GlassPanel>
         </div>
 
+        {/* Undo Toast Banner */}
+        <AnimatePresence>
+          {undoData && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="mb-4 p-3 rounded-xl bg-[#16A34A]/10 border border-[#16A34A]/30 flex items-center justify-between"
+            >
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-[#16A34A]" />
+                <span className="text-sm text-white font-medium">
+                  Subscription extended — 10s undo window
+                </span>
+              </div>
+              <button
+                onClick={handleUndo}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#16A34A] hover:bg-[#16A34A]/80 text-white text-xs font-semibold transition-colors cursor-pointer"
+              >
+                <Undo2 className="w-3.5 h-3.5" />
+                Undo
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* View toggle */}
         <div className="flex items-center gap-2 mb-6">
           <button
@@ -172,6 +278,17 @@ export default function AdminDashboard() {
             }`}
           >
             All History ({allPayments?.length ?? 0})
+          </button>
+          <button
+            onClick={() => setView("clients")}
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-all cursor-pointer ${
+              view === "clients"
+                ? "bg-[#16A34A] text-white shadow-md shadow-[#16A34A]/25"
+                : "bg-white/5 border border-white/10 text-[#A1A1AA] hover:bg-white/10"
+            }`}
+          >
+            <Users className="w-4 h-4 inline mr-1.5" />
+            Active Clients ({allSubscriptions?.filter((s) => s.status === "active").length ?? 0})
           </button>
         </div>
 
@@ -319,7 +436,136 @@ export default function AdminDashboard() {
             </div>
           )}
         </GlassPanel>
+
+        {/* ─── Active Clients Tab ─── */}
+        {view === "clients" && (
+          <GlassPanel className="overflow-hidden">
+            {!allSubscriptions || allSubscriptions.length === 0 ? (
+              <div className="p-12 text-center">
+                <div className="w-16 h-16 mx-auto rounded-2xl bg-white/5 flex items-center justify-center mb-4">
+                  <Users className="w-8 h-8 text-[#A1A1AA]/30" />
+                </div>
+                <h2 className="text-lg font-semibold text-white mb-2">
+                  No subscriptions found
+                </h2>
+                <p className="text-sm text-[#A1A1AA]">
+                  When clients purchase a plan or start a trial, their subscriptions will appear here.
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-t border-white/5">
+                      <th className="px-5 py-3 text-left text-xs font-semibold text-[#A1A1AA] uppercase tracking-wider">
+                        Client Email
+                      </th>
+                      <th className="px-5 py-3 text-left text-xs font-semibold text-[#A1A1AA] uppercase tracking-wider">
+                        Plan
+                      </th>
+                      <th className="px-5 py-3 text-left text-xs font-semibold text-[#A1A1AA] uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-5 py-3 text-left text-xs font-semibold text-[#A1A1AA] uppercase tracking-wider hidden md:table-cell">
+                        Expires
+                      </th>
+                      <th className="px-5 py-3 text-right text-xs font-semibold text-[#A1A1AA] uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    <AnimatePresence>
+                      {allSubscriptions
+                        .filter((s) => s.status === "active" || s.status === "pending")
+                        .map((sub) => {
+                          const daysRemaining = sub.expiresAt
+                            ? Math.max(0, Math.ceil((sub.expiresAt - Date.now()) / 86400000))
+                            : null;
+                          const isExpired = sub.expiresAt ? sub.expiresAt < Date.now() : false;
+                          const isExpiringSoon = daysRemaining !== null && daysRemaining <= 3 && daysRemaining > 0;
+
+                          return (
+                            <motion.tr
+                              key={sub._id}
+                              initial={{ opacity: 0, y: 5 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, x: -20 }}
+                              className="hover:bg-white/[0.03] transition-colors"
+                            >
+                              <td className="px-5 py-4">
+                                <span className="text-sm font-medium text-white">
+                                  {sub.userEmail}
+                                </span>
+                              </td>
+                              <td className="px-5 py-4">
+                                <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+                                  sub.plan === "pro"
+                                    ? "bg-[#16A34A]/15 text-[#16A34A]"
+                                    : sub.plan === "trial"
+                                    ? "bg-blue-500/15 text-blue-400"
+                                    : sub.plan === "starter"
+                                    ? "bg-amber-500/15 text-amber-400"
+                                    : "bg-white/5 text-[#A1A1AA]"
+                                }`}>
+                                  {sub.plan === "pro" ? "Pro" : sub.plan === "trial" ? "Trial" : sub.plan === "starter" ? "Starter" : "Free"}
+                                </span>
+                              </td>
+                              <td className="px-5 py-4">
+                                {isExpired ? (
+                                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-red-500/15 text-red-400">
+                                    Expired
+                                  </span>
+                                ) : isExpiringSoon ? (
+                                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-orange-500/15 text-orange-400">
+                                    Expiring ({daysRemaining}d)
+                                  </span>
+                                ) : (
+                                  <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+                                    sub.status === "active"
+                                      ? "bg-[#16A34A]/15 text-[#16A34A]"
+                                      : "bg-amber-500/15 text-amber-400"
+                                  }`}>
+                                    {sub.status === "active" ? "Active" : "Pending"}
+                                  </span>
+                                )}
+                              </td>
+                              <td className="px-5 py-4 hidden md:table-cell">
+                                <span className="text-xs text-[#A1A1AA]">
+                                  {sub.expiresAt ? formatTime(sub.expiresAt) : "No expiry"}
+                                </span>
+                              </td>
+                              <td className="px-5 py-4 text-right">
+                                <Button
+                                  size="sm"
+                                  onClick={() => openExtendModal(sub as any)}
+                                  className="h-8 px-3 bg-[#16A34A]/15 hover:bg-[#16A34A]/25 text-[#16A34A] text-xs font-semibold cursor-pointer border border-[#16A34A]/30"
+                                >
+                                  <CalendarClock className="w-3.5 h-3.5 mr-1" />
+                                  Edit Validity
+                                </Button>
+                              </td>
+                            </motion.tr>
+                          );
+                        })}
+                    </AnimatePresence>
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </GlassPanel>
+        )}
       </div>
+
+      {/* Subscription Extend Modal */}
+      <SubscriptionExtendModal
+        open={extendModalOpen}
+        onClose={() => setExtendModalOpen(false)}
+        onConfirm={handleExtend}
+        clientEmail={selectedClientEmail}
+        currentExpiresAt={selectedCurrentExpiry}
+        processing={extendProcessing}
+      />
     </div>
   );
 }
