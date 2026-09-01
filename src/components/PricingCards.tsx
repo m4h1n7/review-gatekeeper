@@ -2,10 +2,11 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
-import { Shield, CheckCircle2, Zap, Star, Gift, AlertTriangle } from "lucide-react";
+import { Shield, CheckCircle2, Zap, Star, Gift, AlertTriangle, Eye } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
+import PlanDemoModal from "@/components/PlanDemoModal";
 
 function GlassPanel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
@@ -36,6 +37,13 @@ export function PricingCards({
 
   const [trialLoading, setTrialLoading] = useState(false);
   const [trialError, setTrialError] = useState("");
+  const [demoModalOpen, setDemoModalOpen] = useState(false);
+  const [demoPlan, setDemoPlan] = useState<"starter" | "pro">("starter");
+
+  const openDemo = (plan: "starter" | "pro") => {
+    setDemoPlan(plan);
+    setDemoModalOpen(true);
+  };
 
   const claimTrial = useMutation(api.subscriptions.claimTrial);
   const trialStatus = useQuery(api.subscriptions.hasTrialUsed);
@@ -230,12 +238,22 @@ export function PricingCards({
               ))}
             </div>
 
-            <Button
-              className="w-full h-12 bg-white/10 hover:bg-white/15 text-white font-semibold border border-white/10 transition-all cursor-pointer"
-              onClick={() => handleGetStarted("starter")}
-            >
-              Get Started
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => openDemo("starter")}
+                className="flex-1 h-11 bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 font-semibold border border-white/[0.08] transition-all cursor-pointer text-xs"
+              >
+                <Eye className="w-3.5 h-3.5 mr-1.5" />
+                View Demo
+              </Button>
+              <Button
+                className="flex-1 h-11 bg-white/10 hover:bg-white/15 text-white font-semibold border border-white/10 transition-all cursor-pointer"
+                onClick={() => handleGetStarted("starter")}
+              >
+                Get Started
+              </Button>
+            </div>
           </div>
         </motion.div>
 
@@ -296,16 +314,32 @@ export function PricingCards({
               ))}
             </div>
 
-            <Button
-              className="w-full h-12 bg-[#16A34A] hover:bg-[#16A34A]/90 text-white font-semibold shadow-lg shadow-[#16A34A]/25 hover:shadow-[#16A34A]/40 transition-all cursor-pointer"
-              onClick={() => handleGetStarted("pro")}
-            >
-              <Star className="w-5 h-5 mr-2 fill-white" />
-              Choose Plan
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => openDemo("pro")}
+                className="flex-1 h-11 bg-white/[0.04] hover:bg-[#16A34A]/10 text-zinc-300 font-semibold border border-white/[0.08] hover:border-[#16A34A]/20 transition-all cursor-pointer text-xs"
+              >
+                <Eye className="w-3.5 h-3.5 mr-1.5" />
+                View Demo
+              </Button>
+              <Button
+                className="flex-1 h-11 bg-[#16A34A] hover:bg-[#16A34A]/90 text-white font-semibold shadow-lg shadow-[#16A34A]/25 hover:shadow-[#16A34A]/40 transition-all cursor-pointer"
+                onClick={() => handleGetStarted("pro")}
+              >
+                <Star className="w-5 h-5 mr-2 fill-white" />
+                Choose Plan
+              </Button>
+            </div>
           </div>
         </motion.div>
       </div>
+
+      <PlanDemoModal
+        isOpen={demoModalOpen}
+        onClose={() => setDemoModalOpen(false)}
+        initialPlan={demoPlan}
+      />
     </div>
   );
 }
