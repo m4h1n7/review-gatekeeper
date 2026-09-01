@@ -941,9 +941,12 @@ export default function Dashboard() {
                   id: String(s.staffId),
                   name: s.name,
                   slug: s.slug,
+                  role: s.role,
                   totalScans: s.totalScans,
                   publicReviews: s.publicReviews,
                   privateFeedbacks: s.privateFeedbacks,
+                  positiveReviews: s.positiveReviews,
+                  negativeFeedbacks: s.negativeFeedbacks,
                   conversionRate: s.conversionRate,
                 })) || []}
               />
