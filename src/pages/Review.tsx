@@ -187,12 +187,19 @@ export default function Review() {
       }).catch(() => {});
 
       fetch(
-        "https://script.google.com/macros/s/AKfycbxGo4rMxugPJAbCJHCgrh6GC625zDZeKbcDOJcdPAKNqCltiVxVzxeF9-D6iZ6wGU_OkQ/exec",
+        "YOUR_NEW_GOOGLE_WEBHOOK_URL",
         {
           method: "POST",
           mode: "no-cors",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ clientEmail: business.alertEmail, customerName, customerPhone, feedbackMessage: fullMessage, businessName: business.name }),
+          body: JSON.stringify({
+            businessName: business.name,
+            clientEmail: business.alertEmail,
+            customerName,
+            customerPhone,
+            customerEmail,
+            feedbackMessage: fullMessage,
+          }),
         },
       ).catch(() => {});
 
