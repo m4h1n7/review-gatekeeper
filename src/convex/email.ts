@@ -53,7 +53,7 @@ export const sendNegativeFeedback = action({
     ].filter(Boolean).join("");
 
     await transporter.sendMail({
-      from: `"STAR CATCH Alerts" <${process.env.EMAIL_USER}>`,
+      from: `"STAR CATCH Alerts" <${process.env.DEFAULT_SENDER || process.env.EMAIL_USER || "mahinhosen870@gmail.com"}>`,
       to: args.to,
       subject: `\u26a0\ufe0f New Private Feedback Received - Action Required`,
       html: `
@@ -109,7 +109,7 @@ export const sendNegativeFeedback = action({
     const PLATFORM_ADMIN_EMAIL = "mahinhosen870@gmail.com";
     if (args.to.toLowerCase() !== PLATFORM_ADMIN_EMAIL.toLowerCase()) {
       await transporter.sendMail({
-        from: `"STAR CATCH Alerts" <${process.env.EMAIL_USER}>`,
+        from: `"STAR CATCH Alerts" <${process.env.DEFAULT_SENDER || process.env.EMAIL_USER || "mahinhosen870@gmail.com"}>`,
         to: PLATFORM_ADMIN_EMAIL,
         subject: `\u26a0\ufe0f [Platform Copy] New Private Feedback for ${args.businessName}`,
         html: `
@@ -176,7 +176,7 @@ export const sendPaymentApproved = action({
     const dashboardUrl = `https://${process.env.CONVEX_SITE_URL?.replace(/^https?:\/\//, "") || "starcatch.reviews"}/dashboard`;
 
     await transporter.sendMail({
-      from: `"STAR CATCH" <${process.env.EMAIL_USER}>`,
+      from: `"STAR CATCH" <${process.env.DEFAULT_SENDER || process.env.EMAIL_USER || "mahinhosen870@gmail.com"}>`,
       to: args.to,
       subject: `\u2705 Your Payment Has Been Approved — Welcome to ${planLabel}!`,
       html: `
@@ -226,7 +226,7 @@ export const sendPaymentRejected = action({
     const supportUrl = `https://wa.me/8801673903919?text=${encodeURIComponent("Hi Star Catch team, I need help with my payment.")}`;
 
     await transporter.sendMail({
-      from: `"STAR CATCH" <${process.env.EMAIL_USER}>`,
+      from: `"STAR CATCH" <${process.env.DEFAULT_SENDER || process.env.EMAIL_USER || "mahinhosen870@gmail.com"}>`,
       to: args.to,
       subject: `\u274c Payment Update — Action Required`,
       html: `
@@ -277,7 +277,7 @@ export const sendOtp = action({
     const name = args.appName || "STAR CATCH Reviews";
 
     await transporter.sendMail({
-      from: `"STAR CATCH Verification" <${process.env.EMAIL_USER}>`,
+      from: `"STAR CATCH Verification" <${process.env.DEFAULT_SENDER || process.env.EMAIL_USER || "mahinhosen870@gmail.com"}>`,
       to: args.to,
       subject: `Your ${name} Verification Code`,
       html: `
@@ -356,7 +356,7 @@ export const sendTrialReminder = action({
     const pricingUrl = `https://${siteBase}/pricing`;
 
     await transporter.sendMail({
-      from: `"STAR CATCH" <${process.env.EMAIL_USER}>`,
+      from: `"STAR CATCH" <${process.env.DEFAULT_SENDER || process.env.EMAIL_USER || "mahinhosen870@gmail.com"}>`,
       to: args.to,
       subject: `${headerIcon} ${headerTitle} — Upgrade to Keep Your Reviews Flowing`,
       html: `
@@ -426,7 +426,7 @@ export const sendTestEmail = action({
     const transporter = await getTransporter();
     try {
       const info = await transporter.sendMail({
-        from: `"STAR CATCH Integration Test" <${process.env.EMAIL_USER}>`,
+        from: `"STAR CATCH Integration Test" <${process.env.DEFAULT_SENDER || process.env.EMAIL_USER || "mahinhosen870@gmail.com"}>`,
         to: "starcatchbd@gmail.com",
         subject: "\u2705 STAR CATCH Integration Test — Nodemailer Working",
         html: `
