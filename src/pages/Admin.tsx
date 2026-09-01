@@ -44,7 +44,9 @@ import {
   Lock,
   FileDown,
   Bell,
+  Send,
 } from "lucide-react";
+import SubscriptionExtendModal from "@/components/SubscriptionExtendModal";
 import { useNavigate } from "react-router";
 
 const SUPER_ADMIN_EMAILS = ["mahinhosen870@gmail.com", "atazwar103@gmail.com", "starcatchbd@gmail.com"];
@@ -171,6 +173,10 @@ export default function Admin() {
 
   // Client action dropdown
   const [openActionMenu, setOpenActionMenu] = useState<string | null>(null);
+
+  // Extend subscription modal
+  const [extendModalOpen, setExtendModalOpen] = useState(false);
+  const [extendTarget, setExtendTarget] = useState<{ userId: string; name: string; email: string; expiresAt: number | null } | null>(null);
 
   // Archive (danger zone) modal
   const [archiveModalOpen, setArchiveModalOpen] = useState(false);
@@ -360,6 +366,27 @@ export default function Admin() {
     try {
       await extendSubscription({ userId, days: 30 });
       toast.success(`Subscription extended by 30 days for ${clientName}`);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to extend");
+    } finally { setProcessingId(null); }
+  };
+
+  const openExtendModal = (userId: string, name: string, email: string, expiresAt: number | null) => {
+    setExtendTarget({ userId, name, email, expiresAt });
+    setExtendModalOpen(true);
+  };
+
+  const handleExtendConfirm = async (days: number) => {
+    if (!extendTarget) return;
+    const key = `extend-${extendTarget.userId}`;
+    setProcessingId(key);
+    try {
+      await extendSubscription({ userId: extendTarget.userId, days });
+      toast.success(`Subscription extended by ${days} days for ${extendTarget.name}`, {
+        description: `${days} days added successfully.`,
+      });
+      setExtendModalOpen(false);
+      setExtendTarget(null);
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Failed to extend");
     } finally { setProcessingId(null); }
@@ -583,10 +610,21 @@ export default function Admin() {
                 <span className="ml-1 px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-white/10">{tab.count}</span>
               )}
             </button>
-          ))}
-        </div>
+          )        )}
 
-        {/* ═══ OVERVIEW TAB ═══ */}
+      </div>
+
+      {/* ═══ EXTEND SUBSCRIPTION MODAL ═══ */}
+      <SubscriptionExtendModal
+        open={extendModalOpen}
+        onClose={() => { setExtendModalOpen(false); setExtendTarget(null); }}
+        onConfirm={handleExtendConfirm}
+        clientEmail={extendTarget?.email || ""}
+        currentExpiresAt={extendTarget?.expiresAt ?? null}
+        processing={processingId !== null}
+      />
+
+      {/*  ═══ OVERVIEW TAB ═══ */}
         {activeTab === "overview" && (
           <>
             <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
@@ -1078,13 +1116,18 @@ export default function Admin() {
                               )}
                               {(isPro || isStarter || isExpired) && (
                                 <Button size="sm" variant="outline"
-                                  onClick={() => handleExtend(client.userId, client.name)}
+                                  onClick={() => openExtendModal(
+                                    client.userId,
+                                    client.name,
+                                    client.email,
+                                    sub?.expiresAt ?? null,
+                                  )}
                                   disabled={processingId === `extend-${client.userId}`}
                                   className="h-8 px-2.5 border-[#16A34A]/30 text-[#16A34A] hover:bg-[#16A34A]/10 text-xs cursor-pointer"
-                                  title="Extend +30 days">
+                                  title="Extend Subscription">
                                   {processingId === `extend-${client.userId}`
                                     ? <div className="w-3.5 h-3.5 border-2 border-[#16A34A]/30 border-t-[#16A34A] rounded-full animate-spin" />
-                                    : <><CalendarPlus className="w-3.5 h-3.5 mr-1" /><span className="hidden sm:inline">+30d</span></>}
+                                    : <><CalendarPlus className="w-3.5 h-3.5 mr-1" /><span className="hidden sm:inline">Extend</span></>}
                                 </Button>
                               )}
                               {/* Account status actions */}
@@ -1391,6 +1434,42 @@ export default function Admin() {
               </div>
               <Button onClick={handleBackup} className="w-full h-10 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold cursor-pointer">
                 <FileDown className="w-4 h-4 mr-2" /> Download Full System Backup
+              </Button>
+            </GlassPanel>
+
+            {/* Test Webhook Email */}
+            <GlassPanel className="p-6">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center">
+                  <Bell className="w-5 h-5 text-green-400" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-white">Test Webhook Email</h3>
+                  <p className="text-xs text-[#A1A1AA]">Send a test POST to the Google Apps Script webhook</p>
+                </div>
+              </div>
+              <Button onClick={async () => {
+                try {
+                  await fetch("YOUR_GOOGLE_WEBHOOK_URL", {
+                    method: "POST",
+                    mode: "no-cors",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      businessName: "StarCatch BD Test",
+                      clientEmail: "starcatchbd@gmail.com",
+                      customerName: "Test Customer",
+                      customerPhone: "01700000000",
+                      customerEmail: "test@example.com",
+                      feedbackMessage: "This is a test feedback message to check if Google Apps Script integration is working properly.",
+                    }),
+                  });
+                  toast.success("Test email request sent!", { description: "Check your starcatchbd@gmail.com inbox." });
+                } catch (err) {
+                  toast.error("Webhook failed", { description: err instanceof Error ? err.message : String(err) });
+                }
+              }}
+                className="w-full h-10 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold cursor-pointer">
+                <Send className="w-4 h-4 mr-2" /> Send Test Webhook
               </Button>
             </GlassPanel>
           </div>
