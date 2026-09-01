@@ -74,13 +74,13 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     ? returnTo
     : (redirectAfterAuth || "/dashboard");
 
-  // Compute redirect with role-based routing
-  const getRedirect = (email?: string | null) => {
+  // Compute redirect with role-based routing (memoized for useEffect deps)
+  const getRedirect = useCallback((email?: string | null) => {
     if (isAdminEmail(email) && baseRedirect !== "/admin") {
       return "/admin";
     }
     return baseRedirect;
-  };
+  }, [baseRedirect]);
   const redirect = getRedirect(user?.email);
 
   const [view, setView] = useState<AuthView>("signIn");
@@ -459,19 +459,8 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       </div>
 
       <div className="flex-1 flex items-center justify-center px-4 py-8">
-        {/* ─── OAuth Callback / Post-Auth Redirect Loading Screen ─── */}
-        {!authLoading && isAuthenticated && (
-          <div className="flex flex-col items-center gap-4">
-            <Loader2 className="h-8 w-8 animate-spin text-[#16A34A]" />
-            <div className="text-center">
-              <p className="text-white font-medium">Signing you in...</p>
-              <p className="text-[#A1A1AA] text-sm mt-1">Please wait while we set up your session</p>
-            </div>
-          </div>
-        )}
-
         {/* ─── Auth Form (hidden when authenticated / loading redirect) ─── */}
-        {!isAuthenticated && (
+        {(!isAuthenticated || authLoading) && (
         <Card className="w-full max-w-[420px] border-white/10 bg-[#18181B]/80 backdrop-blur-xl shadow-2xl shadow-black/40">
           {/* ─── SIGN IN ─── */}
           {currentView === "signIn" && (

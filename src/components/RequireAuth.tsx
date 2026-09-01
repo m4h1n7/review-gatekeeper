@@ -73,8 +73,12 @@ export function RequireAuth({ children }: { children: ReactNode }) {
     );
   }
 
-  // ── 3. Super admin: /dashboard and /onboarding → /admin ──
-  if (admin && (location.pathname === "/dashboard" || location.pathname === "/onboarding")) {
+  // ── 3. Super admin: /dashboard, /dashboard/*, and /onboarding → /admin ──
+  if (admin && (
+    location.pathname === "/dashboard" ||
+    location.pathname.startsWith("/dashboard/") ||
+    location.pathname === "/onboarding"
+  )) {
     return <Navigate to="/admin" replace />;
   }
 
