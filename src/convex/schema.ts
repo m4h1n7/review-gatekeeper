@@ -167,6 +167,8 @@ const schema = defineSchema(
       name: v.string(),
       slug: v.string(), // unique identifier used in review URL: /review/:businessSlug?sid=xxx
       role: v.optional(v.string()), // e.g. "Server", "Cashier", "Manager"
+      email: v.optional(v.string()), // staff contact email
+      phone: v.optional(v.string()), // staff contact phone
       createdAt: v.number(),
       active: v.boolean(),
     })

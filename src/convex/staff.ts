@@ -8,6 +8,8 @@ export const create = mutation({
     businessId: v.string(),
     name: v.string(),
     role: v.optional(v.string()),
+    email: v.optional(v.string()),
+    phone: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -39,6 +41,8 @@ export const create = mutation({
       name: args.name,
       slug: finalSlug,
       role: args.role,
+      email: args.email,
+      phone: args.phone,
       createdAt: Date.now(),
       active: true,
     });
@@ -53,6 +57,8 @@ export const update = mutation({
     staffId: v.string(),
     name: v.optional(v.string()),
     role: v.optional(v.string()),
+    email: v.optional(v.string()),
+    phone: v.optional(v.string()),
     active: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
@@ -69,6 +75,8 @@ export const update = mutation({
     const patch: Record<string, any> = {};
     if (args.name !== undefined) patch.name = args.name;
     if (args.role !== undefined) patch.role = args.role;
+    if (args.email !== undefined) patch.email = args.email;
+    if (args.phone !== undefined) patch.phone = args.phone;
     if (args.active !== undefined) patch.active = args.active;
 
     await ctx.db.patch(args.staffId as any, patch);
@@ -111,6 +119,8 @@ export const listByBusiness = query({
       name: m.name,
       slug: m.slug,
       role: m.role,
+      email: m.email,
+      phone: m.phone,
       active: m.active,
       createdAt: m.createdAt,
     }));
@@ -131,6 +141,8 @@ export const getBySlug = query({
       name: staff.name,
       slug: staff.slug,
       role: staff.role,
+      email: staff.email,
+      phone: staff.phone,
       businessId: staff.businessId,
     };
   },
@@ -161,6 +173,12 @@ export const getLeaderboard = query({
           .collect();
 
         const totalScans = interactions.length;
+        const positiveReviews = interactions.filter(
+          (i) => (i.type === "public_review" || i.type === "redirect") && i.rating >= 4,
+        ).length;
+        const negativeFeedbacks = interactions.filter(
+          (i) => i.type === "feedback_submitted" && i.rating <= 3,
+        ).length;
         const publicReviews = interactions.filter(
           (i) => i.type === "public_review" || i.type === "redirect",
         ).length;
@@ -177,6 +195,8 @@ export const getLeaderboard = query({
           totalScans,
           publicReviews,
           privateFeedbacks,
+          positiveReviews,
+          negativeFeedbacks,
           conversionRate:
             totalScans > 0
               ? Math.round((publicReviews / totalScans) * 100)

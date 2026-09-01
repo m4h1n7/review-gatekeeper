@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../convex/_generated/api";
+import { QRCodeSVG } from "qrcode.react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Users,
@@ -20,6 +21,10 @@ import {
   ChevronUp,
   UserX,
   UserCheck,
+  Download,
+  Wifi,
+  Mail,
+  Phone,
 } from "lucide-react";
 
 interface StaffManagerProps {
@@ -44,9 +49,13 @@ export default function StaffManager({
   const [showAddForm, setShowAddForm] = useState(false);
   const [newName, setNewName] = useState("");
   const [newRole, setNewRole] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [newPhone, setNewPhone] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
   const [expandedStaff, setExpandedStaff] = useState<string | null>(null);
+  const [copiedStaffId, setCopiedStaffId] = useState<string | null>(null);
+  const [copiedNfcId, setCopiedNfcId] = useState<string | null>(null);
 
   /* ─── Handlers ─── */
   const handleCreate = async () => {
@@ -57,10 +66,14 @@ export default function StaffManager({
         businessId,
         name: newName.trim(),
         role: newRole.trim() || undefined,
+        email: newEmail.trim() || undefined,
+        phone: newPhone.trim() || undefined,
       });
       setSuccessMsg(`Created ${newName.trim()}! QR slug: ${result.slug}`);
       setNewName("");
       setNewRole("");
+      setNewEmail("");
+      setNewPhone("");
       setShowAddForm(false);
       setTimeout(() => setSuccessMsg(""), 4000);
     } catch (err) {
@@ -164,6 +177,32 @@ export default function StaffManager({
                       value={newRole}
                       onChange={(e) => setNewRole(e.target.value)}
                       placeholder="e.g. Cashier, Server"
+                      className="w-full h-10 px-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm placeholder:text-[#A1A1AA]/50 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 transition-all"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-medium text-[#A1A1AA] mb-1 block">
+                      Email (optional)
+                    </label>
+                    <input
+                      value={newEmail}
+                      onChange={(e) => setNewEmail(e.target.value)}
+                      placeholder="staff@email.com"
+                      type="email"
+                      className="w-full h-10 px-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm placeholder:text-[#A1A1AA]/50 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-[#A1A1AA] mb-1 block">
+                      Phone (optional)
+                    </label>
+                    <input
+                      value={newPhone}
+                      onChange={(e) => setNewPhone(e.target.value)}
+                      placeholder="01700-000000"
+                      type="tel"
                       className="w-full h-10 px-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm placeholder:text-[#A1A1AA]/50 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 transition-all"
                     />
                   </div>
