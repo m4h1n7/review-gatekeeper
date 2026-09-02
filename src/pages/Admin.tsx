@@ -45,6 +45,7 @@ import {
   FileDown,
   Bell,
   Send,
+  RefreshCw,
 } from "lucide-react";
 import SubscriptionExtendModal from "@/components/SubscriptionExtendModal";
 import { useNavigate } from "react-router";
@@ -176,7 +177,7 @@ export default function Admin() {
 
   // Extend subscription modal
   const [extendModalOpen, setExtendModalOpen] = useState(false);
-  const [extendTarget, setExtendTarget] = useState<{ userId: string; name: string; email: string; expiresAt: number | null } | null>(null);
+  const [extendTarget, setExtendTarget] = useState<{ userId: string; name: string; email: string; expiresAt: number | null; plan: string } | null>(null);
 
   // Archive (danger zone) modal
   const [archiveModalOpen, setArchiveModalOpen] = useState(false);
@@ -273,6 +274,23 @@ export default function Admin() {
     });
   };
 
+  /* ─── Sync All Business Profiles ───────────────────────── */
+  const handleSyncAllProfiles = async () => {
+    requirePin(async () => {
+      setSyncingProfiles(true);
+      try {
+        const result = await syncAllProfiles();
+        toast.success("Data sync complete!", {
+          description: `${result.profilesChecked} profiles checked, ${result.profilesFixed} fixed to match subscription state.`,
+        });
+      } catch (err: unknown) {
+        toast.error(err instanceof Error ? err.message : "Sync failed");
+      } finally {
+        setSyncingProfiles(false);
+      }
+    });
+  };
+
   // Data
   const kpis = useQuery(api.admin.adminKPIs);
   const revenueData = useQuery(api.admin.monthlyRevenue);
@@ -294,6 +312,9 @@ export default function Admin() {
   const createAnnouncement = useMutation(api.admin.createAnnouncement);
   const toggleAnnouncement = useMutation(api.admin.toggleAnnouncement);
   const deleteAnnouncement = useMutation(api.admin.deleteAnnouncement);
+  const syncAllProfiles = useMutation(api.admin.syncAllBusinessProfiles);
+
+  const [syncingProfiles, setSyncingProfiles] = useState(false);
 
   const handleSignOut = async () => { await signOut(); navigate("/"); };
 
@@ -360,30 +381,30 @@ export default function Admin() {
   };
 
   /* ─── Extend Subscription ────────────────────────────────── */
-  const handleExtend = async (userId: string, clientName: string) => {
+  const handleExtend = async (userId: string, clientName: string, plan: "starter" | "pro" = "pro") => {
     const key = `extend-${userId}`;
     setProcessingId(key);
     try {
-      await extendSubscription({ userId, days: 30 });
-      toast.success(`Subscription extended by 30 days for ${clientName}`);
+      await extendSubscription({ userId, days: 30, plan });
+      toast.success(`Subscription extended by 30 days (${plan.toUpperCase()}) for ${clientName}`);
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Failed to extend");
     } finally { setProcessingId(null); }
   };
 
-  const openExtendModal = (userId: string, name: string, email: string, expiresAt: number | null) => {
-    setExtendTarget({ userId, name, email, expiresAt });
+  const openExtendModal = (userId: string, name: string, email: string, expiresAt: number | null, plan: string) => {
+    setExtendTarget({ userId, name, email, expiresAt, plan });
     setExtendModalOpen(true);
   };
 
-  const handleExtendConfirm = async (days: number) => {
+  const handleExtendConfirm = async (days: number, plan: "starter" | "pro") => {
     if (!extendTarget) return;
     const key = `extend-${extendTarget.userId}`;
     setProcessingId(key);
     try {
-      await extendSubscription({ userId: extendTarget.userId, days });
-      toast.success(`Subscription extended by ${days} days for ${extendTarget.name}`, {
-        description: `${days} days added successfully.`,
+      await extendSubscription({ userId: extendTarget.userId, days, plan });
+      toast.success(`Subscription extended by ${days} days (${plan.toUpperCase()}) for ${extendTarget.name}`, {
+        description: `${days} days added. Business profiles synced automatically.`,
       });
       setExtendModalOpen(false);
       setExtendTarget(null);
@@ -620,7 +641,9 @@ export default function Admin() {
         onClose={() => { setExtendModalOpen(false); setExtendTarget(null); }}
         onConfirm={handleExtendConfirm}
         clientEmail={extendTarget?.email || ""}
+        clientName={extendTarget?.name || ""}
         currentExpiresAt={extendTarget?.expiresAt ?? null}
+        currentPlan={extendTarget?.plan ?? "pro"}
         processing={processingId !== null}
       />
 
@@ -1121,6 +1144,7 @@ export default function Admin() {
                                     client.name,
                                     client.email,
                                     sub?.expiresAt ?? null,
+                                    sub?.plan ?? "pro",
                                   )}
                                   disabled={processingId === `extend-${client.userId}`}
                                   className="h-8 px-2.5 border-[#16A34A]/30 text-[#16A34A] hover:bg-[#16A34A]/10 text-xs cursor-pointer"
@@ -1472,6 +1496,30 @@ export default function Admin() {
                 <Send className="w-4 h-4 mr-2" /> Send Test Webhook
               </Button>
             </GlassPanel>
+
+            {/* Sync All Business Profiles */}
+            <GlassPanel className="p-6">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                  <RefreshCw className="w-5 h-5 text-amber-400" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-white">Sync Business Profiles</h3>
+                  <p className="text-xs text-[#A1A1AA]">Align all business records with current subscription state</p>
+                </div>
+              </div>
+              <p className="text-xs text-[#A1A1AA]/60 mb-4 leading-relaxed">
+                Fixes data drift between subscriptions and business profiles. Run this after any bulk changes.
+              </p>
+              <Button onClick={handleSyncAllProfiles} disabled={syncingProfiles}
+                className="w-full h-10 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                {syncingProfiles ? (
+                  <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" /> Syncing...</>
+                ) : (
+                  <><RefreshCw className="w-4 h-4 mr-2" /> Sync All Profiles</>
+                )}
+              </Button>
+            </GlassPanel>
           </div>
         )}
 
@@ -1494,7 +1542,7 @@ export default function Admin() {
             <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-4 mb-4">
               <p className="text-sm text-white font-semibold mb-1">Archive &quot;{archiveTarget.name}&quot;?</p>
               <p className="text-xs text-[#A1A1AA] leading-relaxed">
-                This will suspend the account and hide it from all client views. The data will be preserved for <strong className="text-white">30 days</strong>, after which it will be permanently deleted. You can restore it at any time from the Archived tab.
+                This will suspend the account, <strong className="text-red-400">cancel any active subscription</strong>, and set all business profiles to inactive. The account is hidden and can be restored within 30 days from the Archived tab.
               </p>
             </div>
             <div className="mb-4">

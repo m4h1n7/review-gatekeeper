@@ -187,6 +187,19 @@ export const approve = mutation({
     // Return client email + plan for frontend to trigger approval email
     const ownerUser = (await ctx.db.get(payment.userId as any)) as any;
 
+    // Sync all business profiles owned by this user to reflect the new plan
+    const businesses = await ctx.db
+      .query("businesses")
+      .withIndex("by_userId", (q) => q.eq("userId", payment.userId))
+      .collect();
+    for (const biz of businesses) {
+      await ctx.db.patch(biz._id, {
+        subscriptionStatus: "active",
+        trialEndsAt: expiresAt,
+        planType: selectedPlan === "pro" ? "pro" : "basic",
+      });
+    }
+
     // Audit log
     const adminEmail = adminUser.email ?? "unknown";
     await ctx.db.insert("auditLogs", {
@@ -194,7 +207,7 @@ export const approve = mutation({
       action: "APPROVE_PAYMENT",
       targetUser: payment.userId,
       targetEmail: paymentData.clientEmail ?? ownerUser?.email,
-      details: `Plan: ${selectedPlan}, TrxID: ${paymentData.trxId ?? "—"}`,
+      details: `Plan: ${selectedPlan}, TrxID: ${paymentData.trxId ?? "—"}, Expires: ${new Date(expiresAt).toISOString()}, ${businesses.length} business profile(s) synced.`,
       createdAt: Date.now(),
     });
 
@@ -203,6 +216,7 @@ export const approve = mutation({
       clientEmail: paymentData.clientEmail ?? ownerUser?.email ?? "",
       plan: selectedPlan,
       clientName: ownerUser?.name ?? "",
+      businessesAffected: businesses.length,
     };
   },
 });

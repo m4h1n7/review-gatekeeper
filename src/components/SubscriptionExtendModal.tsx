@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Calendar, ChevronRight, Clock } from "lucide-react";
+import { X, Calendar, ChevronRight, Clock, Crown, Star } from "lucide-react";
 
 interface SubscriptionExtendModalProps {
   open: boolean;
   onClose: () => void;
-  onConfirm: (days: number) => void;
+  onConfirm: (days: number, plan: "starter" | "pro") => void;
   clientEmail: string;
+  clientName?: string;
   currentExpiresAt: number | null;
+  currentPlan?: string;
   processing: boolean;
 }
 
@@ -27,17 +29,24 @@ export default function SubscriptionExtendModal({
   onClose,
   onConfirm,
   clientEmail,
+  clientName,
   currentExpiresAt,
+  currentPlan = "pro",
   processing,
 }: SubscriptionExtendModalProps) {
   const [selectedDays, setSelectedDays] = useState<number>(30);
   const [customDays, setCustomDays] = useState("");
   const [isCustom, setIsCustom] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<"starter" | "pro">(
+    currentPlan === "starter" ? "starter" : "pro"
+  );
 
   const days = isCustom ? parseInt(customDays) || 0 : selectedDays;
-  const newExpiresAt = currentExpiresAt
-    ? new Date(currentExpiresAt + days * 86400000)
-    : new Date(Date.now() + days * 86400000);
+  const baseDate = currentExpiresAt && currentExpiresAt > Date.now()
+    ? currentExpiresAt
+    : Date.now();
+  const newExpiresAt = new Date(baseDate + days * 86400000);
+  const isPlanChange = selectedPlan !== (currentPlan === "starter" ? "starter" : "pro");
 
   return (
     <AnimatePresence>
@@ -65,7 +74,7 @@ export default function SubscriptionExtendModal({
                     Extend Subscription
                   </h2>
                   <p className="text-sm text-[#A1A1AA] mt-0.5">
-                    {clientEmail}
+                    {clientName || clientEmail}
                   </p>
                 </div>
                 <button
@@ -81,18 +90,60 @@ export default function SubscriptionExtendModal({
               {/* Current Expiry */}
               <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/5">
                 <Clock className="w-4 h-4 text-[#A1A1AA] shrink-0" />
-                <div>
-                  <p className="text-xs text-[#A1A1AA]">Current Expiry</p>
-                  <p className="text-sm font-medium text-white">
-                    {formatDate(currentExpiresAt)}
-                  </p>
+                <div className="flex-1">
+                  <p className="text-xs text-[#A1A1AA]">Current Plan & Expiry</p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className={`text-xs font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${currentPlan === "pro" ? "bg-[#16A34A]/15 text-[#16A34A]" : "bg-amber-500/15 text-amber-400"}`}>
+                      {currentPlan === "pro" ? "PRO" : currentPlan === "starter" ? "STARTER" : currentPlan?.toUpperCase() || "NONE"}
+                    </span>
+                    <span className="text-sm font-medium text-white">
+                      {formatDate(currentExpiresAt)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Plan Type Selector */}
+              <div>
+                <p className="text-xs font-semibold text-[#A1A1AA] uppercase tracking-wider mb-2.5">
+                  Plan Type
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => setSelectedPlan("starter")}
+                    className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                      selectedPlan === "starter"
+                        ? "border-white/20 bg-white/[0.08]"
+                        : "border-white/10 bg-white/[0.03] hover:bg-white/[0.06]"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <Star className="w-3.5 h-3.5 text-amber-400" />
+                      <span className="text-sm font-semibold text-white">Starter</span>
+                    </div>
+                    <p className="text-[10px] text-[#A1A1AA]">1 profile, basic features</p>
+                  </button>
+                  <button
+                    onClick={() => setSelectedPlan("pro")}
+                    className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                      selectedPlan === "pro"
+                        ? "border-[#16A34A]/40 bg-[#16A34A]/[0.08]"
+                        : "border-white/10 bg-white/[0.03] hover:bg-white/[0.06]"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <Crown className="w-3.5 h-3.5 text-[#16A34A]" />
+                      <span className="text-sm font-semibold text-white">Pro</span>
+                    </div>
+                    <p className="text-[10px] text-[#A1A1AA]">Unlimited profiles, all features</p>
+                  </button>
                 </div>
               </div>
 
               {/* Preset Quick Picks */}
               <div>
                 <p className="text-xs font-semibold text-[#A1A1AA] uppercase tracking-wider mb-2.5">
-                  Quick Select
+                  Extension Duration
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {PRESETS.map((d) => (
@@ -149,21 +200,26 @@ export default function SubscriptionExtendModal({
               {/* Projected Date Preview */}
               {days > 0 && (
                 <motion.div
-                  key={days}
+                  key={`${days}-${selectedPlan}`}
                   initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="flex items-center justify-between p-3 rounded-xl bg-[#16A34A]/5 border border-[#16A34A]/20"
+                  className="p-3 rounded-xl bg-[#16A34A]/5 border border-[#16A34A]/20"
                 >
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-[#16A34A]" />
-                    <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-[#16A34A]" />
                       <p className="text-xs text-[#A1A1AA]">New Expiry Date</p>
-                      <p className="text-sm font-semibold text-[#16A34A]">
-                        {formatDate(newExpiresAt.getTime())}
-                      </p>
                     </div>
+                    <ChevronRight className="w-4 h-4 text-[#16A34A]/50" />
                   </div>
-                  <ChevronRight className="w-4 h-4 text-[#16A34A]/50" />
+                  <p className="text-sm font-semibold text-[#16A34A] ml-6">
+                    {formatDate(newExpiresAt.getTime())}
+                  </p>
+                  {isPlanChange && (
+                    <p className="text-[10px] text-amber-400 ml-6 mt-1">
+                      ⚠️ Plan will change from {currentPlan?.toUpperCase() || "NONE"} to {selectedPlan.toUpperCase()}
+                    </p>
+                  )}
                 </motion.div>
               )}
             </div>
@@ -177,7 +233,7 @@ export default function SubscriptionExtendModal({
                 Cancel
               </button>
               <button
-                onClick={() => days > 0 && onConfirm(days)}
+                onClick={() => days > 0 && onConfirm(days, selectedPlan)}
                 disabled={days <= 0 || processing}
                 className="flex-1 px-4 py-2.5 rounded-lg bg-[#16A34A] hover:bg-[#16A34A]/90 text-white text-sm font-semibold shadow-md shadow-[#16A34A]/25 disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer flex items-center justify-center gap-2"
               >

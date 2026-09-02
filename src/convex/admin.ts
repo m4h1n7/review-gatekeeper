@@ -215,11 +215,83 @@ export const allClients = query({
   },
 });
 
-/** Admin mutation: extend a client's subscription by N days */
+/** Admin mutation: extend a client's subscription by N days.
+ * Fully syncs business profiles so the client dashboard reflects the change instantly.
+ */
 export const extendSubscription = mutation({
   args: {
     userId: v.string(),
     days: v.number(),
+    plan: v.optional(v.union(v.literal("starter"), v.literal("pro"))),
+  },
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
+    const targetPlan = args.plan ?? "pro";
+    const DAY_MS = 24 * 60 * 60 * 1000;
+    const addMs = Math.max(1, Math.round(args.days)) * DAY_MS;
+    const now = Date.now();
+
+    const sub = await ctx.db
+      .query("subscriptions")
+      .withIndex("by_userId", (q: any) => q.eq("userId", args.userId))
+      .first();
+
+    let previousExpiresAt: number | undefined;
+    let newExpiry: number;
+
+    if (!sub) {
+      // Create a new subscription
+      newExpiry = now + addMs;
+      await ctx.db.insert("subscriptions", {
+        userId: args.userId,
+        plan: targetPlan,
+        status: "active",
+        createdAt: now,
+        expiresAt: newExpiry,
+        proExpiresAt: newExpiry,
+      });
+    } else {
+      previousExpiresAt = sub.expiresAt;
+      // If expired, start from now; otherwise extend from current expiry
+      const base = (sub.expiresAt && sub.expiresAt < now) ? now : Math.max(now, sub.expiresAt ?? now);
+      newExpiry = base + addMs;
+
+      await ctx.db.patch(sub._id, {
+        plan: targetPlan,
+        status: "active",
+        expiresAt: newExpiry,
+        proExpiresAt: newExpiry,
+      });
+    }
+
+    // Sync all business profiles owned by this user
+    const businesses = await ctx.db
+      .query("businesses")
+      .withIndex("by_userId", (q: any) => q.eq("userId", args.userId))
+      .collect();
+    for (const biz of businesses) {
+      await ctx.db.patch(biz._id, {
+        subscriptionStatus: "active",
+        trialEndsAt: newExpiry,
+        planType: targetPlan === "pro" ? "pro" : "basic",
+      });
+    }
+
+    const was = previousExpiresAt ? new Date(previousExpiresAt).toISOString() : "N/A";
+    await logAuditAction(ctx, "EXTEND_SUBSCRIPTION", args.userId, undefined,
+      `Extended by ${args.days} days (plan: ${targetPlan}). Was: ${was}, Now: ${new Date(newExpiry).toISOString()}`
+    );
+
+    return { ok: true, action: sub ? "extended" : "created", newExpiresAt: newExpiry, daysAdded: args.days };
+  },
+});
+
+/** Admin mutation: change a client's plan (upgrade/downgrade) with immediate sync */
+export const changePlan = mutation({
+  args: {
+    userId: v.string(),
+    plan: v.union(v.literal("starter"), v.literal("pro")),
   },
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
@@ -229,39 +301,47 @@ export const extendSubscription = mutation({
       .withIndex("by_userId", (q: any) => q.eq("userId", args.userId))
       .first();
 
+    const now = Date.now();
+
     if (!sub) {
-      // Create a new Pro subscription
-      const expiresAt = Date.now() + args.days * 24 * 60 * 60 * 1000;
+      // Create new subscription with 30-day default
+      const expiresAt = now + 30 * 24 * 60 * 60 * 1000;
       await ctx.db.insert("subscriptions", {
         userId: args.userId,
-        plan: "pro",
+        plan: args.plan,
         status: "active",
-        createdAt: Date.now(),
+        createdAt: now,
         expiresAt,
         proExpiresAt: expiresAt,
       });
-      return { ok: true, action: "created" };
+    } else {
+      const base = (sub.expiresAt && sub.expiresAt < now) ? now : Math.max(now, sub.expiresAt ?? now);
+      await ctx.db.patch(sub._id, {
+        plan: args.plan,
+        status: "active",
+        expiresAt: base,
+        proExpiresAt: base,
+      });
     }
 
-    // Extend existing subscription
-    const currentExpiry = sub.expiresAt ?? Date.now();
-    // If already expired, start from now
-    const startFrom = currentExpiry < Date.now() ? Date.now() : currentExpiry;
-    const newExpiry = startFrom + args.days * 24 * 60 * 60 * 1000;
+    // Sync all business profiles
+    const businesses = await ctx.db
+      .query("businesses")
+      .withIndex("by_userId", (q: any) => q.eq("userId", args.userId))
+      .collect();
+    for (const biz of businesses) {
+      await ctx.db.patch(biz._id, {
+        subscriptionStatus: "active",
+        planType: args.plan === "pro" ? "pro" : "basic",
+      });
+    }
 
-    await ctx.db.patch(sub._id, {
-      plan: "pro",
-      status: "active",
-      expiresAt: newExpiry,
-      proExpiresAt: newExpiry,
-    });
-
-    await logAuditAction(ctx, "EXTEND_SUBSCRIPTION", args.userId, undefined, `Extended by ${args.days} days`);
-    return { ok: true, action: "extended" };
+    await logAuditAction(ctx, "CHANGE_PLAN", args.userId, undefined, `Plan changed to ${args.plan}`);
+    return { ok: true, plan: args.plan, businessesAffected: businesses.length };
   },
 });
 
-/** Admin mutation: cancel a client's subscription */
+/** Admin mutation: cancel a client's subscription and sync business profiles */
 export const cancelSubscription = mutation({
   args: {
     userId: v.string(),
@@ -276,12 +356,23 @@ export const cancelSubscription = mutation({
 
     if (!sub) return { ok: false, reason: "No subscription found" };
 
-    await ctx.db.patch(sub._id, {
-      status: "cancelled",
-    });
+    const previousPlan = sub.plan;
+    await ctx.db.patch(sub._id, { status: "cancelled" });
 
-    await logAuditAction(ctx, "CANCEL_SUBSCRIPTION", args.userId);
-    return { ok: true };
+    // Sync all business profiles to inactive
+    const businesses = await ctx.db
+      .query("businesses")
+      .withIndex("by_userId", (q: any) => q.eq("userId", args.userId))
+      .collect();
+    for (const biz of businesses) {
+      await ctx.db.patch(biz._id, {
+        subscriptionStatus: "canceled",
+        planType: "none",
+      });
+    }
+
+    await logAuditAction(ctx, "CANCEL_SUBSCRIPTION", args.userId, undefined, `Cancelled ${previousPlan} plan. ${businesses.length} business profile(s) set to inactive.`);
+    return { ok: true, previousPlan, businessesAffected: businesses.length };
   },
 });
 
@@ -356,33 +447,111 @@ export const activateClient = mutation({
   },
 });
 
-/** Admin mutation: archive a client account (30-day soft delete) */
+/** Admin mutation: archive a client account (30-day soft delete).
+ * Automatically cancels active subscription and syncs business profiles
+ * to inactive state so revenue projections stay accurate.
+ */
 export const archiveClient = mutation({
   args: { userId: v.string() },
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
-    const user = await ctx.db.get(args.userId as any);
-    if (!user) throw new Error("User not found");
+    const userDoc = await ctx.db.get(args.userId as any);
+    if (!userDoc) throw new Error("User not found");
+    const user = userDoc as any;
+
+    const now = Date.now();
+
+    // 1. Mark user as archived
     await ctx.db.patch(args.userId as any, {
       accountStatus: "archived",
-      archivedAt: Date.now(),
+      archivedAt: now,
     });
-    await logAuditAction(ctx, "ARCHIVE_CLIENT", args.userId);
-    return { ok: true };
+
+    // 2. Cancel active subscription to stop recurring revenue
+    const sub = await ctx.db
+      .query("subscriptions")
+      .withIndex("by_userId", (q: any) => q.eq("userId", args.userId))
+      .first();
+
+    let previousPlan = "none";
+    let previousStatus = "none";
+    if (sub) {
+      previousPlan = sub.plan;
+      previousStatus = sub.status;
+      if (sub.status === "active") {
+        await ctx.db.patch(sub._id, { status: "cancelled" });
+      }
+    }
+
+    // 3. Sync all business profiles to inactive
+    const businesses = await ctx.db
+      .query("businesses")
+      .withIndex("by_userId", (q: any) => q.eq("userId", args.userId))
+      .collect();
+    for (const biz of businesses) {
+      await ctx.db.patch(biz._id, {
+        subscriptionStatus: "canceled",
+        planType: "none",
+      });
+    }
+
+    // 4. Log audit with revenue impact details
+    await logAuditAction(
+      ctx,
+      "ARCHIVE_CLIENT",
+      args.userId,
+      user.email ?? undefined,
+      `Archived user (${user.name ?? "unknown"}). Previous plan: ${previousPlan}/${previousStatus}. Subscription cancelled. ${businesses.length} business profile(s) set to inactive.`,
+    );
+
+    return {
+      ok: true,
+      previousPlan,
+      previousStatus,
+      businessesAffected: businesses.length,
+    };
   },
 });
 
-/** Admin mutation: restore an archived client account */
+/** Admin mutation: restore an archived client account.
+ * Re-activates subscription and syncs business profiles if sub is still valid.
+ */
 export const restoreClient = mutation({
   args: { userId: v.string() },
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
-    const user = await ctx.db.get(args.userId as any);
-    if (!user) throw new Error("User not found");
+    const userDoc = await ctx.db.get(args.userId as any);
+    if (!userDoc) throw new Error("User not found");
+    const user = userDoc as any;
+
     await ctx.db.patch(args.userId as any, {
       accountStatus: "active",
       archivedAt: undefined,
     });
+
+    // Re-sync business profiles based on current subscription state
+    const sub = await ctx.db
+      .query("subscriptions")
+      .withIndex("by_userId", (q: any) => q.eq("userId", args.userId))
+      .first();
+
+    if (sub && sub.status === "active") {
+      const now = Date.now();
+      const isActive = !sub.expiresAt || sub.expiresAt > now;
+      const businesses = await ctx.db
+        .query("businesses")
+        .withIndex("by_userId", (q: any) => q.eq("userId", args.userId))
+        .collect();
+      for (const biz of businesses) {
+        await ctx.db.patch(biz._id, {
+          subscriptionStatus: isActive ? "active" : "inactive",
+          planType: sub.plan === "pro" || sub.plan === "trial" ? "pro" : sub.plan === "starter" ? "basic" : "none",
+          trialEndsAt: sub.expiresAt,
+        });
+      }
+    }
+
+    await logAuditAction(ctx, "RESTORE_CLIENT", args.userId, user.email ?? undefined);
     return { ok: true };
   },
 });
@@ -549,6 +718,61 @@ export const getAuditLogs = query({
       details: l.details,
       createdAt: l.createdAt,
     }));
+  },
+});
+
+/** Admin: sync all business profiles to match their current subscription state.
+ * Run this if data drift is suspected between subscriptions and business records.
+ */
+export const syncAllBusinessProfiles = mutation({
+  args: {},
+  handler: async (ctx) => {
+    await requireAdmin(ctx);
+
+    const allSubs = await ctx.db.query("subscriptions").collect();
+    let synced = 0;
+    let fixed = 0;
+
+    for (const sub of allSubs) {
+      const businesses = await ctx.db
+        .query("businesses")
+        .withIndex("by_userId", (q: any) => q.eq("userId", sub.userId))
+        .collect();
+
+      const now = Date.now();
+      const isActive = sub.status === "active" && (!sub.expiresAt || sub.expiresAt > now);
+      const isExpired = sub.status === "active" && sub.expiresAt && sub.expiresAt < now;
+
+      for (const biz of businesses) {
+        const correctStatus = isActive ? "active" : isExpired ? "inactive" : sub.status === "cancelled" ? "canceled" : sub.status === "pending" ? "inactive" : biz.subscriptionStatus;
+        const correctPlan = sub.plan === "pro" || sub.plan === "trial" ? "pro" : sub.plan === "starter" ? "basic" : "none";
+
+        if (biz.subscriptionStatus !== correctStatus || biz.planType !== correctPlan) {
+          await ctx.db.patch(biz._id, {
+            subscriptionStatus: correctStatus as any,
+            planType: correctPlan as any,
+            trialEndsAt: sub.expiresAt,
+          });
+          fixed++;
+        }
+        synced++;
+      }
+    }
+
+    // Also sync orphaned businesses (no subscription) to inactive
+    const allBiz = await ctx.db.query("businesses").collect();
+    for (const biz of allBiz) {
+      if (!allSubs.find((s) => s.userId === biz.userId)) {
+        if (biz.subscriptionStatus !== "inactive" || biz.planType !== "none") {
+          await ctx.db.patch(biz._id, { subscriptionStatus: "inactive", planType: "none" });
+          fixed++;
+        }
+        synced++;
+      }
+    }
+
+    await logAuditAction(ctx, "SYNC_ALL_BUSINESS_PROFILES", undefined, undefined, `${synced} profiles checked, ${fixed} fixed`);
+    return { ok: true, profilesChecked: synced, profilesFixed: fixed };
   },
 });
 
