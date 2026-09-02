@@ -134,7 +134,7 @@ export default function Review() {
         }
         return prev - 1;
       });
-    }, 100);
+    }, 1000);
     return () => clearInterval(interval);
   }, [view, business?.reviewUrl]);
 
@@ -428,7 +428,7 @@ export default function Review() {
                 onToggleTag={toggleTag}
                 onFormChange={setForm}
                 onSubmit={handleFeedbackSubmit}
-                onBack={() => setView("low-rating-options")}
+                onBack={() => setView(business.planType === "pro" ? "low-rating-options" : "rating")}
               />
             </motion.div>
           )}
