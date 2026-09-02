@@ -555,6 +555,14 @@ export default function AccountSettings() {
                   thankYouMessage: businesses[0].thankYouMessage || undefined,
                   promoEnabled: businesses[0].promoEnabled,
                   promoText: businesses[0].promoText,
+                  lowRatingShowPublicOption: (businesses[0] as any).lowRatingShowPublicOption ?? true,
+                  lowRatingOptionsHeading: (businesses[0] as any).lowRatingOptionsHeading || "",
+                  lowRatingOptionsSubtitle: (businesses[0] as any).lowRatingOptionsSubtitle || "",
+                  lowRatingPrivateLabel: (businesses[0] as any).lowRatingPrivateLabel || "",
+                  lowRatingPrivateDesc: (businesses[0] as any).lowRatingPrivateDesc || "",
+                  lowRatingPublicLabel: (businesses[0] as any).lowRatingPublicLabel || "",
+                  lowRatingPublicDesc: (businesses[0] as any).lowRatingPublicDesc || "",
+                  lowRatingFeedbackHeading: (businesses[0] as any).lowRatingFeedbackHeading || "",
                 } : {}}
                 businessName={businesses?.[0]?.name || "Your Business"}
                 onSave={async (data) => {
@@ -570,6 +578,14 @@ export default function AccountSettings() {
                     publicReviewDesc: data.publicReviewDesc || undefined,
                     privateFeedbackLabel: data.privateFeedbackLabel || undefined,
                     privateFeedbackDesc: data.privateFeedbackDesc || undefined,
+                    lowRatingShowPublicOption: data.lowRatingShowPublicOption,
+                    lowRatingOptionsHeading: data.lowRatingOptionsHeading || undefined,
+                    lowRatingOptionsSubtitle: data.lowRatingOptionsSubtitle || undefined,
+                    lowRatingPrivateLabel: data.lowRatingPrivateLabel || undefined,
+                    lowRatingPrivateDesc: data.lowRatingPrivateDesc || undefined,
+                    lowRatingPublicLabel: data.lowRatingPublicLabel || undefined,
+                    lowRatingPublicDesc: data.lowRatingPublicDesc || undefined,
+                    lowRatingFeedbackHeading: data.lowRatingFeedbackHeading || undefined,
                   });
                   if (data.thankYouMessage !== undefined) {
                     await updateThankYou({ businessId: businesses[0].id, thankYouMessage: data.thankYouMessage });

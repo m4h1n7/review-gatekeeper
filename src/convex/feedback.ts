@@ -79,6 +79,30 @@ export const logRedirect = mutation({
 });
 
 /**
+ * Generic interaction logger: records every star click with rating, type, and optional staff attribution.
+ */
+export const logInteraction = mutation({
+  args: {
+    businessId: v.string(),
+    businessSlug: v.string(),
+    rating: v.number(),
+    type: v.union(v.literal("redirect"), v.literal("feedback_submitted"), v.literal("public_review")),
+    staffId: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.insert("interactions", {
+      businessId: args.businessId,
+      businessSlug: args.businessSlug,
+      rating: args.rating,
+      type: args.type,
+      createdAt: Date.now(),
+      staffId: args.staffId,
+    });
+    return { ok: true };
+  },
+});
+
+/**
  * Log when a customer clicks "Share Public Review" (option A).
  * This records that the customer chose to leave a public Google review.
  * rating is set to 5 by default since the user chose the public review path.

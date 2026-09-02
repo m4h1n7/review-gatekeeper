@@ -61,6 +61,15 @@ const schema = defineSchema(
       publicReviewDesc: v.optional(v.string()), // e.g. "Share your experience on Google"
       privateFeedbackLabel: v.optional(v.string()), // e.g. "Provide Private Feedback"
       privateFeedbackDesc: v.optional(v.string()), // e.g. "Speak directly with our team"
+      // Low-rating options customization (1-3 star flow)
+      lowRatingShowPublicOption: v.optional(v.boolean()), // whether to show "Proceed to Public Review" for 1-3 stars
+      lowRatingOptionsHeading: v.optional(v.string()), // e.g. "How would you like to share your feedback?"
+      lowRatingOptionsSubtitle: v.optional(v.string()), // subtitle for the options page
+      lowRatingPrivateLabel: v.optional(v.string()), // Choice A button label
+      lowRatingPrivateDesc: v.optional(v.string()), // Choice A description
+      lowRatingPublicLabel: v.optional(v.string()), // Choice B button label
+      lowRatingPublicDesc: v.optional(v.string()), // Choice B description
+      lowRatingFeedbackHeading: v.optional(v.string()), // heading on the feedback form
       createdAt: v.number(),
       userId: v.string(), // owner of this business profile
       // Subscription tracking (synced from subscriptions table)

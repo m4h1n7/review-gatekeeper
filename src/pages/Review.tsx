@@ -98,6 +98,7 @@ export default function Review() {
   );
   const submitFeedback = useMutation(api.feedback.submit);
   const logPublicReview = useMutation(api.feedback.logPublicReview);
+  const logInteraction = useMutation(api.feedback.logInteraction);
   const sendEmail = useAction(api.notifications.sendNegativeFeedbackEmail);
   const isOwnerSuspended = useQuery(
     api.users.isBusinessOwnerSuspended,
@@ -109,7 +110,9 @@ export default function Review() {
   );
 
   // State
-  const [view, setView] = useState<"choice" | "feedback" | "submitted" | "redirecting">("choice");
+  type ViewState = "rating" | "low-rating-options" | "feedback" | "submitted" | "redirecting";
+  const [view, setView] = useState<ViewState>("rating");
+  const [selectedRating, setSelectedRating] = useState<number | null>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [form, setForm] = useState({ name: "", phone: "", email: "", message: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -136,6 +139,32 @@ export default function Review() {
   }, [view, business?.reviewUrl]);
 
   /* ─── Handlers ─── */
+  const handleStarClick = async (rating: number) => {
+    if (!business) return;
+    setSelectedRating(rating);
+
+    // Log the interaction
+    try {
+      await logInteraction({
+        businessId: business.id,
+        businessSlug: business.slug,
+        rating,
+        type: rating >= 4 ? "redirect" : "feedback_submitted",
+        staffId: effectiveStaffId,
+      });
+    } catch (e) {
+      console.error("Failed to log interaction:", e);
+    }
+
+    if (rating >= 4) {
+      // 4-5 stars → redirect to Google Review
+      handlePublicReview();
+    } else {
+      // 1-3 stars → show options page
+      setView("low-rating-options");
+    }
+  };
+
   const handlePublicReview = async () => {
     if (business) {
       try {
@@ -171,7 +200,7 @@ export default function Review() {
         phone: customerPhone,
         email: customerEmail,
         message: fullMessage,
-        rating: 3,
+        rating: selectedRating || 3,
         staffId: effectiveStaffId,
       });
 
@@ -182,7 +211,7 @@ export default function Review() {
         customerName,
         customerPhone,
         customerEmail,
-        rating: 3,
+        rating: selectedRating || 3,
         message: fullMessage,
       }).catch(() => {});
 
@@ -212,7 +241,8 @@ export default function Review() {
   };
 
   const resetForm = () => {
-    setView("choice");
+    setView("rating");
+    setSelectedRating(null);
     setSelectedTags([]);
     setForm({ name: "", phone: "", email: "", message: "" });
   };
@@ -220,11 +250,21 @@ export default function Review() {
   /* ─── Derived ─── */
   const brandColor = business?.brandColor || "#16A34A";
   const welcomeMsg = business?.customHeadline || business?.welcomeMessage || `How was your experience with ${business?.name || "us"} today?`;
-  const subtitleMsg = business?.customSubtitle || "Choose how you'd like to share your feedback";
+  const subtitleMsg = business?.customSubtitle || "Tap a star to rate your experience";
   const publicLabel = business?.publicReviewLabel || "Submit Public Review";
   const publicDesc = business?.publicReviewDesc || "Share your experience on Google";
   const privateLabel = business?.privateFeedbackLabel || "Provide Private Feedback";
   const privateDesc = business?.privateFeedbackDesc || "Speak directly with our management team";
+
+  // Low-rating options defaults
+  const showPublicOption = business?.lowRatingShowPublicOption ?? true;
+  const lowRatingHeading = business?.lowRatingOptionsHeading || "How would you like to share your feedback?";
+  const lowRatingSubtitle = business?.lowRatingOptionsSubtitle || "Choose the option that works best for you";
+  const lowRatingPrivateLabel = business?.lowRatingPrivateLabel || "Inform our manager directly";
+  const lowRatingPrivateDesc = business?.lowRatingPrivateDesc || "Speak directly with our management team so we can improve your future experience.";
+  const lowRatingPublicLabel = business?.lowRatingPublicLabel || "Proceed to leave a public review";
+  const lowRatingPublicDesc = business?.lowRatingPublicDesc || "Share your experience on Google for others to see.";
+  const lowRatingFeedbackHeading = business?.lowRatingFeedbackHeading || "We're sorry to hear that. How can we make it right?";
 
   // Loading
   if (!clientSlug || business === undefined) {
@@ -330,22 +370,36 @@ export default function Review() {
 
       <div className="w-full max-w-md relative z-10">
         <AnimatePresence mode="wait">
-          {/* ─── CHOICE VIEW ─── */}
-          {view === "choice" && (
-            <motion.div key="choice" {...fadeSlide}>
-              <ChoiceView
+          {/* ─── STAR RATING VIEW ─── */}
+          {view === "rating" && (
+            <motion.div key="rating" {...fadeSlide}>
+              <StarRatingView
                 business={business}
                 brandColor={brandColor}
                 welcomeMsg={welcomeMsg}
                 subtitleMsg={subtitleMsg}
-                publicLabel={publicLabel}
-                publicDesc={publicDesc}
-                privateLabel={privateLabel}
-                privateDesc={privateDesc}
                 logoFailed={logoFailed}
                 onLogoFail={() => setLogoFailed(true)}
-                onPublicReview={handlePublicReview}
+                onStarClick={handleStarClick}
+              />
+            </motion.div>
+          )}
+
+          {/* ─── LOW RATING OPTIONS VIEW ─── */}
+          {view === "low-rating-options" && (
+            <motion.div key="low-options" {...fadeSlide}>
+              <LowRatingOptionsView
+                brandColor={brandColor}
+                showPublicOption={showPublicOption}
+                heading={lowRatingHeading}
+                subtitle={lowRatingSubtitle}
+                privateLabel={lowRatingPrivateLabel}
+                privateDesc={lowRatingPrivateDesc}
+                publicLabel={lowRatingPublicLabel}
+                publicDesc={lowRatingPublicDesc}
                 onPrivateFeedback={() => setView("feedback")}
+                onPublicReview={handlePublicReview}
+                onBack={resetForm}
               />
             </motion.div>
           )}
@@ -366,13 +420,14 @@ export default function Review() {
             <motion.div key="feedback" {...fadeSlide}>
               <FeedbackView
                 brandColor={brandColor}
+                heading={lowRatingFeedbackHeading}
                 selectedTags={selectedTags}
                 form={form}
                 isSubmitting={isSubmitting}
                 onToggleTag={toggleTag}
                 onFormChange={setForm}
                 onSubmit={handleFeedbackSubmit}
-                onBack={resetForm}
+                onBack={() => setView("low-rating-options")}
               />
             </motion.div>
           )}
@@ -390,7 +445,7 @@ export default function Review() {
         </AnimatePresence>
 
         {/* Promo Banner */}
-        {view === "choice" && business.promoEnabled && business.promoText && (
+        {view === "rating" && business.promoEnabled && business.promoText && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -425,34 +480,26 @@ export default function Review() {
    SUB-VIEWS
    ═══════════════════════════════════════════════════════════════════ */
 
-/* ─── Choice View ─── */
-function ChoiceView({
+/* ─── Star Rating View ─── */
+function StarRatingView({
   business,
   brandColor,
   welcomeMsg,
   subtitleMsg,
-  publicLabel,
-  publicDesc,
-  privateLabel,
-  privateDesc,
   logoFailed,
   onLogoFail,
-  onPublicReview,
-  onPrivateFeedback,
+  onStarClick,
 }: {
   business: any;
   brandColor: string;
   welcomeMsg: string;
   subtitleMsg: string;
-  publicLabel: string;
-  publicDesc: string;
-  privateLabel: string;
-  privateDesc: string;
   logoFailed: boolean;
   onLogoFail: () => void;
-  onPublicReview: () => void;
-  onPrivateFeedback: () => void;
+  onStarClick: (rating: number) => void;
 }) {
+  const [hoveredStar, setHoveredStar] = useState<number | null>(null);
+
   return (
     <div className="flex flex-col items-center">
       {/* Logo */}
@@ -497,18 +544,150 @@ function ChoiceView({
         {subtitleMsg}
       </motion.p>
 
-      {/* Two Choice Buttons */}
+      {/* Star Rating */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.35 }}
+        className="flex items-center gap-3 sm:gap-5"
+      >
+        {[1, 2, 3, 4, 5].map((star) => {
+          const isHovered = hoveredStar !== null && star <= hoveredStar;
+          return (
+            <motion.button
+              key={star}
+              type="button"
+              whileHover={{ scale: 1.2, y: -4 }}
+              whileTap={{ scale: 0.9 }}
+              onMouseEnter={() => setHoveredStar(star)}
+              onMouseLeave={() => setHoveredStar(null)}
+              onClick={() => onStarClick(star)}
+              className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center cursor-pointer transition-all duration-150 rounded-2xl"
+              style={{
+                backgroundColor: isHovered ? `${brandColor}18` : "transparent",
+              }}
+            >
+              <svg
+                className="w-10 h-10 sm:w-12 sm:h-12 transition-all duration-150"
+                viewBox="0 0 24 24"
+                fill={isHovered ? brandColor : "none"}
+                stroke={isHovered ? brandColor : "rgba(255,255,255,0.25)"}
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+              </svg>
+            </motion.button>
+          );
+        })}
+      </motion.div>
+
+      {/* Star labels */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.45 }}
+        className="flex items-center justify-between w-full max-w-[300px] sm:max-w-[340px] mt-2 px-1"
+      >
+        <span className="text-[10px] text-white/20 font-medium">Poor</span>
+        <span className="text-[10px] text-white/20 font-medium">Excellent</span>
+      </motion.div>
+
+      {/* Trust Badge */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.55 }}
+        className="mt-8 flex items-center gap-1.5 text-[11px] text-white/20"
+      >
+        <ShieldCheck className="w-3.5 h-3.5" />
+        <span>Your choice is completely voluntary — no pressure</span>
+      </motion.div>
+    </div>
+  );
+}
+
+/* ─── Low Rating Options View ─── */
+function LowRatingOptionsView({
+  brandColor,
+  showPublicOption,
+  heading,
+  subtitle,
+  privateLabel,
+  privateDesc,
+  publicLabel,
+  publicDesc,
+  onPrivateFeedback,
+  onPublicReview,
+  onBack,
+}: {
+  brandColor: string;
+  showPublicOption: boolean;
+  heading: string;
+  subtitle: string;
+  privateLabel: string;
+  privateDesc: string;
+  publicLabel: string;
+  publicDesc: string;
+  onPrivateFeedback: () => void;
+  onPublicReview: () => void;
+  onBack: () => void;
+}) {
+  return (
+    <div className="flex flex-col items-center">
+      {/* Back */}
+      <button
+        onClick={onBack}
+        className="self-start flex items-center gap-1.5 text-white/30 text-xs mb-6 hover:text-white/50 transition-colors cursor-pointer"
+      >
+        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M19 12H5M12 19l-7-7 7-7" />
+        </svg>
+        Change rating
+      </button>
+
+      {/* Header */}
+      <div className="text-center mb-8">
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.1 }}
+          className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
+          style={{ backgroundColor: `${brandColor}12` }}
+        >
+          <MessageCircle className="w-7 h-7" style={{ color: brandColor }} />
+        </motion.div>
+        <motion.h2
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="text-lg sm:text-xl font-bold text-white mb-2 leading-snug"
+        >
+          {heading}
+        </motion.h2>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.25 }}
+          className="text-sm text-white/35 leading-relaxed max-w-xs mx-auto"
+        >
+          {subtitle}
+        </motion.p>
+      </div>
+
+      {/* Option Cards */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
         className="w-full space-y-3"
       >
-        {/* Public Review */}
+        {/* Choice A: Private Manager Alert */}
         <motion.button
           whileHover={{ scale: 1.015, y: -1 }}
           whileTap={{ scale: 0.985 }}
-          onClick={onPublicReview}
+          onClick={onPrivateFeedback}
           className="w-full group relative rounded-2xl p-5 text-left transition-all duration-200 cursor-pointer border"
           style={{
             backgroundColor: `${brandColor}08`,
@@ -528,50 +707,53 @@ function ChoiceView({
               className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-colors duration-200"
               style={{ backgroundColor: `${brandColor}20` }}
             >
-              <svg className="w-6 h-6" viewBox="0 0 24 24" fill={brandColor}>
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-              </svg>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[15px] font-semibold text-white mb-0.5">{publicLabel}</p>
-              <p className="text-xs text-white/35 leading-snug">{publicDesc}</p>
-            </div>
-            <ExternalLink className="w-4 h-4 text-white/20 group-hover:text-white/40 transition-colors shrink-0" />
-          </div>
-        </motion.button>
-
-        {/* Divider */}
-        <div className="flex items-center gap-4 px-2">
-          <div className="flex-1 h-px bg-white/[0.06]" />
-          <span className="text-[10px] text-white/20 font-medium tracking-widest">OR</span>
-          <div className="flex-1 h-px bg-white/[0.06]" />
-        </div>
-
-        {/* Private Feedback */}
-        <motion.button
-          whileHover={{ scale: 1.015, y: -1 }}
-          whileTap={{ scale: 0.985 }}
-          onClick={onPrivateFeedback}
-          className="w-full group rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 text-left transition-all duration-200 hover:border-white/[0.12] hover:bg-white/[0.04] cursor-pointer"
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-white/[0.04] flex items-center justify-center shrink-0 group-hover:bg-white/[0.06] transition-colors">
-              <MessageCircle className="w-6 h-6 text-white/40" />
+              <MessageCircle className="w-6 h-6" style={{ color: brandColor }} />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-[15px] font-semibold text-white mb-0.5">{privateLabel}</p>
               <p className="text-xs text-white/35 leading-snug">{privateDesc}</p>
             </div>
-            <MessageCircle className="w-4 h-4 text-white/15 group-hover:text-white/30 transition-colors shrink-0" />
           </div>
         </motion.button>
+
+        {/* Divider */}
+        {showPublicOption && (
+          <div className="flex items-center gap-4 px-2">
+            <div className="flex-1 h-px bg-white/[0.06]" />
+            <span className="text-[10px] text-white/20 font-medium tracking-widest">OR</span>
+            <div className="flex-1 h-px bg-white/[0.06]" />
+          </div>
+        )}
+
+        {/* Choice B: Proceed to Public Review */}
+        {showPublicOption && (
+          <motion.button
+            whileHover={{ scale: 1.015, y: -1 }}
+            whileTap={{ scale: 0.985 }}
+            onClick={onPublicReview}
+            className="w-full group rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 text-left transition-all duration-200 hover:border-white/[0.12] hover:bg-white/[0.04] cursor-pointer"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-white/[0.04] flex items-center justify-center shrink-0 group-hover:bg-white/[0.06] transition-colors">
+                <svg className="w-6 h-6 text-white/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                </svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[15px] font-semibold text-white mb-0.5">{publicLabel}</p>
+                <p className="text-xs text-white/35 leading-snug">{publicDesc}</p>
+              </div>
+              <ExternalLink className="w-4 h-4 text-white/15 group-hover:text-white/30 transition-colors shrink-0" />
+            </div>
+          </motion.button>
+        )}
       </motion.div>
 
       {/* Trust Badge */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.55 }}
+        transition={{ delay: 0.5 }}
         className="mt-6 flex items-center gap-1.5 text-[11px] text-white/20"
       >
         <ShieldCheck className="w-3.5 h-3.5" />
@@ -641,6 +823,7 @@ function RedirectView({
 /* ─── Feedback Form View ─── */
 function FeedbackView({
   brandColor,
+  heading,
   selectedTags,
   form,
   isSubmitting,
@@ -650,6 +833,7 @@ function FeedbackView({
   onBack,
 }: {
   brandColor: string;
+  heading: string;
   selectedTags: string[];
   form: { name: string; phone: string; email: string; message: string };
   isSubmitting: boolean;
@@ -682,7 +866,7 @@ function FeedbackView({
         >
           <MessageCircle className="w-6 h-6 text-white/50" />
         </div>
-        <h2 className="text-lg font-bold text-white mb-1">We're sorry to hear that.</h2>
+        <h2 className="text-lg font-bold text-white mb-1">{heading}</h2>
         <p className="text-sm text-white/35 leading-relaxed max-w-xs mx-auto">
           Have an issue or concern? Speak directly with our management team so we can resolve it within 24 hours.
         </p>
@@ -792,7 +976,7 @@ function FeedbackView({
           ) : (
             <>
               <Send className="w-4 h-4" />
-              Submit Feedback
+              Submit Private Feedback
             </>
           )}
         </motion.button>

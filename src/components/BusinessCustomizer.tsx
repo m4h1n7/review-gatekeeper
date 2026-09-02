@@ -20,6 +20,8 @@ import {
   Moon,
   Monitor,
   Eye,
+  ToggleLeft,
+  ToggleRight,
 } from "lucide-react";
 
 interface CustomizationState {
@@ -36,6 +38,15 @@ interface CustomizationState {
   thankYouMessage: string;
   promoEnabled: boolean;
   promoText: string;
+  // Low-rating options
+  lowRatingShowPublicOption: boolean;
+  lowRatingOptionsHeading: string;
+  lowRatingOptionsSubtitle: string;
+  lowRatingPrivateLabel: string;
+  lowRatingPrivateDesc: string;
+  lowRatingPublicLabel: string;
+  lowRatingPublicDesc: string;
+  lowRatingFeedbackHeading: string;
 }
 
 interface BusinessCustomizerProps {
@@ -74,12 +85,21 @@ export default function BusinessCustomizer({
     thankYouMessage: initialData.thankYouMessage || "",
     promoEnabled: initialData.promoEnabled || false,
     promoText: initialData.promoText || "",
+    // Low-rating options
+    lowRatingShowPublicOption: initialData.lowRatingShowPublicOption ?? true,
+    lowRatingOptionsHeading: initialData.lowRatingOptionsHeading || "",
+    lowRatingOptionsSubtitle: initialData.lowRatingOptionsSubtitle || "",
+    lowRatingPrivateLabel: initialData.lowRatingPrivateLabel || "",
+    lowRatingPrivateDesc: initialData.lowRatingPrivateDesc || "",
+    lowRatingPublicLabel: initialData.lowRatingPublicLabel || "",
+    lowRatingPublicDesc: initialData.lowRatingPublicDesc || "",
+    lowRatingFeedbackHeading: initialData.lowRatingFeedbackHeading || "",
   });
 
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [logoLoaded, setLogoLoaded] = useState(false);
-  const [activeSection, setActiveSection] = useState<"brand" | "content" | "buttons">("brand");
+  const [activeSection, setActiveSection] = useState<"brand" | "content" | "buttons" | "review-flow">("brand");
 
   // Sync external changes
   useEffect(() => {
@@ -129,6 +149,7 @@ export default function BusinessCustomizer({
             { id: "brand" as const, label: "Brand & Colors", icon: Palette },
             { id: "content" as const, label: "Headings & Text", icon: Type },
             { id: "buttons" as const, label: "Buttons & Labels", icon: MessageCircle },
+            { id: "review-flow" as const, label: "Review Flow", icon: Star },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -300,6 +321,105 @@ export default function BusinessCustomizer({
           </motion.div>
         )}
 
+        {/* Review Flow Section */}
+        {activeSection === "review-flow" && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-4"
+          >
+            {/* Low Rating: Show Public Option Toggle */}
+            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-white">Allow public review for 1-3 stars</p>
+                  <p className="text-xs text-[#A1A1AA] mt-0.5">
+                    When customers give 1-3 stars, show them the option to still leave a public Google review
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => update("lowRatingShowPublicOption", !config.lowRatingShowPublicOption)}
+                  className="cursor-pointer transition-colors"
+                >
+                  {config.lowRatingShowPublicOption ? (
+                    <ToggleRight className="w-10 h-10" style={{ color: config.brandColor }} />
+                  ) : (
+                    <ToggleLeft className="w-10 h-10 text-[#A1A1AA]/40" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Options Page Heading */}
+            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 space-y-3">
+              <Label className="text-xs font-medium text-[#A1A1AA]">Options Page Heading</Label>
+              <Input
+                value={config.lowRatingOptionsHeading}
+                onChange={(e) => update("lowRatingOptionsHeading", e.target.value)}
+                placeholder="How would you like to share your feedback?"
+                className={inputClass}
+              />
+              <Label className="text-xs font-medium text-[#A1A1AA]">Subtitle</Label>
+              <Input
+                value={config.lowRatingOptionsSubtitle}
+                onChange={(e) => update("lowRatingOptionsSubtitle", e.target.value)}
+                placeholder="Choose the option that works best for you"
+                className={inputClass}
+              />
+            </div>
+
+            {/* Choice A: Private Feedback */}
+            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 space-y-3">
+              <Label className="flex items-center gap-2 text-xs font-medium text-[#A1A1AA]">
+                <MessageCircle className="w-3.5 h-3.5" style={{ color: config.brandColor }} />
+                Choice A — Private Manager Alert
+              </Label>
+              <Input
+                value={config.lowRatingPrivateLabel}
+                onChange={(e) => update("lowRatingPrivateLabel", e.target.value)}
+                placeholder="Inform our manager directly"
+                className={inputClass}
+              />
+              <Input
+                value={config.lowRatingPrivateDesc}
+                onChange={(e) => update("lowRatingPrivateDesc", e.target.value)}
+                placeholder="Speak directly with our management team..."
+                className={inputClass}
+              />
+              <Label className="text-xs font-medium text-[#A1A1AA]">Feedback Form Heading</Label>
+              <Input
+                value={config.lowRatingFeedbackHeading}
+                onChange={(e) => update("lowRatingFeedbackHeading", e.target.value)}
+                placeholder="We're sorry to hear that. How can we make it right?"
+                className={inputClass}
+              />
+            </div>
+
+            {/* Choice B: Public Review (if enabled) */}
+            {config.lowRatingShowPublicOption && (
+              <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 space-y-3">
+                <Label className="flex items-center gap-2 text-xs font-medium text-[#A1A1AA]">
+                  <Star className="w-3.5 h-3.5" style={{ color: config.brandColor }} />
+                  Choice B — Proceed to Public Review
+                </Label>
+                <Input
+                  value={config.lowRatingPublicLabel}
+                  onChange={(e) => update("lowRatingPublicLabel", e.target.value)}
+                  placeholder="Proceed to leave a public review"
+                  className={inputClass}
+                />
+                <Input
+                  value={config.lowRatingPublicDesc}
+                  onChange={(e) => update("lowRatingPublicDesc", e.target.value)}
+                  placeholder="Share your experience on Google for others to see"
+                  className={inputClass}
+                />
+              </div>
+            )}
+          </motion.div>
+        )}
+
         {/* Buttons Section */}
         {activeSection === "buttons" && (
           <motion.div
@@ -417,64 +537,92 @@ export default function BusinessCustomizer({
             {subtitle}
           </p>
 
-          {/* Public Review Button */}
-          <div
-            className="w-full rounded-xl p-4 text-left border mb-2"
-            style={{
-              backgroundColor: `${config.brandColor}08`,
-              borderColor: `${config.brandColor}30`,
-            }}
-          >
-            <div className="flex items-center gap-3">
-              <div
-                className="w-10 h-10 rounded-lg flex items-center justify-center"
-                style={{ backgroundColor: `${config.brandColor}20` }}
+          {/* Star Rating Preview */}
+          <div className="flex items-center gap-3 mb-6">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <svg
+                key={star}
+                className="w-8 h-8"
+                viewBox="0 0 24 24"
+                fill={star <= 4 ? config.brandColor : "none"}
+                stroke={star <= 4 ? config.brandColor : (config.themeMode === "light" ? "#CBD5E1" : "rgba(255,255,255,0.25)")}
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
               >
-                <Star className="w-5 h-5" style={{ color: config.brandColor }} />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-semibold" style={{ color: config.themeMode === "light" ? "#0F172A" : "white" }}>
-                  {publicLabel}
-                </p>
-                <p className="text-[10px]" style={{ color: config.themeMode === "light" ? "#64748B" : "rgba(255,255,255,0.35)" }}>
-                  {publicDesc}
-                </p>
-              </div>
-              <ExternalLink className="w-3.5 h-3.5" style={{ color: config.themeMode === "light" ? "#94A3B8" : "rgba(255,255,255,0.2)" }} />
-            </div>
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+              </svg>
+            ))}
           </div>
 
-          {/* Divider */}
-          <div className="flex items-center gap-3 px-2 my-1">
-            <div className="flex-1 h-px" style={{ backgroundColor: config.themeMode === "light" ? "#E2E8F0" : "rgba(255,255,255,0.06)" }} />
-            <span className="text-[8px] font-medium tracking-widest" style={{ color: config.themeMode === "light" ? "#94A3B8" : "rgba(255,255,255,0.2)" }}>OR</span>
-            <div className="flex-1 h-px" style={{ backgroundColor: config.themeMode === "light" ? "#E2E8F0" : "rgba(255,255,255,0.06)" }} />
-          </div>
+          {/* Low-Rating Options Preview (simulated 1-3 star path) */}
+          <div className="w-full space-y-2">
+            <p className="text-[9px] text-center font-medium tracking-wider mb-2" style={{ color: config.themeMode === "light" ? "#94A3B8" : "rgba(255,255,255,0.25)" }}>
+              LOW-RATING OPTIONS PREVIEW
+            </p>
 
-          {/* Private Feedback Button */}
-          <div
-            className="w-full rounded-xl p-4 text-left border"
-            style={{
-              borderColor: config.themeMode === "light" ? "#E2E8F0" : "rgba(255,255,255,0.06)",
-              backgroundColor: config.themeMode === "light" ? "#FFFFFF" : "rgba(255,255,255,0.02)",
-            }}
-          >
-            <div className="flex items-center gap-3">
-              <div
-                className="w-10 h-10 rounded-lg flex items-center justify-center"
-                style={{ backgroundColor: config.themeMode === "light" ? "#F1F5F9" : "rgba(255,255,255,0.04)" }}
-              >
-                <MessageCircle className="w-5 h-5" style={{ color: config.themeMode === "light" ? "#64748B" : "rgba(255,255,255,0.4)" }} />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-semibold" style={{ color: config.themeMode === "light" ? "#0F172A" : "white" }}>
-                  {privateLabel}
-                </p>
-                <p className="text-[10px]" style={{ color: config.themeMode === "light" ? "#64748B" : "rgba(255,255,255,0.35)" }}>
-                  {privateDesc}
-                </p>
+            {/* Choice A */}
+            <div
+              className="w-full rounded-xl p-3.5 text-left border"
+              style={{
+                backgroundColor: `${config.brandColor}08`,
+                borderColor: `${config.brandColor}30`,
+              }}
+            >
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: `${config.brandColor}20` }}
+                >
+                  <MessageCircle className="w-4 h-4" style={{ color: config.brandColor }} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold" style={{ color: config.themeMode === "light" ? "#0F172A" : "white" }}>
+                    {config.lowRatingPrivateLabel || "Inform our manager directly"}
+                  </p>
+                  <p className="text-[9px]" style={{ color: config.themeMode === "light" ? "#64748B" : "rgba(255,255,255,0.3)" }}>
+                    {config.lowRatingPrivateDesc || "Speak directly with our management team"}
+                  </p>
+                </div>
               </div>
             </div>
+
+            {/* Divider */}
+            {config.lowRatingShowPublicOption && (
+              <div className="flex items-center gap-3 px-2">
+                <div className="flex-1 h-px" style={{ backgroundColor: config.themeMode === "light" ? "#E2E8F0" : "rgba(255,255,255,0.06)" }} />
+                <span className="text-[8px] font-medium tracking-widest" style={{ color: config.themeMode === "light" ? "#94A3B8" : "rgba(255,255,255,0.2)" }}>OR</span>
+                <div className="flex-1 h-px" style={{ backgroundColor: config.themeMode === "light" ? "#E2E8F0" : "rgba(255,255,255,0.06)" }} />
+              </div>
+            )}
+
+            {/* Choice B */}
+            {config.lowRatingShowPublicOption && (
+              <div
+                className="w-full rounded-xl p-3.5 text-left border"
+                style={{
+                  borderColor: config.themeMode === "light" ? "#E2E8F0" : "rgba(255,255,255,0.06)",
+                  backgroundColor: config.themeMode === "light" ? "#FFFFFF" : "rgba(255,255,255,0.02)",
+                }}
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: config.themeMode === "light" ? "#F1F5F9" : "rgba(255,255,255,0.04)" }}
+                  >
+                    <Star className="w-4 h-4" style={{ color: config.themeMode === "light" ? "#64748B" : "rgba(255,255,255,0.4)" }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold" style={{ color: config.themeMode === "light" ? "#0F172A" : "white" }}>
+                      {config.lowRatingPublicLabel || "Proceed to leave a public review"}
+                    </p>
+                    <p className="text-[9px]" style={{ color: config.themeMode === "light" ? "#64748B" : "rgba(255,255,255,0.3)" }}>
+                      {config.lowRatingPublicDesc || "Share your experience on Google"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Trust Badge */}

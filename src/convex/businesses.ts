@@ -132,6 +132,15 @@ export const getBySlug = query({
       publicReviewDesc: business.publicReviewDesc ?? "",
       privateFeedbackLabel: business.privateFeedbackLabel ?? "",
       privateFeedbackDesc: business.privateFeedbackDesc ?? "",
+      // Low-rating options
+      lowRatingShowPublicOption: business.lowRatingShowPublicOption ?? true,
+      lowRatingOptionsHeading: business.lowRatingOptionsHeading ?? "",
+      lowRatingOptionsSubtitle: business.lowRatingOptionsSubtitle ?? "",
+      lowRatingPrivateLabel: business.lowRatingPrivateLabel ?? "",
+      lowRatingPrivateDesc: business.lowRatingPrivateDesc ?? "",
+      lowRatingPublicLabel: business.lowRatingPublicLabel ?? "",
+      lowRatingPublicDesc: business.lowRatingPublicDesc ?? "",
+      lowRatingFeedbackHeading: business.lowRatingFeedbackHeading ?? "",
     };
   },
 });
@@ -196,6 +205,15 @@ export const updateBranding = mutation({
     publicReviewDesc: v.optional(v.string()),
     privateFeedbackLabel: v.optional(v.string()),
     privateFeedbackDesc: v.optional(v.string()),
+    // Low-rating options
+    lowRatingShowPublicOption: v.optional(v.boolean()),
+    lowRatingOptionsHeading: v.optional(v.string()),
+    lowRatingOptionsSubtitle: v.optional(v.string()),
+    lowRatingPrivateLabel: v.optional(v.string()),
+    lowRatingPrivateDesc: v.optional(v.string()),
+    lowRatingPublicLabel: v.optional(v.string()),
+    lowRatingPublicDesc: v.optional(v.string()),
+    lowRatingFeedbackHeading: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -216,6 +234,15 @@ export const updateBranding = mutation({
     if (args.publicReviewDesc !== undefined) patch.publicReviewDesc = args.publicReviewDesc;
     if (args.privateFeedbackLabel !== undefined) patch.privateFeedbackLabel = args.privateFeedbackLabel;
     if (args.privateFeedbackDesc !== undefined) patch.privateFeedbackDesc = args.privateFeedbackDesc;
+    // Low-rating options
+    if (args.lowRatingShowPublicOption !== undefined) patch.lowRatingShowPublicOption = args.lowRatingShowPublicOption;
+    if (args.lowRatingOptionsHeading !== undefined) patch.lowRatingOptionsHeading = args.lowRatingOptionsHeading;
+    if (args.lowRatingOptionsSubtitle !== undefined) patch.lowRatingOptionsSubtitle = args.lowRatingOptionsSubtitle;
+    if (args.lowRatingPrivateLabel !== undefined) patch.lowRatingPrivateLabel = args.lowRatingPrivateLabel;
+    if (args.lowRatingPrivateDesc !== undefined) patch.lowRatingPrivateDesc = args.lowRatingPrivateDesc;
+    if (args.lowRatingPublicLabel !== undefined) patch.lowRatingPublicLabel = args.lowRatingPublicLabel;
+    if (args.lowRatingPublicDesc !== undefined) patch.lowRatingPublicDesc = args.lowRatingPublicDesc;
+    if (args.lowRatingFeedbackHeading !== undefined) patch.lowRatingFeedbackHeading = args.lowRatingFeedbackHeading;
 
     await ctx.db.patch(args.businessId as any, patch);
 
@@ -257,6 +284,15 @@ export const listByUser = query({
       publicReviewDesc: b.publicReviewDesc ?? "",
       privateFeedbackLabel: b.privateFeedbackLabel ?? "",
       privateFeedbackDesc: b.privateFeedbackDesc ?? "",
+      // Low-rating options
+      lowRatingShowPublicOption: b.lowRatingShowPublicOption ?? true,
+      lowRatingOptionsHeading: b.lowRatingOptionsHeading ?? "",
+      lowRatingOptionsSubtitle: b.lowRatingOptionsSubtitle ?? "",
+      lowRatingPrivateLabel: b.lowRatingPrivateLabel ?? "",
+      lowRatingPrivateDesc: b.lowRatingPrivateDesc ?? "",
+      lowRatingPublicLabel: b.lowRatingPublicLabel ?? "",
+      lowRatingPublicDesc: b.lowRatingPublicDesc ?? "",
+      lowRatingFeedbackHeading: b.lowRatingFeedbackHeading ?? "",
       subscriptionStatus: b.subscriptionStatus,
       trialEndsAt: b.trialEndsAt,
       planType: b.planType,
