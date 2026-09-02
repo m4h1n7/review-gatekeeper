@@ -5,6 +5,7 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { PrintableQR } from "@/components/PrintableQR";
 import QRCodeGenerator from "@/components/QRCodeGenerator";
+import NFCCardPreview from "@/components/NFCCardPreview";
 import StaffManager from "@/components/StaffManager";
 import AIAssistant from "@/components/AIAssistant";
 import WhatsAppAlertConfig from "@/components/WhatsAppAlertConfig";
@@ -55,6 +56,7 @@ import {
   Zap,
   ArrowRight,
   Crown,
+  Nfc,
 } from "lucide-react";
 import { useNavigate } from "react-router";
 
@@ -796,6 +798,32 @@ export default function Dashboard() {
             {/* QR Code */}
             {reviewSlug && (
               <PrintableQR slug={reviewSlug} businessName={overview.businesses[0]?.name || businessName} isPro={!!isPro} />
+            )}
+
+            {/* NFC Card Preview */}
+            {reviewSlug && (
+              <GlassPanel className="p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-9 h-9 rounded-xl bg-[#16A34A]/10 flex items-center justify-center">
+                    <Nfc className="w-5 h-5 text-[#16A34A]" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-white">NFC Review Card Preview</h3>
+                    <p className="text-[10px] text-[#A1A1AA]">Physical card design for printing & NFC programming</p>
+                  </div>
+                </div>
+                <NFCCardPreview
+                  slug={reviewSlug}
+                  businessName={overview.businesses[0]?.name || businessName}
+                  brandColor={overview.businesses[0]?.brandColor || "#16A34A"}
+                  staffMembers={staffLeaderboard?.map((s) => ({
+                    id: String(s.staffId),
+                    name: s.name,
+                    slug: s.slug,
+                  })) || []}
+                  isPro={!!isPro}
+                />
+              </GlassPanel>
             )}
 
             {/* WhatsApp Template */}
