@@ -114,6 +114,7 @@ export const getBySlug = query({
     if (!business) return null;
     return {
       id: business._id,
+      userId: business.userId,
       name: business.name,
       slug: business.slug,
       logoUrl: business.logoUrl,

@@ -306,23 +306,44 @@ export default function Review() {
 
     return (
       <div className="min-h-dvh flex items-center justify-center px-5" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
-        <div className="fixed inset-0 -z-10 bg-[#0A0A0B]" />
+        <div className="fixed inset-0 -z-10 bg-[#0A0A0B]">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[400px] h-[400px] rounded-full blur-[120px] opacity-[0.03] bg-red-500" />
+        </div>
         <motion.div {...scaleIn} className="w-full max-w-sm text-center">
+          {/* Business logo */}
+          {business.logoUrl && !logoFailed ? (
+            <img
+              src={business.logoUrl}
+              alt={business.name}
+              className="w-16 h-16 rounded-2xl object-cover mx-auto mb-5 opacity-40 grayscale"
+              onError={() => setLogoFailed(true)}
+            />
+          ) : (
+            <div
+              className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5 text-white font-bold text-2xl opacity-40 grayscale"
+              style={{ backgroundColor: business.brandColor || "#16A34A" }}
+            >
+              {business.name?.charAt(0)?.toUpperCase() || "B"}
+            </div>
+          )}
           <div className={`w-14 h-14 mx-auto rounded-2xl flex items-center justify-center mb-4 ${isExpired || isCancelled ? "bg-red-500/10" : "bg-amber-500/10"}`}>
             <Clock className={`w-6 h-6 ${isExpired || isCancelled ? "text-red-400" : "text-amber-400"}`} />
           </div>
           <h1 className="text-xl font-bold text-white mb-2">
-            {isExpired ? "Trial Expired" : isCancelled ? "Subscription Cancelled" : isPending ? "Payment Under Review" : "Account Inactive"}
+            {isExpired ? "Review Portal Inactive" : isCancelled ? "Review Portal Unavailable" : isPending ? "Payment Under Review" : "Review Portal Inactive"}
           </h1>
-          <p className="text-white/40 text-sm leading-relaxed">
-            {isExpired
-              ? "This business's free trial has ended. The owner needs to subscribe to continue."
-              : isCancelled
-                ? "This subscription has been cancelled."
-                : isPending
-                  ? "Payment is being verified. Reviews will be available shortly."
-                  : "This account is currently inactive."}
+          <p className="text-white/40 text-sm leading-relaxed mb-6">
+            This review portal is currently inactive. Please contact the business owner or renew your Star Catch subscription to reactivate.
           </p>
+          <div className="p-4 rounded-2xl border border-white/[0.06] bg-white/[0.02]">
+            <p className="text-xs text-white/25 mb-2 font-medium uppercase tracking-wider">Business</p>
+            <p className="text-sm text-white/50 font-semibold">{business.name}</p>
+            {isPending && (
+              <p className="text-[11px] text-amber-400/60 mt-2">
+                Payment verification typically takes 1-2 hours.
+              </p>
+            )}
+          </div>
         </motion.div>
       </div>
     );
@@ -332,14 +353,32 @@ export default function Review() {
   if (isOwnerSuspended === true) {
     return (
       <div className="min-h-dvh flex items-center justify-center px-5" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
-        <div className="fixed inset-0 -z-10 bg-[#0A0A0B]" />
+        <div className="fixed inset-0 -z-10 bg-[#0A0A0B]">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[400px] h-[400px] rounded-full blur-[120px] opacity-[0.03] bg-amber-500" />
+        </div>
         <motion.div {...scaleIn} className="w-full max-w-sm text-center">
+          {/* Business logo */}
+          {business.logoUrl && !logoFailed ? (
+            <img
+              src={business.logoUrl}
+              alt={business.name}
+              className="w-16 h-16 rounded-2xl object-cover mx-auto mb-5 opacity-40 grayscale"
+              onError={() => setLogoFailed(true)}
+            />
+          ) : (
+            <div
+              className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5 text-white font-bold text-2xl opacity-40 grayscale"
+              style={{ backgroundColor: business.brandColor || "#16A34A" }}
+            >
+              {business.name?.charAt(0)?.toUpperCase() || "B"}
+            </div>
+          )}
           <div className="w-14 h-14 mx-auto rounded-2xl bg-amber-500/10 flex items-center justify-center mb-4">
             <Clock className="w-6 h-6 text-amber-400" />
           </div>
-          <h1 className="text-xl font-bold text-white mb-2">Service Paused</h1>
+          <h1 className="text-xl font-bold text-white mb-2">Review Portal Paused</h1>
           <p className="text-white/40 text-sm leading-relaxed">
-            This business has temporarily paused review collection.
+            This business has temporarily paused review collection. Please try again later or contact the business directly.
           </p>
         </motion.div>
       </div>
