@@ -52,6 +52,7 @@ interface CustomizationState {
 interface BusinessCustomizerProps {
   initialData: Partial<CustomizationState>;
   businessName: string;
+  planType?: string;
   onSave: (data: Partial<CustomizationState>) => Promise<void>;
 }
 
@@ -69,6 +70,7 @@ const THEME_OPTIONS = [
 export default function BusinessCustomizer({
   initialData,
   businessName,
+  planType,
   onSave,
 }: BusinessCustomizerProps) {
   const [config, setConfig] = useState<CustomizationState>({
@@ -100,6 +102,7 @@ export default function BusinessCustomizer({
   const [saved, setSaved] = useState(false);
   const [logoLoaded, setLogoLoaded] = useState(false);
   const [activeSection, setActiveSection] = useState<"brand" | "content" | "buttons" | "review-flow">("brand");
+  const isProPlan = planType === "pro";
 
   // Sync external changes
   useEffect(() => {
@@ -326,8 +329,24 @@ export default function BusinessCustomizer({
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            className="space-y-4"
+            className="space-y-4 relative"
           >
+            {/* Non-Pro Lock Overlay */}
+            {!isProPlan && (
+              <div className="absolute inset-0 z-10 rounded-xl bg-[#0A0A0B]/80 backdrop-blur-sm flex flex-col items-center justify-center p-6">
+                <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center mb-3">
+                  <svg className="w-6 h-6 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                  </svg>
+                </div>
+                <p className="text-sm font-semibold text-white text-center mb-1">Business Pro Feature</p>
+                <p className="text-xs text-[#A1A1AA] text-center leading-relaxed max-w-[240px]">
+                  Upgrade to Business Pro to unlock dual-choice review routing and customize low-rating options.
+                </p>
+              </div>
+            )}
+
             {/* Low Rating: Show Public Option Toggle */}
             <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
               <div className="flex items-center justify-between">
@@ -341,6 +360,7 @@ export default function BusinessCustomizer({
                   type="button"
                   onClick={() => update("lowRatingShowPublicOption", !config.lowRatingShowPublicOption)}
                   className="cursor-pointer transition-colors"
+                  disabled={!isProPlan}
                 >
                   {config.lowRatingShowPublicOption ? (
                     <ToggleRight className="w-10 h-10" style={{ color: config.brandColor }} />
@@ -359,6 +379,7 @@ export default function BusinessCustomizer({
                 onChange={(e) => update("lowRatingOptionsHeading", e.target.value)}
                 placeholder="How would you like to share your feedback?"
                 className={inputClass}
+                disabled={!isProPlan}
               />
               <Label className="text-xs font-medium text-[#A1A1AA]">Subtitle</Label>
               <Input
@@ -366,6 +387,7 @@ export default function BusinessCustomizer({
                 onChange={(e) => update("lowRatingOptionsSubtitle", e.target.value)}
                 placeholder="Choose the option that works best for you"
                 className={inputClass}
+                disabled={!isProPlan}
               />
             </div>
 
@@ -380,12 +402,14 @@ export default function BusinessCustomizer({
                 onChange={(e) => update("lowRatingPrivateLabel", e.target.value)}
                 placeholder="Inform our manager directly"
                 className={inputClass}
+                disabled={!isProPlan}
               />
               <Input
                 value={config.lowRatingPrivateDesc}
                 onChange={(e) => update("lowRatingPrivateDesc", e.target.value)}
                 placeholder="Speak directly with our management team..."
                 className={inputClass}
+                disabled={!isProPlan}
               />
               <Label className="text-xs font-medium text-[#A1A1AA]">Feedback Form Heading</Label>
               <Input
@@ -393,6 +417,7 @@ export default function BusinessCustomizer({
                 onChange={(e) => update("lowRatingFeedbackHeading", e.target.value)}
                 placeholder="We're sorry to hear that. How can we make it right?"
                 className={inputClass}
+                disabled={!isProPlan}
               />
             </div>
 
@@ -408,12 +433,14 @@ export default function BusinessCustomizer({
                   onChange={(e) => update("lowRatingPublicLabel", e.target.value)}
                   placeholder="Proceed to leave a public review"
                   className={inputClass}
+                  disabled={!isProPlan}
                 />
                 <Input
                   value={config.lowRatingPublicDesc}
                   onChange={(e) => update("lowRatingPublicDesc", e.target.value)}
                   placeholder="Share your experience on Google for others to see"
                   className={inputClass}
+                  disabled={!isProPlan}
                 />
               </div>
             )}

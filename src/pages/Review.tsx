@@ -160,8 +160,9 @@ export default function Review() {
       // 4-5 stars → redirect to Google Review
       handlePublicReview();
     } else {
-      // 1-3 stars → show options page
-      setView("low-rating-options");
+      // 1-3 stars: Business Pro gets dual-choice, others get simple feedback form
+      const isPro = business.planType === "pro";
+      setView(isPro ? "low-rating-options" : "feedback");
     }
   };
 

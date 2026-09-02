@@ -141,6 +141,9 @@ export const getBySlug = query({
       lowRatingPublicLabel: business.lowRatingPublicLabel ?? "",
       lowRatingPublicDesc: business.lowRatingPublicDesc ?? "",
       lowRatingFeedbackHeading: business.lowRatingFeedbackHeading ?? "",
+      // Plan type for feature gating
+      planType: business.planType ?? "none",
+      subscriptionStatus: business.subscriptionStatus ?? "inactive",
     };
   },
 });

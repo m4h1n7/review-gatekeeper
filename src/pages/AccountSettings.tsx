@@ -565,6 +565,7 @@ export default function AccountSettings() {
                   lowRatingFeedbackHeading: (businesses[0] as any).lowRatingFeedbackHeading || "",
                 } : {}}
                 businessName={businesses?.[0]?.name || "Your Business"}
+                planType={(businesses?.[0] as any)?.planType || "none"}
                 onSave={async (data) => {
                   if (!businesses?.[0]) return;
                   await updateBranding({
