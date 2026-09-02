@@ -14,25 +14,20 @@ import { isAdminEmail } from "@/lib/routing";
  *  2. Suspended / deleted → blocked page
  *  3. Super admin on /dashboard or /onboarding → /admin
  *  4. Onboarding done + on /onboarding → /dashboard
- *  5. Subscription expired → /pricing
- *  6. Otherwise → render children
+ *  5. Otherwise → render children (dashboard handles its own paywall)
  */
 export function RequireAuth({ children }: { children: ReactNode }) {
   const { isLoading, isAuthenticated } = useAuth();
   const location = useLocation();
   const onboardingDone = useQuery(api.users.hasCompletedOnboarding);
-  const subscription = useQuery(api.subscriptions.getCurrent);
   const user = useQuery(api.users.currentUser);
   const accountStatus = useQuery(api.users.getAccountStatus);
 
   // ── CRITICAL: Never redirect while any loading state is still true ──
   // This prevents the auth-loop where isAuthenticated hasn't propagated yet.
-  // isLoading = isAuthLoading || user === undefined (from useAuth)
-  // We also guard on onboardingDone/subscription/user queries.
   if (
     isLoading ||
     onboardingDone === undefined ||
-    subscription === undefined ||
     user === undefined
   ) {
     return (
@@ -46,7 +41,6 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   }
 
   // ── 1. Unauthenticated → send to login ──
-  // Only reachable AFTER all loading states resolved and user data fetched.
   if (!isAuthenticated) {
     const returnTo = `${location.pathname}${location.search}`;
     return (
@@ -97,35 +91,14 @@ export function RequireAuth({ children }: { children: ReactNode }) {
     return <Navigate to="/dashboard" replace />;
   }
 
-  // ── 5. Subscription expired → /pricing (allow /pricing page even when expired) ──
+  // ── 5. Always allow /pricing ──
   if (location.pathname === "/pricing") {
     return children;
   }
 
-  const now = Date.now();
-  const plan = subscription?.plan;
-  const status = subscription?.status;
-  const expiresAt = subscription?.expiresAt;
-
-  // Active paid subscription (starter/pro) — not expired → full access
-  const isActivePaid =
-    (plan === "starter" || plan === "pro") &&
-    status === "active" &&
-    (expiresAt === undefined || expiresAt === null || expiresAt > now);
-
-  // Active trial — not expired → full access
-  const isActiveTrial =
-    plan === "trial" &&
-    status === "active" &&
-    (expiresAt === undefined || expiresAt === null || expiresAt > now);
-
-  // Pending payment → allow dashboard (shows pending banner)
-  const isPending = status === "pending";
-
-  if (isActivePaid || isActiveTrial || isPending) {
-    return children;
-  }
-
-  // Expired / no subscription / cancelled → redirect to pricing
-  return <Navigate to="/pricing" replace />;
+  // ── 6. Authenticated user → render children ──
+  // No subscription check here — the Dashboard itself renders a paywall
+  // overlay for users without an active plan, so they can still see
+  // the dashboard but features are locked.
+  return children;
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useMutation } from "convex/react";
@@ -52,6 +52,9 @@ import {
   Trophy,
   Sparkles,
   User,
+  Zap,
+  ArrowRight,
+  Crown,
 } from "lucide-react";
 import { useNavigate } from "react-router";
 
@@ -130,8 +133,23 @@ export default function Dashboard() {
   const hasProAccess = useHasAccess("pro");
   const daysRemaining = subscription?.expiresAt ? Math.ceil((subscription.expiresAt - Date.now()) / (24 * 60 * 60 * 1000)) : null;
   const showExpiryWarning = subscription?.status === "active" && daysRemaining !== null && daysRemaining <= 3 && daysRemaining > 0;
-  const [showPaywall, setShowPaywall] = useState(subscription?.status === "pending" || isExpired);
-  const [showTrialExpired, setShowTrialExpired] = useState(isTrial && isExpired);
+
+  // ── Locked state: no active plan or expired trial ──
+  const isLocked = !hasPaidAccess.hasAccess && !hasPaidAccess.isLoading;
+
+  const [showPaywall, setShowPaywall] = useState(false);
+  const [showTrialExpired, setShowTrialExpired] = useState(false);
+
+  // Show paywall modal on first load for users without a plan
+  useEffect(() => {
+    if (hasPaidAccess.isLoading) return; // wait for subscription to load
+    if (isLocked) {
+      setShowPaywall(true);
+    } else if (isTrial && isExpired) {
+      setShowTrialExpired(true);
+    }
+  }, [hasPaidAccess.isLoading, isLocked, isTrial, isExpired]);
+
   const stats = useQuery(api.analytics.businessStats, selectedBusinessId ? { businessId: selectedBusinessId, filter } : "skip");
   const feedbacks = useQuery(api.analytics.recentFeedbacks, selectedBusinessId ? { businessId: selectedBusinessId, limit: 20 } : "skip");
   const staffLeaderboard = useQuery(api.staff.getLeaderboard, overview?.businesses?.[0]?.id ? { businessId: overview.businesses[0].id } : "skip");
@@ -204,11 +222,11 @@ export default function Dashboard() {
 
   const unresolvedCount = feedbacks?.filter((fb) => (fb as any).status === "unresolved").length ?? 0;
 
-  const tabs: { id: TabType; label: string; icon: React.ReactNode; badge?: number; action?: () => void }[] = [
+  const tabs: { id: TabType; label: string; icon: React.ReactNode; badge?: number; locked?: boolean; action?: () => void }[] = [
     { id: "overview", label: "Overview", icon: <BarChart3 className="w-4 h-4" /> },
-    { id: "reviews", label: "Get Reviews", icon: <Star className="w-4 h-4" /> },
-    { id: "inbox", label: "Private Inbox", icon: <Inbox className="w-4 h-4" />, badge: unresolvedCount > 0 ? unresolvedCount : undefined, action: () => navigate("/dashboard/feedback") },
-    { id: "staff", label: "Staff & QR", icon: <Users className="w-4 h-4" /> },
+    { id: "reviews", label: "Get Reviews", icon: <Star className="w-4 h-4" />, locked: isLocked },
+    { id: "inbox", label: "Private Inbox", icon: <Inbox className="w-4 h-4" />, badge: !isLocked && unresolvedCount > 0 ? unresolvedCount : undefined, locked: isLocked, action: isLocked ? undefined : () => navigate("/dashboard/feedback") },
+    { id: "staff", label: "Staff & QR", icon: <Users className="w-4 h-4" />, locked: isLocked },
   ];
 
   return (
@@ -216,7 +234,9 @@ export default function Dashboard() {
       <PaywallModal
         open={showPaywall}
         onClose={() => setShowPaywall(false)}
-        reason={isExpired ? "Your Pro subscription has expired. Renew via bKash or Nagad to regain full access." : "Complete your Pro subscription to unlock full dashboard access. Pay via bKash, Nagad, or card."}
+        reason={isExpired
+          ? "Your subscription has expired. Renew via bKash or Nagad to regain full access."
+          : "Complete your subscription to unlock full dashboard access. Pay via bKash, Nagad, or card."}
       />
 
       {/* Trial Expired Payment Modal */}
@@ -226,6 +246,34 @@ export default function Dashboard() {
           onClose={() => setShowTrialExpired(false)}
           onSuccess={() => setShowTrialExpired(false)}
         />
+      )}
+
+      {/* ─── LOCKED DASHBOARD PAYWALL BANNER ─── */}
+      {isLocked && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gradient-to-r from-[#16A34A]/15 via-[#16A34A]/10 to-[#16A34A]/5 border-b border-[#16A34A]/20"
+        >
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-[#16A34A]/15 border border-[#16A34A]/25 flex items-center justify-center shrink-0">
+                <Lock className="w-5 h-5 text-[#16A34A]" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-white">Unlock Full Access</p>
+                <p className="text-xs text-[#A1A1AA]">Choose a plan to start collecting reviews and unlocking all features</p>
+              </div>
+            </div>
+            <Button
+              onClick={() => setShowPaywall(true)}
+              className="bg-[#16A34A] hover:bg-[#15803D] text-white font-semibold px-6 cursor-pointer shadow-lg shadow-[#16A34A]/25 hover:shadow-[#16A34A]/40 transition-all whitespace-nowrap"
+            >
+              <Zap className="w-4 h-4 mr-2" /> Select Plan
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </div>
+        </motion.div>
       )}
 
       {/* Pending Approval Banner */}
@@ -337,6 +385,24 @@ export default function Dashboard() {
                 <span className="text-[10px] text-[#A1A1AA] leading-none mt-0.5 max-w-[120px] truncate">{user?.email}</span>
               </div>
             </div>
+            {/* Subscription Badge */}
+            {!isLocked && (
+              <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#16A34A]/10 border border-[#16A34A]/20">
+                <Crown className="w-3.5 h-3.5 text-[#16A34A]" />
+                <span className="text-[10px] font-bold text-[#16A34A] uppercase tracking-wider">
+                  {subscription?.plan === "pro" ? "Pro" : subscription?.plan === "starter" ? "Starter" : "Trial"}
+                </span>
+              </div>
+            )}
+            {isLocked && (
+              <Button
+                size="sm"
+                onClick={() => setShowPaywall(true)}
+                className="bg-[#16A34A] hover:bg-[#15803D] text-white cursor-pointer font-semibold text-xs whitespace-nowrap"
+              >
+                <Zap className="w-3.5 h-3.5 mr-1" /> Upgrade
+              </Button>
+            )}
             {isSuperAdmin(user?.email) && (
               <Button variant="outline" size="sm" onClick={() => navigate("/admin")}
                 className="border-[#16A34A]/30 bg-[#16A34A]/10 hover:bg-[#16A34A]/20 text-[#16A34A] cursor-pointer font-semibold text-xs whitespace-nowrap">
@@ -375,28 +441,36 @@ export default function Dashboard() {
         )}
 
         {/* Header */}
-
         <div className="mb-6">
           <h1 className="text-xl sm:text-2xl font-bold text-white">Welcome back, {businessName}!</h1>
-          <p className="text-sm text-[#A1A1AA] mt-1">Here's how your review gateway is performing.</p>
+          <p className="text-sm text-[#A1A1AA] mt-1">
+            {isLocked
+              ? "Set up your business profile and choose a plan to start collecting reviews."
+              : "Here's how your review gateway is performing."}
+          </p>
         </div>
 
         {/* Tabs */}
         <div className="flex gap-1 p-1 rounded-xl bg-white/[0.03] border border-white/5 mb-6 w-fit overflow-x-auto flex-nowrap">
           {tabs.map((tab) => (
             <button key={tab.id} onClick={() => {
+              if (tab.locked) {
+                setShowPaywall(true);
+                return;
+              }
               if ((tab as any).action) {
                 (tab as any).action();
               } else {
                 setActiveTab(tab.id);
               }
             }}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer ${
-                activeTab === tab.id
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer relative ${
+                activeTab === tab.id && !tab.locked
                   ? "bg-[#16A34A] text-white shadow-md shadow-[#16A34A]/25"
                   : "text-[#A1A1AA] hover:text-white hover:bg-white/5"
               }`}>
               {tab.icon} {tab.label}
+              {tab.locked && <Lock className="w-3 h-3 text-[#A1A1AA]/40 ml-0.5" />}
               {tab.badge !== undefined && (
                 <span className="ml-1 px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-red-500/20 text-red-400">
                   {tab.badge}
@@ -496,17 +570,14 @@ export default function Dashboard() {
             <GlassPanel className="p-5 mb-6">
               <h3 className="text-sm font-semibold text-white mb-4">Tap → Conversion Funnel</h3>
               <div className="flex flex-col sm:flex-row items-stretch gap-0">
-                {/* Step 1: Total Scans */}
                 <div className="flex-1 p-4 rounded-xl bg-white/[0.03] border border-white/5 text-center relative">
                   <p className="text-[10px] text-[#A1A1AA] uppercase tracking-wider mb-1">Total Scans</p>
                   <p className="text-2xl font-extrabold text-white">{displayStats?.totalVisits ?? 0}</p>
                   <p className="text-[10px] text-[#A1A1AA]/60 mt-1">NFC / QR / Link taps</p>
-                  {/* Arrow */}
                   <div className="hidden sm:flex absolute -right-3 top-1/2 -translate-y-1/2 z-10 w-6 h-6 rounded-full bg-[#18181B] border border-white/10 items-center justify-center">
                     <span className="text-[#A1A1AA] text-xs">→</span>
                   </div>
                 </div>
-                {/* Step 2: Google Redirects */}
                 <div className="flex-1 p-4 rounded-xl bg-[#16A34A]/[0.04] border border-[#16A34A]/15 text-center relative">
                   <p className="text-[10px] text-[#16A34A]/80 uppercase tracking-wider mb-1">Google Reviews</p>
                   <p className="text-2xl font-extrabold text-[#16A34A]">{displayStats?.redirectCount ?? 0}</p>
@@ -515,14 +586,12 @@ export default function Dashboard() {
                     <span className="text-[#A1A1AA] text-xs">→</span>
                   </div>
                 </div>
-                {/* Step 3: Private Feedback */}
                 <div className="flex-1 p-4 rounded-xl bg-amber-500/[0.04] border border-amber-500/15 text-center">
                   <p className="text-[10px] text-amber-400/80 uppercase tracking-wider mb-1">Private Feedback</p>
                   <p className="text-2xl font-extrabold text-amber-400">{displayStats?.feedbackCount ?? 0}</p>
                   <p className="text-[10px] text-amber-400/60 mt-1">{displayStats?.feedbackPercentage ?? 0}% of scans</p>
                 </div>
               </div>
-              {/* Conversion rate callout */}
               <div className="mt-4 flex items-center justify-center gap-2 p-3 rounded-lg bg-[#16A34A]/[0.06] border border-[#16A34A]/15">
                 <TrendingUp className="w-4 h-4 text-[#16A34A]" />
                 <p className="text-xs text-[#A1A1AA]">
@@ -559,7 +628,6 @@ export default function Dashboard() {
                 </div>
               ) : (
                 <>
-                  {/* Starter: simplified total count graph */}
                   <div className="h-[220px] flex items-center justify-center">
                     <div className="text-center">
                       <BarChart3 className="w-10 h-10 text-[#A1A1AA]/20 mx-auto mb-3" />
@@ -567,20 +635,21 @@ export default function Dashboard() {
                       <p className="text-xs text-[#A1A1AA]/60">Simple count view</p>
                     </div>
                   </div>
-                  {/* Upgrade overlay */}
-                  <div className="absolute inset-0 bg-[#0D0D0D]/60 backdrop-blur-[1px] flex items-center justify-center">
-                    <div className="text-center px-6">
-                      <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#16A34A]/15 border border-[#16A34A]/25 text-[#16A34A] text-xs font-semibold mb-3">
-                        <Star className="w-3 h-3 fill-[#16A34A]" /> PRO FEATURE
+                  {!isLocked && (
+                    <div className="absolute inset-0 bg-[#0D0D0D]/60 backdrop-blur-[1px] flex items-center justify-center">
+                      <div className="text-center px-6">
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#16A34A]/15 border border-[#16A34A]/25 text-[#16A34A] text-xs font-semibold mb-3">
+                          <Star className="w-3 h-3 fill-[#16A34A]" /> PRO FEATURE
+                        </div>
+                        <p className="text-sm font-semibold text-white mb-1">Dynamic Trend Analysis</p>
+                        <p className="text-xs text-[#A1A1AA] mb-4">Upgrade to Business Pro to unlock the interactive daily rating chart</p>
+                        <Button onClick={() => navigate("/pricing")} size="sm"
+                          className="bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-semibold cursor-pointer">
+                          Upgrade to Business Pro
+                        </Button>
                       </div>
-                      <p className="text-sm font-semibold text-white mb-1">Dynamic Trend Analysis</p>
-                      <p className="text-xs text-[#A1A1AA] mb-4">Upgrade to Business Pro to unlock the interactive daily rating chart</p>
-                      <Button onClick={() => navigate("/pricing")} size="sm"
-                        className="bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-semibold cursor-pointer">
-                        Upgrade to Business Pro
-                      </Button>
                     </div>
-                  </div>
+                  )}
                 </>
               )}
             </GlassPanel>
@@ -630,7 +699,6 @@ export default function Dashboard() {
                       feedbacks?.forEach((fb) => {
                         dist[fb.rating] = (dist[fb.rating] || 0) + 1;
                       });
-                      // Also count redirects as 5-star
                       dist[5] += displayStats?.redirectCount ?? 0;
                       return dist;
                     })(),
@@ -704,7 +772,7 @@ export default function Dashboard() {
           <SubscriptionGuard
             requiredTier="starter"
             message="Subscribe to a plan to unlock your custom review link, QR code, and start capturing reviews from customers."
-            enabled={!hasPaidAccess.hasAccess}
+            enabled={isLocked}
           >
           <div className="grid sm:grid-cols-2 gap-6">
             {/* Copy Link Card */}
@@ -806,7 +874,7 @@ export default function Dashboard() {
           <SubscriptionGuard
             requiredTier="starter"
             message="Subscribe to a plan to access your private feedback inbox and capture negative reviews before they go public."
-            enabled={!hasPaidAccess.hasAccess}
+            enabled={isLocked}
           >
           <GlassPanel className="overflow-hidden">
             <div className="p-5 flex items-center justify-between border-b border-white/5">
@@ -870,7 +938,6 @@ export default function Dashboard() {
                           <p className="text-[10px] text-[#A1A1AA]/40 mt-2">{new Date(fb.createdAt).toLocaleString()}</p>
                         </div>
                         <div className="flex items-center gap-3 shrink-0">
-                          {/* WhatsApp Recovery Button */}
                           {fb.phone && (
                             <a
                               href={`https://wa.me/${fb.phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(
@@ -904,6 +971,11 @@ export default function Dashboard() {
 
         {/* ─── STAFF & QR TAB ─── */}
         {activeTab === "staff" && overview && (
+          <SubscriptionGuard
+            requiredTier="starter"
+            message="Subscribe to a plan to unlock staff management, QR code generation, and performance tracking."
+            enabled={isLocked}
+          >
           <div className="space-y-6">
             {/* QR Code Generator */}
             <GlassPanel className="p-5">
@@ -952,6 +1024,7 @@ export default function Dashboard() {
               />
             </GlassPanel>
           </div>
+          </SubscriptionGuard>
         )}
       </div>
 
