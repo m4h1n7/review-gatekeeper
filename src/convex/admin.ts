@@ -390,7 +390,7 @@ export const createClient = mutation({
     // Check if user with this email already exists
     const existing = await ctx.db
       .query("users")
-      .withIndex("by_email", (q: any) => q.eq("email", args.email.toLowerCase()))
+      .withIndex("email", (q: any) => q.eq("email", args.email.toLowerCase()))
       .first();
 
     if (existing) {

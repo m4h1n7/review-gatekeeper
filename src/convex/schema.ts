@@ -1,18 +1,42 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
+/**
+ * Auth tables matching the exact structure expected by @convex-dev/auth v0.0.95.
+ *
+ * IMPORTANT: The library hardcodes these index names:
+ *   authAccounts → "providerAndAccountId" on ["provider", "providerAccountId"]
+ *   authAccounts → "userIdAndProvider" on ["userId", "provider"]
+ *   authSessions → "userId" on ["userId"]
+ *   authVerificationCodes → "accountId" on ["accountId"], "code" on ["code"]
+ *   authVerifiers → "signature" on ["signature"]
+ *   authRateLimits → "identifier" on ["identifier"]
+ *   authRefreshTokens → "sessionId" on ["sessionId"]
+ *
+ * We do NOT spread authTables because the deployed backend already has
+ * authAccounts with "by_provider" index, and Convex rejects duplicate
+ * index field sets. Instead we define each table manually with the
+ * library-expected index names.
+ */
 export default defineSchema(
   {
-    // User accounts
+    // ═══════════════════════════════════════════════════════════════════
+    // Users — extended with app-specific fields beyond what auth needs
+    // ═══════════════════════════════════════════════════════════════════
     users: defineTable({
       name: v.optional(v.string()),
       email: v.optional(v.string()),
       image: v.optional(v.string()),
+      // Library fields
+      emailVerificationTime: v.optional(v.number()),
+      phone: v.optional(v.string()),
+      phoneVerificationTime: v.optional(v.number()),
+      isAnonymous: v.optional(v.boolean()),
+      // App-specific fields
       tokenIdentifier: v.optional(v.string()),
       emailVerified: v.optional(v.boolean()),
       onboardingDone: v.optional(v.boolean()),
       onboardingCompleted: v.optional(v.boolean()),
-      isAnonymous: v.optional(v.boolean()),
       hasUsedTrial: v.optional(v.boolean()),
       role: v.optional(v.string()),
       accountStatus: v.optional(v.string()),
@@ -24,40 +48,84 @@ export default defineSchema(
       suspendedAt: v.optional(v.number()),
       suspendedBy: v.optional(v.string()),
       suspendedReason: v.optional(v.string()),
-    }).index("by_token", ["tokenIdentifier"])
-      .index("by_email", ["email"]),
+    })
+      .index("email", ["email"])
+      .index("phone", ["phone"])
+      .index("by_token", ["tokenIdentifier"]),
 
-    // Auth accounts (managed by @convex-dev/auth)
+    // ═══════════════════════════════════════════════════════════════════
+    // Auth Accounts — uses library-expected index names
+    // ═══════════════════════════════════════════════════════════════════
     authAccounts: defineTable({
       userId: v.id("users"),
       provider: v.string(),
       providerAccountId: v.string(),
+      secret: v.optional(v.string()),
+      emailVerified: v.optional(v.string()),
+      phoneVerified: v.optional(v.string()),
     })
-      .index("by_provider", ["provider", "providerAccountId"])
-      .index("by_userId", ["userId"]),
+      .index("userIdAndProvider", ["userId", "provider"])
+      .index("providerAndAccountId", ["provider", "providerAccountId"]),
 
-    // Auth sessions
+    // ═══════════════════════════════════════════════════════════════════
+    // Auth Sessions
+    // ═══════════════════════════════════════════════════════════════════
     authSessions: defineTable({
       userId: v.id("users"),
       expirationTime: v.number(),
-    }).index("by_userId", ["userId"]),
+    }).index("userId", ["userId"]),
 
-    // Auth key-value pairs (password hashes, etc.)
-    authKeyValues: defineTable({
-      key: v.string(),
-      value: v.string(),
-    }).index("by_key", ["key"]),
-
-    // Auth verification tokens
-    authVerificationTokens: defineTable({
-      identifier: v.string(),
-      token: v.string(),
+    // ═══════════════════════════════════════════════════════════════════
+    // Auth Refresh Tokens
+    // ═══════════════════════════════════════════════════════════════════
+    authRefreshTokens: defineTable({
+      sessionId: v.id("authSessions"),
       expirationTime: v.number(),
+      firstUsedTime: v.optional(v.number()),
+      parentRefreshTokenId: v.optional(v.id("authRefreshTokens")),
     })
-      .index("by_identifier", ["identifier"])
-      .index("by_token", ["token"]),
+      .index("sessionId", ["sessionId"])
+      .index("sessionIdAndParentRefreshTokenId", [
+        "sessionId",
+        "parentRefreshTokenId",
+      ]),
 
-    // Business profiles
+    // ═══════════════════════════════════════════════════════════════════
+    // Auth Verification Codes (OTP, magic link, OAuth codes)
+    // ═══════════════════════════════════════════════════════════════════
+    authVerificationCodes: defineTable({
+      accountId: v.id("authAccounts"),
+      provider: v.string(),
+      code: v.string(),
+      expirationTime: v.number(),
+      verifier: v.optional(v.string()),
+      emailVerified: v.optional(v.string()),
+      phoneVerified: v.optional(v.string()),
+    })
+      .index("accountId", ["accountId"])
+      .index("code", ["code"]),
+
+    // ═══════════════════════════════════════════════════════════════════
+    // Auth Verifiers (PKCE for OAuth)
+    // ═══════════════════════════════════════════════════════════════════
+    authVerifiers: defineTable({
+      sessionId: v.optional(v.id("authSessions")),
+      signature: v.optional(v.string()),
+    }).index("signature", ["signature"]),
+
+    // ═══════════════════════════════════════════════════════════════════
+    // Auth Rate Limits (OTP + password throttling)
+    // ═══════════════════════════════════════════════════════════════════
+    authRateLimits: defineTable({
+      identifier: v.string(),
+      lastAttemptTime: v.number(),
+      attemptsLeft: v.number(),
+    }).index("identifier", ["identifier"]),
+
+    // ═══════════════════════════════════════════════════════════════════
+    // App Tables
+    // ═══════════════════════════════════════════════════════════════════
+
     businesses: defineTable({
       userId: v.string(),
       slug: v.string(),
@@ -108,7 +176,6 @@ export default defineSchema(
       .index("by_userId", ["userId"])
       .index("by_slug", ["slug"]),
 
-    // Subscriptions
     subscriptions: defineTable({
       userId: v.string(),
       plan: v.string(),
@@ -120,7 +187,6 @@ export default defineSchema(
       approvedAt: v.optional(v.number()),
     }).index("by_userId", ["userId"]),
 
-    // Private feedback submissions (primary table)
     feedbacks: defineTable({
       businessId: v.string(),
       businessSlug: v.string(),
@@ -140,7 +206,6 @@ export default defineSchema(
       .index("by_status", ["status"])
       .index("by_submittedAt", ["submittedAt"]),
 
-    // Feedback alias (used by some admin/analytics queries)
     feedback: defineTable({
       businessId: v.string(),
       businessSlug: v.string(),
@@ -163,7 +228,6 @@ export default defineSchema(
       .index("by_businessId", ["businessId"])
       .index("by_status", ["status"]),
 
-    // Review interactions (star clicks, redirects)
     interactions: defineTable({
       businessId: v.string(),
       businessSlug: v.string(),
@@ -201,7 +265,6 @@ export default defineSchema(
       .index("by_userId", ["userId"])
       .index("by_status", ["status"]),
 
-    // Notifications
     notifications: defineTable({
       type: v.string(),
       title: v.string(),
@@ -214,7 +277,6 @@ export default defineSchema(
       .index("by_targetUser", ["targetUserId", "read"])
       .index("by_type", ["type"]),
 
-    // Announcements (admin broadcast)
     announcements: defineTable({
       title: v.string(),
       message: v.string(),
@@ -223,7 +285,6 @@ export default defineSchema(
       createdAt: v.number(),
     }).index("by_active", ["active"]),
 
-    // Audit logs
     auditLogs: defineTable({
       adminEmail: v.optional(v.string()),
       action: v.string(),
@@ -233,7 +294,6 @@ export default defineSchema(
       createdAt: v.number(),
     }).index("by_createdAt", ["createdAt"]),
 
-    // Staff sub-accounts
     staffAccounts: defineTable({
       ownerId: v.string(),
       staffEmail: v.string(),
@@ -244,7 +304,6 @@ export default defineSchema(
       .index("by_ownerId", ["ownerId"])
       .index("by_staffEmail", ["staffEmail"]),
 
-    // Staff members for attribution & leaderboard
     staffMembers: defineTable({
       businessId: v.string(),
       name: v.string(),
@@ -258,7 +317,6 @@ export default defineSchema(
       .index("by_businessId", ["businessId"])
       .index("by_slug", ["slug"]),
 
-    // Demo links (7-day expiry)
     demos: defineTable({
       slug: v.string(),
       businessName: v.string(),
@@ -271,14 +329,12 @@ export default defineSchema(
       .index("by_slug", ["slug"])
       .index("by_createdAt", ["createdAt"]),
 
-    // System-wide settings
     systemSettings: defineTable({
       key: v.string(),
       value: v.string(),
       updatedAt: v.number(),
       updatedBy: v.optional(v.string()),
-    })
-      .index("by_key", ["key"]),
+    }).index("by_key", ["key"]),
   },
   {
     schemaValidation: false,

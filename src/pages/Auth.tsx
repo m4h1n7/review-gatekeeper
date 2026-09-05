@@ -273,6 +273,10 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
         setError("Incorrect email or password. Please try again.");
       } else if (msg.includes("Too many") || msg.includes("rate limit")) {
         setError("Too many failed attempts. Please wait a few minutes and try again.");
+      } else if (msg.includes("Index") && msg.includes("not found")) {
+        setError("Account setup is in progress. Please try again in a moment.");
+      } else if (msg.includes("network") || msg.includes("fetch") || msg.includes("CONNECTION_CLOSED")) {
+        setError("Network error. Please check your connection and try again.");
       } else {
         setError(msg || "Sign-in failed. Please check your credentials and try again.");
       }
