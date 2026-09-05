@@ -21,6 +21,7 @@ const Admin = lazy(() => import("./pages/Admin.tsx"));
 const Review = lazy(() => import("./pages/Review.tsx"));
 const Pricing = lazy(() => import("./pages/Pricing.tsx"));
 const DemoDashboard = lazy(() => import("./pages/DemoDashboard.tsx"));
+const DemoLanding = lazy(() => import("./pages/DemoLanding.tsx"));
 
 const AccountSettings = lazy(() => import("./pages/AccountSettings.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
@@ -176,6 +177,7 @@ createRoot(document.getElementById("root")!).render(
               />
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/demo" element={<DemoDashboard />} />
+              <Route path="/demo/:slug" element={<DemoLanding />} />
               <Route path="/review/:clientSlug" element={<Review />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="/privacy" element={<Privacy />} />
