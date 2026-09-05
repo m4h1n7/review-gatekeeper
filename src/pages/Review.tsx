@@ -253,7 +253,7 @@ export default function Review() {
   const welcomeMsg = business?.customHeadline || business?.welcomeMessage || `How was your experience with ${business?.name || "us"} today?`;
   const subtitleMsg = business?.customSubtitle || "Tap a star to rate your experience";
   const publicLabel = business?.publicReviewLabel || "Submit Public Review";
-  const publicDesc = business?.publicReviewDesc || "Share your experience on Google";
+  const publicDesc = business?.publicReviewDesc || "Share your experience on Google.";
   const privateLabel = business?.privateFeedbackLabel || "Provide Private Feedback";
   const privateDesc = business?.privateFeedbackDesc || "Speak directly with our management team";
 
@@ -264,7 +264,7 @@ export default function Review() {
   const lowRatingPrivateLabel = business?.lowRatingPrivateLabel || "Inform our manager directly";
   const lowRatingPrivateDesc = business?.lowRatingPrivateDesc || "Speak directly with our management team so we can improve your future experience.";
   const lowRatingPublicLabel = business?.lowRatingPublicLabel || "Proceed to leave a public review";
-  const lowRatingPublicDesc = business?.lowRatingPublicDesc || "Share your experience on Google for others to see.";
+  const lowRatingPublicDesc = business?.lowRatingPublicDesc || "Share your experience on Google.";
   const lowRatingFeedbackHeading = business?.lowRatingFeedbackHeading || "We're sorry to hear that. How can we make it right?";
 
   // Loading
@@ -830,8 +830,7 @@ function RedirectView({
       <h2 className="text-xl font-bold text-white mb-2">Thank you for sharing!</h2>
       {business.thankYouMessage ? (
         <p className="text-sm text-white/50 leading-relaxed mb-5 max-w-xs">{business.thankYouMessage}</p>
-      ) : (
-        <p className="text-sm text-white/40 mb-5 max-w-xs">
+      ) : (          <p className="text-sm text-white/40 mb-5 max-w-xs">
           We'd love it if you shared your experience on Google. Thank you!
         </p>
       )}
@@ -847,15 +846,20 @@ function RedirectView({
       </div>
       <p className="text-[11px] text-white/25 mb-4">
         Redirecting in {Math.ceil(countdown / 10)}s…
-      </p>
-      <a
-        href={business.reviewUrl || "#"}
-        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all duration-200 hover:opacity-90"
-        style={{ backgroundColor: brandColor }}
-      >
-        <ExternalLink className="w-4 h-4" />
-        Open Google Review
-      </a>
+      </p>        {business.reviewUrl ? (
+        <a
+          href={business.reviewUrl}
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all duration-200 hover:opacity-90"
+          style={{ backgroundColor: brandColor }}
+        >
+          <ExternalLink className="w-4 h-4" />
+          Open Google Review
+        </a>
+      ) : (
+        <p className="text-sm text-white/30 mb-2">
+          No Google Review link configured for this business.
+        </p>
+      )}
     </div>
   );
 }

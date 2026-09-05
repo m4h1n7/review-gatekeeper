@@ -90,7 +90,7 @@ type DemoData = {
 
 const FALLBACK_DEMO: DemoData = {
   businessName: "Demo Business",
-  reviewUrl: "https://search.google.com/local/writereview?placeid=PLACE_ID",
+  reviewUrl: "https://maps.app.goo.gl/example",
   logoUrl: undefined,
   brandColor: "#16A34A",
   headline: "How was your experience with Demo Business today?",
@@ -115,7 +115,7 @@ function loadDemoData(slug: string | undefined): DemoData {
 
   const out: DemoData = {
     businessName: name || slugify(slug).replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) || FALLBACK_DEMO.businessName,
-    reviewUrl: url || FALLBACK_DEMO.reviewUrl,
+    reviewUrl: url || "",
     logoUrl: logo || undefined,
     brandColor: color || FALLBACK_DEMO.brandColor,
     headline: headline || FALLBACK_DEMO.headline,
@@ -127,8 +127,6 @@ function loadDemoData(slug: string | undefined): DemoData {
 
   // Fallback brand color from slug if user only gave name (e.g. /demo/cafforia-bd?name=...)
   if (!out.brandColor || out.brandColor === "#000000") out.brandColor = FALLBACK_DEMO.brandColor;
-  if (!out.reviewUrl || out.reviewUrl === "#") out.reviewUrl = FALLBACK_DEMO.reviewUrl;
-
   return out;
 }
 
@@ -693,17 +691,22 @@ function RedirectView({
           transition={{ duration: 1, ease: "easeInOut" }}
         />
       </div>
-      <p className="text-[11px] text-white/25 mb-4">
-        Redirecting in {Math.max(1, Math.ceil(countdown / 10))}s…
+      <p className="text-[11px] text-white/25 mb-4">          Redirecting in {Math.max(1, Math.ceil(countdown / 10))}s…
       </p>
-      <a
-        href={reviewUrl && reviewUrl !== "#" ? reviewUrl : "#"}
-        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all duration-200 hover:opacity-90"
-        style={{ backgroundColor: brandColor }}
-      >
-        <ExternalLink className="w-4 h-4" />
-        Open Google Review
-      </a>
+      {reviewUrl ? (
+        <a
+          href={reviewUrl}
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all duration-200 hover:opacity-90"
+          style={{ backgroundColor: brandColor }}
+        >
+          <ExternalLink className="w-4 h-4" />
+          Open Google Review
+        </a>
+      ) : (
+        <p className="text-sm text-white/30 mb-2">
+          No Google Review link configured for this demo.
+        </p>
+      )}
     </div>
   );
 }
