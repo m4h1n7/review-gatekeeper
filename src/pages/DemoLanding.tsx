@@ -233,7 +233,7 @@ export default function DemoLanding() {
   const privateDesc =
     "Speak directly with our management team so we can improve your future experience.";
   const publicLabel = "Proceed to leave a public review";
-  const publicDesc = "Share your experience on Google for others to see.";
+  const publicDesc = "Share your experience on Google.";
   const feedbackHeading = "We're sorry to hear that. How can we make it right?";
 
   /* ─── Loading / not-found is not needed here — demo always renders ─── */
