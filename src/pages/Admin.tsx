@@ -6,6 +6,7 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import { useNavigate } from "react-router";
 import {
   BarChart,
   Bar,
@@ -38,91 +39,19 @@ import {
   X,
   UserPlus,
   Wand2,
-  Link,
-  QrCode,
-  Printer,
-  ExternalLink,
-  ArrowUpRight,
-  CheckCircle2,
-  Loader2,
-  Sparkles,
-  Download,
-  Share2,
-  ChevronRight,
-  Copy,
-  Check,
-  X,
-  Users,
-  TrendingUp,
-  Activity,
-  Crown,
-  Search,
-  Filter,
-  ExternalLink,
-  CreditCard,
-  DollarSign,
-  Building2,
-  Bell,
-  Send,
-  RefreshCw,
-  FileDown,
-  AlertTriangle,
-  Lock,
-  Shield,
-  Star,
-  LogOut,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  motion,
-  AnimatePresence,
-  toast,
-  useNavigate,
-  useRef,
-  useState,
-  useEffect,
-  useMemo,
-  useCallback,
-  api,
-  GlassPanel,
-  KpiCard,
-  formatTime,
-  formatCurrency,
-  RevenueTooltip,
-  RejectModal,
-  SubscriptionExtendModal,
-  Button,
-  SUPER_ADMIN_EMAILS,
-
   Megaphone,
   Pause,
   Play,
   Trash2,
   AlertTriangle,
   Lock,
-  FileDown,
   Bell,
   Send,
   RefreshCw,
-  Wand2,
-  Link,
-  QrCode,
-  Printer,
-  ExternalLink,
-  ArrowUpRight,
-  CheckCircle2,
-  Loader2,
-  Sparkles,
-  Download,
-  Share2,
-  ChevronRight,
+  FileDown,
 } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import SubscriptionExtendModal from "@/components/SubscriptionExtendModal";
-import { useNavigate } from "react-router";
 
 const SUPER_ADMIN_EMAILS = ["mahinhosen870@gmail.com", "atazwar103@gmail.com", "starcatchbd@gmail.com"];
 
@@ -808,13 +737,12 @@ export default function Admin() {
                 <div className="flex-1">
                   <p className="text-xs text-[#A1A1AA] mb-2">Scannable QR Preview</p>
                   <div className="p-4 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-center">
-                    <QRCodeStyling
+                    <QRCodeSVG
                       value={generatedDemoUrl}
-                      width={140}
-                      height={140}
-                      type="svg"
-                      qrOptions={{ type: "square", squareSize: 6, margin: 2 }}
-                      colors={{ dark: "#16A34A", light: "#0D0D0D" }}
+                      size={140}
+                      bgColor="#FFFFFF"
+                      fgColor="#111827"
+                      level="M"
                     />
                   </div>
                 </div>
