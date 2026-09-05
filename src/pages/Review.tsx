@@ -206,7 +206,7 @@ export default function Review() {
       });
 
       sendEmail({
-        alertEmail: business.alertEmail,
+        alertEmail: business.alertEmail || "",
         businessName: business.name,
         businessSlug: business.slug,
         customerName,

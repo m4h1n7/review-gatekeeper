@@ -163,7 +163,7 @@ export default function Dashboard() {
     const headers = ["Customer Name", "Phone", "Email", "Rating", "Feedback", "Status", "Timestamp"];
     const rows = feedbacks.map((fb) => [
       fb.customerName, fb.phone, fb.email, fb.rating,
-      `"${fb.message.replace(/"/g, '""')}"`, (fb as any).status ?? "unresolved",
+      `"${(fb.message ?? "").replace(/"/g, '""')}"`, (fb as any).status ?? "unresolved",
       new Date(fb.createdAt).toISOString(),
     ]);
     const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
@@ -692,7 +692,7 @@ export default function Dashboard() {
                     feedbacks: feedbacks?.map((fb) => ({
                       customerName: fb.customerName,
                       rating: fb.rating,
-                      message: fb.message,
+                      message: fb.message ?? "",
                       createdAt: fb.createdAt,
                       status: (fb as any).status ?? "unresolved",
                     })) ?? [],

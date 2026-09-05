@@ -31,9 +31,9 @@ type StatusFilter = "all" | "unread" | "in_progress" | "resolved";
 interface FeedbackItem {
   id: string;
   customerName: string;
-  phone: string;
-  email: string;
-  message: string;
+  phone: string | undefined;
+  email: string | undefined;
+  message: string | undefined;
   rating: number;
   createdAt: number;
   status: string;
@@ -133,8 +133,8 @@ export default function PrivateFeedbackInbox() {
       // Search filter
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
-        const { tags, cleanMessage } = parseTagsFromMessage(fb.message);
-        const searchable = `${fb.customerName} ${fb.phone} ${fb.email} ${cleanMessage} ${tags.join(" ")}`.toLowerCase();
+        const { tags, cleanMessage } = parseTagsFromMessage(fb.message ?? "");
+        const searchable = `${fb.customerName} ${fb.phone ?? ""} ${fb.email ?? ""} ${cleanMessage} ${tags.join(" ")}`.toLowerCase();
         if (!searchable.includes(q)) return false;
       }
 
@@ -178,7 +178,7 @@ export default function PrivateFeedbackInbox() {
     setAiResponse(null);
     // Simulate AI generation with a delay
     setTimeout(() => {
-      const { tags } = parseTagsFromMessage(fb.message);
+      const { tags } = parseTagsFromMessage(fb.message ?? "");
       const response = getAIResponse(tags);
       setAiResponse(response);
       setAiGenerating(null);
@@ -197,12 +197,12 @@ export default function PrivateFeedbackInbox() {
     if (!feedbacks || feedbacks.length === 0) return;
     const headers = ["Customer Name", "Phone", "Email", "Rating", "Tags", "Feedback", "Status", "Timestamp"];
     const rows = feedbacks.map((fb: FeedbackItem) => {
-      const { tags, cleanMessage } = parseTagsFromMessage(fb.message);
+      const { tags, cleanMessage } = parseTagsFromMessage(fb.message ?? "");
       const status = localStatuses[fb.id] ?? fb.status;
       return [
         fb.customerName,
-        fb.phone,
-        fb.email,
+        fb.phone ?? "",
+        fb.email ?? "",
         fb.rating,
         `"${tags.join(", ")}"`,
         `"${cleanMessage.replace(/"/g, '""')}"`,
@@ -367,7 +367,7 @@ export default function PrivateFeedbackInbox() {
             <AnimatePresence>
               {filteredFeedbacks.map((fb: FeedbackItem, index: number) => {
                 const effectiveStatus = localStatuses[fb.id] ?? fb.status;
-                const { tags, cleanMessage } = parseTagsFromMessage(fb.message);
+                const { tags, cleanMessage } = parseTagsFromMessage(fb.message ?? "");
                 const isNew = effectiveStatus === "unresolved";
                 const isInProgress = effectiveStatus === "in_progress";
 
