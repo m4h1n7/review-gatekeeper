@@ -1,190 +1,277 @@
-import { authTables } from "@convex-dev/auth/server";
 import { defineSchema, defineTable } from "convex/server";
-import { Infer, v } from "convex/values";
+import { v } from "convex/values";
 
-// default user roles. can add / remove based on the project as needed
-export const ROLES = {
-  ADMIN: "admin",
-  USER: "user",
-  MEMBER: "member",
-} as const;
-
-export const roleValidator = v.union(
-  v.literal(ROLES.ADMIN),
-  v.literal(ROLES.USER),
-  v.literal(ROLES.MEMBER),
-);
-export type Role = Infer<typeof roleValidator>;
-
-const schema = defineSchema(
+export default defineSchema(
   {
-    // default auth tables using convex auth.
-    ...authTables, // do not remove or modify
-
-    // the users table is the default users table that is brought in by the authTables
+    // User accounts
     users: defineTable({
-      name: v.optional(v.string()), // name of the user. do not remove
-      image: v.optional(v.string()), // image of the user. do not remove
-      email: v.optional(v.string()), // email of the user. do not remove
-      emailVerificationTime: v.optional(v.number()), // email verification time. do not remove
-      isAnonymous: v.optional(v.boolean()), // is the user anonymous. do not remove
-
-      role: v.optional(roleValidator), // role of the user. do not remove
-      accountStatus: v.optional(v.union(v.literal("active"), v.literal("suspended"), v.literal("archived"), v.literal("deleted"))),
-      archivedAt: v.optional(v.number()), // timestamp when account was archived (30-day soft delete)
+      name: v.optional(v.string()),
+      email: v.optional(v.string()),
+      image: v.optional(v.string()),
+      tokenIdentifier: v.optional(v.string()),
+      emailVerified: v.optional(v.boolean()),
+      onboardingDone: v.optional(v.boolean()),
       onboardingCompleted: v.optional(v.boolean()),
-      emailVerified: v.optional(v.boolean()), // whether the user verified their email via OTP
-      signupOtp: v.optional(v.string()), // 6-digit OTP for email verification
-      signupOtpExpiry: v.optional(v.number()), // OTP expiry timestamp
-      hasUsedTrial: v.optional(v.boolean()), // tracks if this email has ever claimed a free trial
-    }).index("email", ["email"]), // index for the email. do not remove or modify
+      isAnonymous: v.optional(v.boolean()),
+      hasUsedTrial: v.optional(v.boolean()),
+      role: v.optional(v.string()),
+      accountStatus: v.optional(v.string()),
+      signupOtp: v.optional(v.string()),
+      signupOtpExpiry: v.optional(v.number()),
+      archivedAt: v.optional(v.number()),
+      archivedBy: v.optional(v.string()),
+      suspended: v.optional(v.boolean()),
+      suspendedAt: v.optional(v.number()),
+      suspendedBy: v.optional(v.string()),
+      suspendedReason: v.optional(v.string()),
+    }).index("by_token", ["tokenIdentifier"])
+      .index("by_email", ["email"]),
 
+    // Auth accounts (managed by @convex-dev/auth)
+    authAccounts: defineTable({
+      userId: v.id("users"),
+      provider: v.string(),
+      providerAccountId: v.string(),
+    })
+      .index("by_provider", ["provider", "providerAccountId"])
+      .index("by_userId", ["userId"]),
+
+    // Auth sessions
+    authSessions: defineTable({
+      userId: v.id("users"),
+      expirationTime: v.number(),
+    }).index("by_userId", ["userId"]),
+
+    // Auth key-value pairs (password hashes, etc.)
+    authKeyValues: defineTable({
+      key: v.string(),
+      value: v.string(),
+    }).index("by_key", ["key"]),
+
+    // Auth verification tokens
+    authVerificationTokens: defineTable({
+      identifier: v.string(),
+      token: v.string(),
+      expirationTime: v.number(),
+    })
+      .index("by_identifier", ["identifier"])
+      .index("by_token", ["token"]),
+
+    // Business profiles
     businesses: defineTable({
-      name: v.string(),
+      userId: v.string(),
       slug: v.string(),
-      logoUrl: v.string(),
+      name: v.string(),
+      businessName: v.optional(v.string()),
+      logoUrl: v.optional(v.string()),
       reviewUrl: v.string(),
-      alertEmail: v.string(),
+      alertEmail: v.optional(v.string()),
+      clientEmail: v.optional(v.string()),
+      alertPhone: v.optional(v.string()),
       category: v.optional(v.string()),
       phone: v.optional(v.string()),
       heroUrl: v.optional(v.string()),
-      brandColor: v.optional(v.string()), // hex color e.g. "#16A34A"
-      welcomeMessage: v.optional(v.string()), // custom greeting on review page
+      createdAt: v.number(),
+      subscriptionStatus: v.optional(v.string()),
+      planType: v.optional(v.string()),
+      trialEndsAt: v.optional(v.number()),
+      customHeading: v.optional(v.string()),
+      customSubtitle: v.optional(v.string()),
+      customHeadline: v.optional(v.string()),
+      brandColor: v.optional(v.string()),
+      darkMode: v.optional(v.string()),
+      themeMode: v.optional(v.string()),
+      thankYouMessage: v.optional(v.string()),
+      welcomeMessage: v.optional(v.string()),
+      publicReviewLabel: v.optional(v.string()),
+      publicReviewDescription: v.optional(v.string()),
+      publicReviewDesc: v.optional(v.string()),
+      privateFeedbackLabel: v.optional(v.string()),
+      privateFeedbackDescription: v.optional(v.string()),
+      privateFeedbackDesc: v.optional(v.string()),
       promoEnabled: v.optional(v.boolean()),
       promoText: v.optional(v.string()),
-      thankYouMessage: v.optional(v.string()),
-      // Customer screen customization
-      themeMode: v.optional(v.union(v.literal("dark"), v.literal("light"), v.literal("auto"))),
-      customHeadline: v.optional(v.string()), // e.g. "How was your experience with us?"
-      customSubtitle: v.optional(v.string()), // e.g. "Choose how you'd like to share"
-      publicReviewLabel: v.optional(v.string()), // e.g. "Submit Public Review"
-      publicReviewDesc: v.optional(v.string()), // e.g. "Share your experience on Google"
-      privateFeedbackLabel: v.optional(v.string()), // e.g. "Provide Private Feedback"
-      privateFeedbackDesc: v.optional(v.string()), // e.g. "Speak directly with our team"
-      // Low-rating options customization (1-3 star flow)
-      lowRatingShowPublicOption: v.optional(v.boolean()), // whether to show "Proceed to Public Review" for 1-3 stars
-      lowRatingOptionsHeading: v.optional(v.string()), // e.g. "How would you like to share your feedback?"
-      lowRatingOptionsSubtitle: v.optional(v.string()), // subtitle for the options page
-      lowRatingPrivateLabel: v.optional(v.string()), // Choice A button label
-      lowRatingPrivateDesc: v.optional(v.string()), // Choice A description
-      lowRatingPublicLabel: v.optional(v.string()), // Choice B button label
-      lowRatingPublicDesc: v.optional(v.string()), // Choice B description
-      lowRatingFeedbackHeading: v.optional(v.string()), // heading on the feedback form
-      createdAt: v.number(),
-      userId: v.string(), // owner of this business profile
-      // Subscription tracking (synced from subscriptions table)
-      subscriptionStatus: v.optional(v.union(v.literal("active"), v.literal("trialing"), v.literal("inactive"), v.literal("canceled"))),
-      trialEndsAt: v.optional(v.number()), // timestamp when trial expires
-      planType: v.optional(v.union(v.literal("basic"), v.literal("pro"), v.literal("none"))),
+      whatsappEnabled: v.optional(v.boolean()),
+      whatsappMessage: v.optional(v.string()),
+      lowRatingShowPublicOption: v.optional(v.boolean()),
+      lowRatingOptionsHeading: v.optional(v.string()),
+      lowRatingOptionsSubtitle: v.optional(v.string()),
+      lowRatingPrivateLabel: v.optional(v.string()),
+      lowRatingPrivateDesc: v.optional(v.string()),
+      lowRatingPublicLabel: v.optional(v.string()),
+      lowRatingPublicDesc: v.optional(v.string()),
+      lowRatingFeedbackHeading: v.optional(v.string()),
+      facebookReviewUrl: v.optional(v.string()),
+      tripadvisorReviewUrl: v.optional(v.string()),
+      trustpilotReviewUrl: v.optional(v.string()),
     })
-      .index("by_slug", ["slug"])
-      .index("by_createdAt", ["createdAt"])
-      .index("by_userId", ["userId"]),
+      .index("by_userId", ["userId"])
+      .index("by_slug", ["slug"]),
 
+    // Subscriptions
+    subscriptions: defineTable({
+      userId: v.string(),
+      plan: v.string(),
+      status: v.string(),
+      expiresAt: v.number(),
+      proExpiresAt: v.optional(v.number()),
+      createdAt: v.number(),
+      approvedBy: v.optional(v.string()),
+      approvedAt: v.optional(v.number()),
+    }).index("by_userId", ["userId"]),
+
+    // Private feedback submissions (primary table)
+    feedbacks: defineTable({
+      businessId: v.string(),
+      businessSlug: v.string(),
+      clientEmail: v.string(),
+      businessName: v.string(),
+      customerName: v.string(),
+      customerPhone: v.optional(v.string()),
+      customerEmail: v.optional(v.string()),
+      feedbackMessage: v.string(),
+      rating: v.number(),
+      staffId: v.optional(v.string()),
+      staffName: v.optional(v.string()),
+      status: v.string(),
+      submittedAt: v.number(),
+    })
+      .index("by_businessId", ["businessId"])
+      .index("by_status", ["status"])
+      .index("by_submittedAt", ["submittedAt"]),
+
+    // Feedback alias (used by some admin/analytics queries)
     feedback: defineTable({
       businessId: v.string(),
       businessSlug: v.string(),
+      clientEmail: v.string(),
+      businessName: v.string(),
       customerName: v.string(),
-      phone: v.string(),
-      email: v.string(),
-      message: v.string(),
+      phone: v.optional(v.string()),
+      email: v.optional(v.string()),
+      message: v.optional(v.string()),
+      customerPhone: v.optional(v.string()),
+      customerEmail: v.optional(v.string()),
+      feedbackMessage: v.string(),
       rating: v.number(),
+      staffId: v.optional(v.string()),
+      staffName: v.optional(v.string()),
+      status: v.string(),
+      submittedAt: v.number(),
       createdAt: v.number(),
-      status: v.union(v.literal("unresolved"), v.literal("resolved")),
     })
       .index("by_businessId", ["businessId"])
-      .index("by_businessSlug", ["businessSlug"])
-      .index("by_createdAt", ["createdAt"]),
+      .index("by_status", ["status"]),
 
-    // Tracks every star click (both positive redirects and negative feedback)
+    // Review interactions (star clicks, redirects)
     interactions: defineTable({
       businessId: v.string(),
       businessSlug: v.string(),
       rating: v.number(),
-      type: v.union(v.literal("redirect"), v.literal("feedback_submitted"), v.literal("public_review")),
+      action: v.optional(v.string()),
+      type: v.string(),
+      staffId: v.optional(v.string()),
+      staffName: v.optional(v.string()),
+      timestamp: v.optional(v.number()),
       createdAt: v.number(),
-      staffId: v.optional(v.string()), // optional staff attribution
     })
       .index("by_businessId", ["businessId", "createdAt"])
-      .index("by_businessSlug", ["businessSlug", "createdAt"])
-      .index("by_createdAt", ["createdAt"])
-      .index("by_staffId", ["staffId"]),
+      .index("by_staffId", ["staffId"])
+      .index("by_timestamp", ["timestamp"])
+      .index("by_slug", ["businessSlug"]),
 
-    // Manual payment submissions (bKash/Nagad)
     payments: defineTable({
       userId: v.string(),
-      clientEmail: v.optional(v.string()),
-      gateway: v.union(v.literal("bkash"), v.literal("nagad")),
-      senderPhone: v.optional(v.string()),
+      plan: v.string(),
+      amount: v.optional(v.number()),
+      currency: v.optional(v.string()),
+      paymentMethod: v.optional(v.string()),
+      transactionId: v.optional(v.string()),
       trxId: v.optional(v.string()),
-      status: v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected")),
-      plan: v.optional(v.union(v.literal("starter"), v.literal("pro"))),
+      clientEmail: v.optional(v.string()),
+      gateway: v.optional(v.string()),
+      senderPhone: v.optional(v.string()),
       setupFee: v.optional(v.number()),
       rejectionReason: v.optional(v.string()),
+      status: v.string(),
       submittedAt: v.number(),
+      reviewedBy: v.optional(v.string()),
       reviewedAt: v.optional(v.number()),
     })
-      .index("by_status", ["status"])
-      .index("by_userId", ["userId"]),
+      .index("by_userId", ["userId"])
+      .index("by_status", ["status"]),
 
-    // System announcements broadcast to all client dashboards
+    // Notifications
+    notifications: defineTable({
+      type: v.string(),
+      title: v.string(),
+      message: v.string(),
+      targetUserId: v.optional(v.string()),
+      read: v.boolean(),
+      createdAt: v.number(),
+      actionUrl: v.optional(v.string()),
+    })
+      .index("by_targetUser", ["targetUserId", "read"])
+      .index("by_type", ["type"]),
+
+    // Announcements (admin broadcast)
     announcements: defineTable({
       title: v.string(),
       message: v.string(),
       active: v.boolean(),
-      createdBy: v.string(),
+      createdBy: v.optional(v.string()),
       createdAt: v.number(),
-    })
-      .index("by_active", ["active"]),
+    }).index("by_active", ["active"]),
 
-    // Subscription plans: pending payment or active pro
-    subscriptions: defineTable({
-      userId: v.string(),
-      plan: v.union(v.literal("free"), v.literal("trial"), v.literal("starter"), v.literal("pro")),
-      status: v.union(v.literal("active"), v.literal("pending"), v.literal("cancelled")),
-      createdAt: v.number(),
-      expiresAt: v.optional(v.number()),
-      proExpiresAt: v.optional(v.number()),
-    })
-      .index("by_userId", ["userId"]),
-
-    // Security audit log for admin actions
+    // Audit logs
     auditLogs: defineTable({
-      adminEmail: v.string(),
+      adminEmail: v.optional(v.string()),
       action: v.string(),
       targetUser: v.optional(v.string()),
       targetEmail: v.optional(v.string()),
       details: v.optional(v.string()),
       createdAt: v.number(),
-    })
-      .index("by_createdAt", ["createdAt"]),
+    }).index("by_createdAt", ["createdAt"]),
 
-    // Staff sub-accounts (Business Pro feature)
+    // Staff sub-accounts
     staffAccounts: defineTable({
-      ownerId: v.string(), // business owner userId
+      ownerId: v.string(),
       staffEmail: v.string(),
       staffName: v.optional(v.string()),
-      status: v.union(v.literal("pending"), v.literal("active"), v.literal("revoked")),
+      status: v.string(),
       createdAt: v.number(),
     })
       .index("by_ownerId", ["ownerId"])
       .index("by_staffEmail", ["staffEmail"]),
 
-    // Staff members for attribution & leaderboard tracking
+    // Staff members for attribution & leaderboard
     staffMembers: defineTable({
       businessId: v.string(),
       name: v.string(),
-      slug: v.string(), // unique identifier used in review URL: /review/:businessSlug?sid=xxx
-      role: v.optional(v.string()), // e.g. "Server", "Cashier", "Manager"
-      email: v.optional(v.string()), // staff contact email
-      phone: v.optional(v.string()), // staff contact phone
+      slug: v.string(),
+      role: v.optional(v.string()),
+      email: v.optional(v.string()),
+      phone: v.optional(v.string()),
       createdAt: v.number(),
       active: v.boolean(),
     })
       .index("by_businessId", ["businessId"])
       .index("by_slug", ["slug"]),
 
-    // System-wide settings (maintenance mode, etc.)
+    // Demo links (7-day expiry)
+    demos: defineTable({
+      slug: v.string(),
+      businessName: v.string(),
+      reviewUrl: v.string(),
+      logoUrl: v.optional(v.string()),
+      createdBy: v.string(),
+      createdAt: v.number(),
+      expiresAt: v.number(),
+    })
+      .index("by_slug", ["slug"])
+      .index("by_createdAt", ["createdAt"]),
+
+    // System-wide settings
     systemSettings: defineTable({
       key: v.string(),
       value: v.string(),
@@ -197,5 +284,3 @@ const schema = defineSchema(
     schemaValidation: false,
   },
 );
-
-export default schema;

@@ -45,15 +45,25 @@ export const submit = mutation({
       staffId: args.staffId,
     });
 
+    // Look up business to fill clientEmail and businessName
+    const business = await ctx.db
+      .query("businesses")
+      .withIndex("by_slug", (q) => q.eq("slug", args.businessSlug))
+      .first();
+
     const id = await ctx.db.insert("feedback", {
       businessId: args.businessId,
       businessSlug: args.businessSlug,
+      clientEmail: business?.clientEmail ?? business?.alertEmail ?? "",
+      businessName: business?.name ?? business?.businessName ?? "",
       customerName: args.customerName,
       phone: args.phone,
       email: args.email,
       message: args.message,
+      feedbackMessage: args.message,
       rating: args.rating,
       createdAt: Date.now(),
+      submittedAt: Date.now(),
       status: "unresolved",
     });
     return { id };
