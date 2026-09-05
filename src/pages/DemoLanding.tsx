@@ -107,6 +107,9 @@ function loadDemoData(slug: string | undefined): DemoData {
   const name = params.get("name")?.trim();
   const url = params.get("url")?.trim();
   const logo = params.get("logo")?.trim() || undefined;
+  // Accept data:image/... Base64 strings as well as http/https URLs
+  const rawLogo = params.get("logo")?.trim() || "";
+  const resolvedLogo = rawLogo.startsWith("data:image") || rawLogo.startsWith("http") ? rawLogo || undefined : undefined;
   const color = params.get("color")?.trim() || undefined;
   const headline = params.get("headline")?.trim() || undefined;
   const subtitle = params.get("subtitle")?.trim() || undefined;
@@ -116,7 +119,7 @@ function loadDemoData(slug: string | undefined): DemoData {
   const out: DemoData = {
     businessName: name || slugify(slug).replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) || FALLBACK_DEMO.businessName,
     reviewUrl: url || "",
-    logoUrl: logo || undefined,
+    logoUrl: resolvedLogo || undefined,
     brandColor: color || FALLBACK_DEMO.brandColor,
     headline: headline || FALLBACK_DEMO.headline,
     subtitle: subtitle || FALLBACK_DEMO.subtitle,

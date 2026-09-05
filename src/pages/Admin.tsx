@@ -697,7 +697,13 @@ export default function Admin() {
                   .slice(0, 32);
                 const finalSlug = slug || `demo-${Date.now()}`;
                 setDemoSlug(finalSlug);
-                setGeneratedDemoUrl(`${window.location.origin}/demo/${finalSlug}`);
+                const params = new URLSearchParams();
+                if (demoForm.reviewUrl) params.set("url", demoForm.reviewUrl);
+                if (demoForm.logoUrl) params.set("logo", demoForm.logoUrl);
+                const query = params.toString();
+                setGeneratedDemoUrl(
+                  `${window.location.origin}/demo/${finalSlug}${query ? `?${query}` : ""}`
+                );
                 toast.success("Demo link generated!");
               }}
               disabled={!demoForm.businessName || !demoForm.reviewUrl}
