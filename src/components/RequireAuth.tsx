@@ -53,27 +53,16 @@ export function RequireAuth({ children }: { children: ReactNode }) {
 
   const admin = isAdminEmail(user?.email) || user?.role === "admin";
 
-  // ── 2. Suspended / Archived / Deleted → block access ──
+  // ── 2. Suspended / Archived / Deleted → redirect to dedicated page ──
   if (
     accountStatus === "suspended" ||
     accountStatus === "deleted"
   ) {
+    const targetPath = accountStatus === "suspended"
+      ? "/account-suspended"
+      : "/account-archived";
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#0D0D0D]">
-        <div className="max-w-md text-center px-6">
-          <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4">
-            <span className="text-2xl">⛔</span>
-          </div>
-          <h1 className="text-xl font-bold text-white mb-2">Account {accountStatus === "suspended" ? "Suspended" : "Deactivated"}</h1>
-          <p className="text-sm text-[#A1A1AA] mb-4">
-            Your account has been {accountStatus === "suspended" ? "suspended" : "deactivated"} by the administrator. Please contact support to resolve this issue.
-          </p>
-          <a href="https://wa.me/8801791130633" target="_blank" rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#25D366] text-white text-sm font-medium hover:bg-[#128C7E] transition-colors">
-            Contact Support on WhatsApp
-          </a>
-        </div>
-      </main>
+      <Navigate to={targetPath} replace />
     );
   }
 

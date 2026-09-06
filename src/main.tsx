@@ -25,6 +25,8 @@ const DemoLanding = lazy(() => import("./pages/DemoLanding.tsx"));
 
 const AccountSettings = lazy(() => import("./pages/AccountSettings.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
+const AccountSuspended = lazy(() => import("./pages/AccountSuspended.tsx"));
+const AccountArchived = lazy(() => import("./pages/AccountArchived.tsx"));
 const Terms = lazy(() => import("./pages/Terms.tsx"));
 const Privacy = lazy(() => import("./pages/Privacy.tsx"));
 const RefundPolicy = lazy(() => import("./pages/RefundPolicy.tsx"));
@@ -182,6 +184,8 @@ createRoot(document.getElementById("root")!).render(
               <Route path="/terms" element={<Terms />} />
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/refund-policy" element={<RefundPolicy />} />
+              <Route path="/account-suspended" element={<AccountSuspended />} />
+              <Route path="/account-archived" element={<AccountArchived />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>

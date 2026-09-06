@@ -207,6 +207,15 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     // Skip if handlePasswordSignUp/SignIn already triggered a page reload
     if (navigatingRef.current) return;
     if (!authLoading && isAuthenticated && user !== undefined) {
+      // Block suspended/archived accounts from any redirect
+      if (user?.accountStatus === "suspended") {
+        navigate("/account-suspended");
+        return;
+      }
+      if (user?.accountStatus === "deleted") {
+        navigate("/account-archived");
+        return;
+      }
       // Super admin: always redirect to /admin immediately
       if (isAdminEmail(user?.email)) {
         navigate("/admin");
@@ -256,6 +265,19 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
         email,
         password,
       });
+
+      // After sign-in, check account status before redirecting.
+      // Suspended/archived accounts must be blocked from the dashboard flow.
+      if (user && user.accountStatus === "suspended") {
+        setError("Your account has been suspended. Please contact support to restore access.");
+        setIsLoading(false);
+        return;
+      }
+      if (user && user.accountStatus === "deleted") {
+        setError("Your account has been deactivated. Please contact support to reactivate.");
+        setIsLoading(false);
+        return;
+      }
 
       // signIn() stores the JWT token in localStorage, but the in-memory
       // Convex auth state (isAuthenticated) may not have propagated yet.
