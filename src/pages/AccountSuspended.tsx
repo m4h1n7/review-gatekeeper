@@ -1,7 +1,21 @@
 import { motion } from "framer-motion";
-import { AlertTriangle, MessageCircle, Mail } from "lucide-react";
+import { AlertTriangle, MessageCircle, Mail, LogOut } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { useNavigate } from "react-router";
 
 export default function AccountSuspended() {
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    localStorage.clear();
+    document.cookie.split(";").forEach((c) => {
+      document.cookie = c.trim().split("=")[0] + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+    });
+    navigate("/auth", { replace: true });
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -68,6 +82,21 @@ export default function AccountSuspended() {
               <Mail className="w-4 h-4" />
               Email Support
             </a>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="mt-6"
+          >
+            <button
+              onClick={handleSignOut}
+              className="inline-flex items-center gap-2.5 px-6 py-3 rounded-xl bg-white/5 border border-white/10 text-[#A1A1AA] text-sm font-semibold hover:bg-white/10 hover:text-white transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              Sign Out / Switch Account
+            </button>
           </motion.div>
 
           <motion.p
