@@ -2,10 +2,32 @@ import { motion } from "framer-motion";
 import { AlertTriangle, MessageCircle, Mail, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useNavigate } from "react-router";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { Loader2 } from "lucide-react";
 
 export default function AccountSuspended() {
   const { signOut } = useAuth();
   const navigate = useNavigate();
+  const accountStatus = useQuery(api.users.getAccountStatus);
+
+  // Real-time sync: if admin unsuspends this user, auto-redirect to dashboard
+  if (accountStatus === "active") {
+    navigate("/dashboard", { replace: true });
+    return null;
+  }
+
+  // While status is still loading, show a spinner
+  if (accountStatus === undefined) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#0D0D0D]">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="size-6 animate-spin text-[#A1A1AA]" />
+          <p className="text-xs text-[#A1A1AA]">Checking account status…</p>
+        </div>
+      </main>
+    );
+  }
 
   const handleSignOut = async () => {
     await signOut();
@@ -98,6 +120,15 @@ export default function AccountSuspended() {
               Sign Out / Switch Account
             </button>
           </motion.div>
+
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6 }}
+            className="mt-4 text-[11px] text-[#A1A1AA]/50"
+          >
+            Status updates automatically — no refresh needed.
+          </motion.p>
 
           <motion.p
             initial={{ opacity: 0 }}

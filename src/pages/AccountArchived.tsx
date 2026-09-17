@@ -1,7 +1,43 @@
 import { motion } from "framer-motion";
-import { Building2, MessageCircle, Mail } from "lucide-react";
+import { Building2, MessageCircle, Mail, LogOut } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { useNavigate } from "react-router";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { Loader2 } from "lucide-react";
 
 export default function AccountArchived() {
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
+  const accountStatus = useQuery(api.users.getAccountStatus);
+
+  // Real-time sync: if admin reactivates this user, auto-redirect to dashboard
+  if (accountStatus === "active") {
+    navigate("/dashboard", { replace: true });
+    return null;
+  }
+
+  // While status is still loading, show a spinner
+  if (accountStatus === undefined) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#0D0D0D]">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="size-6 animate-spin text-[#A1A1AA]" />
+          <p className="text-xs text-[#A1A1AA]">Checking account status…</p>
+        </div>
+      </main>
+    );
+  }
+
+  const handleSignOut = async () => {
+    await signOut();
+    localStorage.clear();
+    document.cookie.split(";").forEach((c) => {
+      document.cookie = c.trim().split("=")[0] + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+    });
+    navigate("/auth", { replace: true });
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -70,11 +106,35 @@ export default function AccountArchived() {
             </a>
           </motion.div>
 
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="mt-6"
+          >
+            <button
+              onClick={handleSignOut}
+              className="inline-flex items-center gap-2.5 px-6 py-3 rounded-xl bg-white/5 border border-white/10 text-[#A1A1AA] text-sm font-semibold hover:bg-white/10 hover:text-white transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              Sign Out / Switch Account
+            </button>
+          </motion.div>
+
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="mt-8 text-[10px] text-[#A1A1AA]/40"
+            transition={{ delay: 0.6 }}
+            className="mt-4 text-[11px] text-[#A1A1AA]/50"
+          >
+            Status updates automatically — no refresh needed.
+          </motion.p>
+
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.7 }}
+            className="mt-2 text-[10px] text-[#A1A1AA]/40"
           >
             STAR CATCH Reviews & Feedback Agency Bd
           </motion.p>
