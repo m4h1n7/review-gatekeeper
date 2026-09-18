@@ -324,14 +324,18 @@ export const extendSubscription = mutation({
     const DAY_MS = 24 * 60 * 60 * 1000;
     const addMs = Math.max(1, Math.round(args.days)) * DAY_MS;
 
-    // Base: use the later of (now) or (current expiry) so we never shrink
-    const base = Math.max(now, sub.expiresAt ?? now, sub.proExpiresAt ?? now);
+    // Instant reactivation: an expired/cancelled sub restarts from NOW (the
+    // client gets the full paid period); an active sub extends from its
+    // current expiry so it never shrinks.
+    const wasInactive = sub.status === "expired" || sub.status === "cancelled";
+    const base = wasInactive ? now : Math.max(now, sub.expiresAt ?? now, sub.proExpiresAt ?? now);
     const newExpiry = base + addMs;
 
     const previousExpiresAt = sub.expiresAt;
     const previousProExpiresAt = sub.proExpiresAt;
 
     await ctx.db.patch(args.subscriptionId, {
+      status: "active",
       expiresAt: newExpiry,
       proExpiresAt: newExpiry,
     });

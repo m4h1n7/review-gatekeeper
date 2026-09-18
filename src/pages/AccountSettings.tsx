@@ -92,6 +92,16 @@ export default function AccountSettings() {
   const updateThankYou = useMutation(api.businesses.updateThankYou);
   const isPro = (subscription?.plan === "pro" || subscription?.plan === "trial") && subscription?.status === "active";
 
+  // Strict gatekeeping: when the subscription is expired (status flipped by
+  // the cron, or timestamp passed pre-cron), all settings edits are disabled
+  // until the client renews.
+  const subscriptionExpired =
+    subscription?.status === "expired" ||
+    ((subscription?.plan === "pro" || subscription?.plan === "starter" || subscription?.plan === "trial") &&
+      subscription?.status === "active" &&
+      subscription?.expiresAt !== undefined &&
+      subscription.expiresAt < Date.now());
+
   // Sync promo & thankYou state from business data
   useEffect(() => {
     if (businesses && businesses.length > 0) {
@@ -530,7 +540,25 @@ export default function AccountSettings() {
             transition={{ duration: 0.4, delay: 0.25 }}
             className="mt-6"
           >
-            <GlassPanel className="p-6">
+            <GlassPanel className={`p-6 relative overflow-hidden ${subscriptionExpired ? "opacity-70" : ""}`}>
+              {subscriptionExpired && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#0D0D0D]/70 backdrop-blur-[1px]">
+                  <div className="text-center px-4">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-500/15 border border-red-500/25 text-red-400 text-xs font-semibold mb-2">
+                      <AlertTriangle className="w-3 h-3" /> SUBSCRIPTION EXPIRED
+                    </div>
+                    <p className="text-sm font-semibold text-white mb-1">Settings locked</p>
+                    <p className="text-xs text-[#A1A1AA] mb-3">Renew your plan to edit your review portal settings.</p>
+                    <Button
+                      onClick={() => navigate("/pricing")}
+                      size="sm"
+                      className="bg-red-600 hover:bg-red-700 text-white text-xs font-semibold cursor-pointer"
+                    >
+                      Renew Now
+                    </Button>
+                  </div>
+                </div>
+              )}
               <div className="flex items-center gap-3 mb-5">
                 <div className="w-9 h-9 rounded-xl bg-[#16A34A]/10 flex items-center justify-center">
                   <Palette className="w-5 h-5 text-[#16A34A]" />

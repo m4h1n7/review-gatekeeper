@@ -132,7 +132,14 @@ export default function Dashboard() {
   const isTrial = subscription?.plan === "trial" && subscription?.status === "active";
   const overview = useQuery(api.analytics.dashboardOverview, { filter });
   const trend = useQuery(api.analytics.ratingTrend, { days: chartDays });
-  const isExpired = (subscription?.plan === "pro" || subscription?.plan === "trial") && subscription?.status === "active" && subscription?.expiresAt !== undefined && subscription.expiresAt < Date.now();
+  // Expired = timestamp passed while still "active" (real-time window before
+  // the cron runs) OR the cron already flipped status to "expired".
+  const isExpired =
+    subscription?.status === "expired" ||
+    ((subscription?.plan === "pro" || subscription?.plan === "starter" || subscription?.plan === "trial") &&
+      subscription?.status === "active" &&
+      subscription?.expiresAt !== undefined &&
+      subscription.expiresAt < Date.now());
   const hasPaidAccess = useHasAccess("starter");
   const hasProAccess = useHasAccess("pro");
   const daysRemaining = subscription?.expiresAt ? Math.ceil((subscription.expiresAt - Date.now()) / (24 * 60 * 60 * 1000)) : null;
@@ -269,9 +276,11 @@ export default function Dashboard() {
                 <AlertTriangle className="w-5 h-5 text-red-400" />
               </div>
               <div>
-                <p className="text-sm font-bold text-white">Your subscription has expired</p>
+                <p className="text-sm font-bold text-white">
+                  Your subscription has expired. Renew your plan to reactivate your NFC review portal.
+                </p>
                 <p className="text-xs text-[#A1A1AA]">
-                  Your review portal is inactive and customer taps go straight to Google. Renew to restore gatekeeping, staff tracking, and analytics.
+                  Customer NFC taps now see a “Service Inactive” screen — no taps reach Google until you renew. All settings are locked while expired.
                 </p>
               </div>
             </div>

@@ -111,21 +111,12 @@ export default function Review() {
     business && "userId" in business ? { userId: (business as any).userId } : "skip",
   );
 
-  /* ─── Graceful bypass for EXPIRED accounts ───
-     NFC taps on an expired account skip the gatekeeper: the customer is
-     auto-redirected to the business's raw Google review link after a short
-     branded pause. Reacts live via subStatus — if the owner renews, the
-     normal gatekeeper flow resumes instantly.                            */
-  const isOwnerExpired = subStatus?.active === false && subStatus.reason === "expired";
-  useEffect(() => {
-    if (!isOwnerExpired) return;
-    const redirectUrl = business?.reviewUrl;
-    if (!redirectUrl) return; // no configured link → fall through to the polite block screen
-    const timeout = setTimeout(() => {
-      window.location.href = redirectUrl;
-    }, 1500);
-    return () => clearTimeout(timeout);
-  }, [isOwnerExpired, business?.reviewUrl]);
+  /* ─── Strict subscription gatekeeping ───
+     The subStatus query (isBusinessActive) is a live server-side check on the
+     owner's subscription. Expired / suspended / 0-days-left accounts NEVER
+     reach the rating UI or the Google redirect — they see "Service Inactive".
+     Reacts in real time: the moment the account is reactivated, the same NFC
+     cards start working again with zero reconfiguration.                   */
 
   // State
   type ViewState = "rating" | "low-rating-options" | "feedback" | "submitted" | "redirecting";
@@ -285,8 +276,15 @@ export default function Review() {
   const lowRatingPublicDesc = business?.lowRatingPublicDesc || "Share your experience on Google.";
   const lowRatingFeedbackHeading = business?.lowRatingFeedbackHeading || "We're sorry to hear that. How can we make it right?";
 
-  // Loading
-  if (!clientSlug || business === undefined) {
+  // Loading — CRITICAL: also wait for the server-side status check to resolve
+  // before rendering any customer-facing options (no flash of rating UI before
+  // the gate decision). If the business slug is invalid, business === null and
+  // the not-found screen below takes over.
+  if (
+    !clientSlug ||
+    business === undefined ||
+    (business && (subStatus === undefined || isOwnerSuspended === undefined))
+  ) {
     return (
       <div className="min-h-dvh flex items-center justify-center" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
         <div className="fixed inset-0 -z-10 bg-[#0A0A0B]" />
@@ -316,10 +314,9 @@ export default function Review() {
     );
   }
 
-  // Subscription inactive — EXPIRED accounts with a configured Google link
-  // bypass gatekeeping entirely (handled just below). Everything else renders
-  // the polite block screen.
-  if (subStatus && !subStatus.active && !(isOwnerExpired && business.reviewUrl)) {
+  // Subscription inactive — EXPIRED / CANCELLED / PENDING / NO SUBSCRIPTION:
+  // strict block. The customer never sees rating stars or a Google redirect.
+  if (subStatus && !subStatus.active) {
     const isExpired = subStatus.reason === "expired";
     const isCancelled = subStatus.reason === "cancelled";
     const isPending = subStatus.reason === "pending_payment";
@@ -349,11 +346,9 @@ export default function Review() {
           <div className={`w-14 h-14 mx-auto rounded-2xl flex items-center justify-center mb-4 ${isExpired || isCancelled ? "bg-red-500/10" : "bg-amber-500/10"}`}>
             <Clock className={`w-6 h-6 ${isExpired || isCancelled ? "text-red-400" : "text-amber-400"}`} />
           </div>
-          <h1 className="text-xl font-bold text-white mb-2">
-            {isExpired ? "Review Portal Inactive" : isCancelled ? "Review Portal Unavailable" : isPending ? "Payment Under Review" : "Review Portal Inactive"}
-          </h1>
+          <h1 className="text-xl font-bold text-white mb-2">Service Inactive</h1>
           <p className="text-white/40 text-sm leading-relaxed mb-6">
-            This review portal is currently inactive. Please contact the business owner or renew your Star Catch subscription to reactivate.
+            This review portal is currently inactive. Please contact the business administrator.
           </p>
           <div className="p-4 rounded-2xl border border-white/[0.06] bg-white/[0.02]">
             <p className="text-xs text-white/25 mb-2 font-medium uppercase tracking-wider">Business</p>
@@ -369,39 +364,8 @@ export default function Review() {
     );
   }
 
-  // EXPIRED + has a Google link → graceful gatekeeping bypass: brief branded
-  // pause, then straight to the raw Google review URL (no rating UI).
-  if (isOwnerExpired && business.reviewUrl) {
-    return (
-      <div className="min-h-dvh flex items-center justify-center px-5" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
-        <div className="fixed inset-0 -z-10 bg-[#0A0A0B]">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[400px] h-[400px] rounded-full blur-[120px] opacity-[0.04]" style={{ backgroundColor: brandColor }} />
-        </div>
-        <motion.div {...scaleIn} className="w-full max-w-sm text-center">
-          {business.logoUrl && !logoFailed ? (
-            <img
-              src={business.logoUrl}
-              alt={business.name}
-              className="w-16 h-16 rounded-2xl object-cover mx-auto mb-5"
-              onError={() => setLogoFailed(true)}
-            />
-          ) : (
-            <div
-              className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5 text-white font-bold text-2xl"
-              style={{ backgroundColor: business.brandColor || "#16A34A" }}
-            >
-              {business.name?.charAt(0)?.toUpperCase() || "B"}
-            </div>
-          )}
-          <div className="w-8 h-8 mx-auto border-2 border-white/10 border-t-white/60 rounded-full animate-spin mb-5" />
-          <h1 className="text-xl font-bold text-white mb-2">Taking you to our Google page…</h1>
-          <p className="text-white/40 text-sm leading-relaxed">One moment please.</p>
-        </motion.div>
-      </div>
-    );
-  }
-
-  // Suspended
+  // Suspended — same strict "Service Inactive" treatment (no rating UI, no
+  // redirect). Suspended = owner account restricted by the platform.
   if (isOwnerSuspended === true) {
     return (
       <div className="min-h-dvh flex items-center justify-center px-5" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
