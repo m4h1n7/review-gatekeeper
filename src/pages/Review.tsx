@@ -152,7 +152,9 @@ export default function Review() {
     if (!business) return;
     setSelectedRating(rating);
 
-    // Log the interaction
+    // Log the star-tap interaction. 4-5★ inserts type="redirect" (this is the
+    // single redirect log — the old code double-logged via logPublicReview);
+    // 1-3★ inserts type="feedback_submitted" as the tap record.
     try {
       await logInteraction({
         businessId: business.id,
@@ -166,8 +168,15 @@ export default function Review() {
     }
 
     if (rating >= 4) {
-      // 4-5 stars → redirect to Google Review
-      handlePublicReview();
+      // 4-5 stars → INSTANT new-tab redirect to the client's Google Review URL.
+      // window.open is called synchronously so it's not blocked by the browser's
+      // popup blocker (which fires only for async/post-await navigations).
+      if (business.reviewUrl) {
+        window.open(business.reviewUrl, "_blank", "noopener,noreferrer");
+      }
+      // Show the branded thank-you (no countdown — the tab is already open)
+      setView("redirecting");
+      setRedirectCountdown(0);
     } else {
       // 1-3 stars: Business Pro gets dual-choice, others get simple feedback form
       const isPro = business.planType === "pro";
@@ -175,6 +184,9 @@ export default function Review() {
     }
   };
 
+  // Public-review button on the dual-choice page (1-3★ path). Logs the public
+  // review choice and shows the thank-you view. The countdown timer in the
+  // redirecting view then navigates the same tab to the Google URL.
   const handlePublicReview = async () => {
     if (business) {
       try {

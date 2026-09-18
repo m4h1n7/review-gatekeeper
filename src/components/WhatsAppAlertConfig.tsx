@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { useQuery } from "convex/react";
+import { api } from "../convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
@@ -16,15 +18,29 @@ import {
 
 interface WhatsAppAlertConfigProps {
   businessName: string;
+  /** Live private feedbacks — used to render the real-time alert preview */
+  latestFeedback?: {
+    customerName: string;
+    rating: number;
+    message: string;
+    createdAt: number;
+  } | null;
 }
 
 export default function WhatsAppAlertConfig({
   businessName,
+  latestFeedback,
 }: WhatsAppAlertConfigProps) {
   const [enabled, setEnabled] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState("+880");
   const [testSent, setTestSent] = useState(false);
   const [testLoading, setTestLoading] = useState(false);
+
+  // The exact alert text that would be pushed to WhatsApp for the latest
+  // private feedback (live — updates instantly when new feedback arrives).
+  const alertPreview = latestFeedback
+    ? `🔔 New Private Feedback for ${businessName}\n\n⭐ Rating: ${latestFeedback.rating}/5\n👤 ${latestFeedback.customerName}\n💬 ${latestFeedback.message.slice(0, 160)}`
+    : null;
 
   const handleToggle = useCallback(() => {
     setEnabled((prev) => !prev);
@@ -139,6 +155,32 @@ export default function WhatsAppAlertConfig({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Real-Time Alert Preview — mirrors the latest private feedback */}
+      {latestFeedback && alertPreview && (
+        <div className="rounded-xl border border-[#25D366]/20 bg-[#25D366]/[0.04] p-3">
+          <div className="flex items-center gap-1.5 mb-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#25D366] animate-pulse" />
+            <p className="text-[10px] font-bold text-[#25D366] uppercase tracking-wider">
+              Live Alert Preview
+            </p>
+          </div>
+          {/* WhatsApp-style bubble */}
+          <div className="rounded-lg rounded-tl-sm bg-[#0B141A] border border-white/5 p-3">
+            <div className="rounded-lg bg-[#005C4B] p-2.5">
+              <p className="text-[11px] text-white/90 whitespace-pre-line leading-relaxed">
+                {alertPreview}
+              </p>
+              <p className="text-right text-[9px] text-white/40 mt-1">
+                {new Date(latestFeedback.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} ✓✓
+              </p>
+            </div>
+          </div>
+          <p className="text-[10px] text-[#A1A1AA]/50 mt-2">
+            Preview of the WhatsApp alert for the most recent private feedback (updates in real time).
+          </p>
+        </div>
+      )}
     </div>
   );
 }

@@ -66,6 +66,20 @@ export const submit = mutation({
       submittedAt: Date.now(),
       status: "unresolved",
     });
+
+    // Real-time dashboard notification — pushed to the business owner so the
+    // client dashboard bell rings the moment private feedback lands.
+    const customerLabel = args.customerName || "A customer";
+    await ctx.db.insert("notifications", {
+      type: "negative_feedback",
+      title: `New private feedback (${args.rating}★)`,
+      message: `${customerLabel}: ${args.message.slice(0, 140)}`,
+      targetUserId: business?.userId ?? args.businessId,
+      read: false,
+      createdAt: Date.now(),
+      actionUrl: "/dashboard/feedback",
+    });
+
     return { id };
   },
 });
