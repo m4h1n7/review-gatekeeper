@@ -1,4 +1,4 @@
-import { mutation, query } from "./_generated/server";
+import { internalMutation, mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
@@ -176,12 +176,13 @@ export const isBusinessActive = query({
       return { active: false, plan: "free" as const, reason: "pending_payment" };
     }
 
-    // Cancelled: not active
-    if (sub.status === "cancelled") {
-      return { active: false, plan: sub.plan, reason: "cancelled" };
+    // Cancelled or already-flipped expired: not active
+    if (sub.status === "cancelled" || sub.status === "expired") {
+      return { active: false, plan: sub.plan, reason: "expired" };
     }
 
-    // Active trial/pro/starter — check expiry
+    // Active trial/pro/starter — check expiry in real time (covers the window
+    // between the moment a sub expires and the next cron run)
     if (sub.status === "active" && (sub.plan === "pro" || sub.plan === "starter" || sub.plan === "trial")) {
       if (sub.expiresAt && sub.expiresAt < Date.now()) {
         return { active: false, plan: sub.plan, reason: "expired" };
@@ -190,6 +191,58 @@ export const isBusinessActive = query({
     }
 
     return { active: false, plan: sub.plan, reason: "inactive" };
+  },
+});
+
+/**
+ * Daily cron: flip active subscriptions whose expiry has passed to status
+ * "expired" and mark their business profiles inactive. Idempotent — only
+ * touches subs that are still "active" and past their expiresAt.
+ */
+export const expireSubscriptions = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const now = Date.now();
+    let expired = 0;
+
+    const activeSubs = await ctx.db
+      .query("subscriptions")
+      .filter((q) => q.eq(q.field("status"), "active"))
+      .collect();
+
+    for (const sub of activeSubs) {
+      if (sub.expiresAt === undefined || sub.expiresAt >= now) continue;
+
+      await ctx.db.patch(sub._id, { status: "expired" });
+      expired++;
+
+      // Mark all of the owner's business profiles inactive so public review
+      // pages see a consistent state even without a live subscription query.
+      const businesses = await ctx.db
+        .query("businesses")
+        .withIndex("by_userId", (q) => q.eq("userId", sub.userId))
+        .collect();
+      for (const biz of businesses) {
+        await ctx.db.patch(biz._id, { subscriptionStatus: "inactive" });
+      }
+
+      // Audit log (best-effort)
+      try {
+        const user = await ctx.db.get(sub.userId as any);
+        await ctx.db.insert("auditLogs", {
+          adminEmail: "system",
+          action: "SUBSCRIPTION_EXPIRED",
+          targetUser: sub.userId,
+          targetEmail: (user as any)?.email ?? "unknown",
+          details: `Plan "${sub.plan}" expired (expiresAt ${new Date(sub.expiresAt).toISOString()}); auto-flipped to expired`,
+          createdAt: now,
+        });
+      } catch {
+        // Never let audit logging break the expiry sweep
+      }
+    }
+
+    return { checked: activeSubs.length, expired };
   },
 });
 

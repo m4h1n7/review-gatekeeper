@@ -257,8 +257,38 @@ export default function Dashboard() {
         />
       )}
 
-      {/* ─── LOCKED DASHBOARD PAYWALL BANNER ─── */}
-      {isLocked && (
+      {/* ─── EXPIRED SUBSCRIPTION BANNER (Upgrade / Renew Plan) ───
+          Shown when the account's plan has lapsed: status is "expired" (set by
+          the daily cron) OR the expiry timestamp has passed while still
+          "active" (covers the real-time window before the next cron run).     */}
+      {isExpired && (
+        <div className="bg-gradient-to-r from-red-500/15 via-red-500/10 to-red-500/5 border-b border-red-500/25">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-red-500/15 border border-red-500/25 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-5 h-5 text-red-400" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-white">Your subscription has expired</p>
+                <p className="text-xs text-[#A1A1AA]">
+                  Your review portal is inactive and customer taps go straight to Google. Renew to restore gatekeeping, staff tracking, and analytics.
+                </p>
+              </div>
+            </div>
+            <Button
+              onClick={() => setShowPaywall(true)}
+              className="bg-red-600 hover:bg-red-700 text-white font-semibold px-6 cursor-pointer shadow-lg shadow-red-600/25 hover:shadow-red-600/40 transition-all whitespace-nowrap"
+            >
+              <Zap className="w-4 h-4 mr-2" /> Upgrade / Renew Plan
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* ─── LOCKED DASHBOARD PAYWALL BANNER (hidden when expired — the
+          dedicated Upgrade / Renew banner above covers that state) ─── */}
+      {isLocked && !isExpired && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}

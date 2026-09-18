@@ -111,6 +111,22 @@ export default function Review() {
     business && "userId" in business ? { userId: (business as any).userId } : "skip",
   );
 
+  /* ─── Graceful bypass for EXPIRED accounts ───
+     NFC taps on an expired account skip the gatekeeper: the customer is
+     auto-redirected to the business's raw Google review link after a short
+     branded pause. Reacts live via subStatus — if the owner renews, the
+     normal gatekeeper flow resumes instantly.                            */
+  const isOwnerExpired = subStatus?.active === false && subStatus.reason === "expired";
+  useEffect(() => {
+    if (!isOwnerExpired) return;
+    const redirectUrl = business?.reviewUrl;
+    if (!redirectUrl) return; // no configured link → fall through to the polite block screen
+    const timeout = setTimeout(() => {
+      window.location.href = redirectUrl;
+    }, 1500);
+    return () => clearTimeout(timeout);
+  }, [isOwnerExpired, business?.reviewUrl]);
+
   // State
   type ViewState = "rating" | "low-rating-options" | "feedback" | "submitted" | "redirecting";
   const [view, setView] = useState<ViewState>("rating");
@@ -300,8 +316,10 @@ export default function Review() {
     );
   }
 
-  // Subscription inactive
-  if (subStatus && !subStatus.active) {
+  // Subscription inactive — EXPIRED accounts with a configured Google link
+  // bypass gatekeeping entirely (handled just below). Everything else renders
+  // the polite block screen.
+  if (subStatus && !subStatus.active && !(isOwnerExpired && business.reviewUrl)) {
     const isExpired = subStatus.reason === "expired";
     const isCancelled = subStatus.reason === "cancelled";
     const isPending = subStatus.reason === "pending_payment";
@@ -346,6 +364,38 @@ export default function Review() {
               </p>
             )}
           </div>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // EXPIRED + has a Google link → graceful gatekeeping bypass: brief branded
+  // pause, then straight to the raw Google review URL (no rating UI).
+  if (isOwnerExpired && business.reviewUrl) {
+    return (
+      <div className="min-h-dvh flex items-center justify-center px-5" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
+        <div className="fixed inset-0 -z-10 bg-[#0A0A0B]">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[400px] h-[400px] rounded-full blur-[120px] opacity-[0.04]" style={{ backgroundColor: brandColor }} />
+        </div>
+        <motion.div {...scaleIn} className="w-full max-w-sm text-center">
+          {business.logoUrl && !logoFailed ? (
+            <img
+              src={business.logoUrl}
+              alt={business.name}
+              className="w-16 h-16 rounded-2xl object-cover mx-auto mb-5"
+              onError={() => setLogoFailed(true)}
+            />
+          ) : (
+            <div
+              className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5 text-white font-bold text-2xl"
+              style={{ backgroundColor: business.brandColor || "#16A34A" }}
+            >
+              {business.name?.charAt(0)?.toUpperCase() || "B"}
+            </div>
+          )}
+          <div className="w-8 h-8 mx-auto border-2 border-white/10 border-t-white/60 rounded-full animate-spin mb-5" />
+          <h1 className="text-xl font-bold text-white mb-2">Taking you to our Google page…</h1>
+          <p className="text-white/40 text-sm leading-relaxed">One moment please.</p>
         </motion.div>
       </div>
     );
