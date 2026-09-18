@@ -1,6 +1,7 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { QRCodeSVG, QRCodeCanvas } from "qrcode.react";
 import { motion, AnimatePresence } from "framer-motion";
+import { jsPDF } from "jspdf";
 import {
   Download,
   Palette,
@@ -8,9 +9,9 @@ import {
   Image as ImageIcon,
   Printer,
   CheckCircle2,
-  X,
   Star,
   MessageCircle,
+  FileDown,
 } from "lucide-react";
 
 interface QRCodeGeneratorProps {
@@ -34,7 +35,112 @@ const COLOR_PRESETS = [
 
 /* ─── Template Styles ─── */
 type TemplateStyle = "counter" | "tentr" | "minimal";
+type PosterFormat = "a5" | "tent";
 
+/* ─── Helpers ─── */
+function hexToRGB(hex: string): [number, number, number] {
+  const h = hex.replace("#", "");
+  return [
+    parseInt(h.substring(0, 2), 16),
+    parseInt(h.substring(2, 4), 16),
+    parseInt(h.substring(4, 6), 16),
+  ];
+}
+
+/** Load an image for canvas/PDF embedding; resolves null on CORS/load failure */
+function loadImage(src: string): Promise<HTMLImageElement | null> {
+  return new Promise((resolve) => {
+    if (!src) return resolve(null);
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    const timeout = setTimeout(() => resolve(null), 4000);
+    img.onload = () => {
+      clearTimeout(timeout);
+      resolve(img.naturalWidth > 0 ? img : null);
+    };
+    img.onerror = () => {
+      clearTimeout(timeout);
+      resolve(null);
+    };
+    img.src = src;
+  });
+}
+
+/** Draw a 5-pointed filled star (canvas, pixel coords) */
+function canvasStar(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  r: number,
+  color: string,
+) {
+  ctx.save();
+  ctx.beginPath();
+  for (let i = 0; i < 10; i++) {
+    const angle = (Math.PI / 5) * i - Math.PI / 2;
+    const rad = i % 2 === 0 ? r : r * 0.4;
+    const x = cx + Math.cos(angle) * rad;
+    const y = cy + Math.sin(angle) * rad;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.fill();
+  ctx.restore();
+}
+
+/** Draw a row of stars centered on cx (canvas) */
+function canvasStars(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  count: number,
+  r: number,
+  color: string,
+) {
+  const spacing = r * 2.8;
+  const startX = cx - ((count - 1) * spacing) / 2;
+  for (let i = 0; i < count; i++) canvasStar(ctx, startX + i * spacing, cy, r, color);
+}
+
+/** Draw a row of stars centered on x (jsPDF, mm coords) */
+function pdfStars(
+  pdf: jsPDF,
+  cx: number,
+  cy: number,
+  count: number,
+  r: number,
+  color: [number, number, number],
+) {
+  const spacing = r * 2.8;
+  const startX = cx - ((count - 1) * spacing) / 2;
+  for (let i = 0; i < count; i++) {
+    pdf.setFillColor(...color);
+    pdf.setDrawColor(...color);
+    const points: [number, number][] = [];
+    for (let j = 0; j < 10; j++) {
+      const angle = (Math.PI / 5) * j - Math.PI / 2;
+      const rad = j % 2 === 0 ? r : r * 0.4;
+      points.push([startX + i * spacing + Math.cos(angle) * rad, cy + Math.sin(angle) * rad]);
+    }
+    pdf.lines(
+      points.slice(1).map((p, idx) => {
+        const prev = points[idx];
+        return [p[0] - prev[0], p[1] - prev[1]];
+      }),
+      points[0][0],
+      points[0][1],
+      [1, 1],
+      "F",
+      true,
+    );
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   MAIN COMPONENT
+   ═══════════════════════════════════════════════════════════════════ */
 export default function QRCodeGenerator({
   reviewUrl,
   businessName,
@@ -49,113 +155,295 @@ export default function QRCodeGenerator({
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateStyle>("counter");
   const [logoPreview, setLogoPreview] = useState(logoUrl || "");
   const [showSuccess, setShowSuccess] = useState(false);
+  const [successLabel, setSuccessLabel] = useState("Poster downloaded!");
+  const [isExporting, setIsExporting] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Build the review URL with optional staff param
-  const qrValue = staffSlug
-    ? `${reviewUrl}?sid=${staffSlug}`
-    : reviewUrl;
+  // ─── Dynamic Branding Sync ───
+  // The parent passes live Convex data; when the client updates their Business
+  // Name / Logo / Brand Accent Color these flow straight into the poster.
+  useEffect(() => {
+    setLogoPreview(logoUrl || "");
+  }, [logoUrl]);
 
-  /* ─── PNG Download ─── */
-  const downloadPNG = useCallback(async () => {
-    const size = 1200;
-    const cvs = document.createElement("canvas");
-    cvs.width = size;
-    cvs.height = size;
-    const ctx = cvs.getContext("2d");
-    if (!ctx) return;
+  useEffect(() => {
+    if (brandColor) setQrFg(brandColor);
+  }, [brandColor]);
 
-    // Background
-    ctx.fillStyle = qrBg;
-    ctx.fillRect(0, 0, size, size);
+  // Build the review URL with optional staff attribution (?staff= is primary)
+  const qrValue = staffSlug ? `${reviewUrl}?staff=${staffSlug}` : reviewUrl;
 
-    // Draw QR from the hidden canvas
-    const hiddenCanvas = document.getElementById("qr-download-canvas") as HTMLCanvasElement;
-    if (hiddenCanvas) {
-      const qrSize = size * 0.55;
-      const offset = (size - qrSize) / 2;
-      ctx.drawImage(hiddenCanvas, offset, 80, qrSize, qrSize);
-
-      // Bake centered logo overlay into the exported image
-      if (logoPreview) {
-        try {
-          const logoImg = new Image();
-          logoImg.crossOrigin = "anonymous";
-          await new Promise<void>((resolve, reject) => {
-            logoImg.onload = () => resolve();
-            logoImg.onerror = () => resolve(); // skip logo on failure
-            logoImg.src = logoPreview;
-          });
-          if (logoImg.complete && logoImg.naturalWidth > 0) {
-            const logoSize = qrSize * 0.22;
-            const logoX = (size - logoSize) / 2;
-            const logoY = 80 + (qrSize - logoSize) / 2;
-            const logoRadius = logoSize / 2;
-            const padding = 6;
-
-            // White circular background
-            ctx.save();
-            ctx.beginPath();
-            ctx.arc(
-              logoX + logoRadius,
-              logoY + logoRadius,
-              logoRadius + padding,
-              0,
-              Math.PI * 2
-            );
-            ctx.fillStyle = "#FFFFFF";
-            ctx.fill();
-            ctx.restore();
-
-            // Clip to circle and draw logo
-            ctx.save();
-            ctx.beginPath();
-            ctx.arc(
-              logoX + logoRadius,
-              logoY + logoRadius,
-              logoRadius,
-              0,
-              Math.PI * 2
-            );
-            ctx.closePath();
-            ctx.clip();
-            ctx.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
-            ctx.restore();
-          }
-        } catch {
-          // Logo load failed — skip overlay
-        }
-      }
+  /** Read the hidden 1200px QR canvas as a data URL (used by PNG + PDF export) */
+  const getQRDataUrl = useCallback((): string | null => {
+    const hidden = document.getElementById("qr-download-canvas") as HTMLCanvasElement | null;
+    if (!hidden) return null;
+    try {
+      return hidden.toDataURL("image/png");
+    } catch {
+      return null;
     }
+  }, []);
 
-    // Business name
-    ctx.fillStyle = "#1E293B";
-    ctx.font = `bold ${size * 0.045}px Inter, system-ui, sans-serif`;
-    ctx.textAlign = "center";
-    ctx.fillText(businessName, size / 2, size - 200);
-
-    // Subtitle
-    ctx.fillStyle = "#64748B";
-    ctx.font = `${size * 0.028}px Inter, system-ui, sans-serif`;
-    ctx.fillText(customText, size / 2, size - 150);
-
-    // Footer
-    ctx.fillStyle = "#94A3B8";
-    ctx.font = `${size * 0.02}px Inter, system-ui, sans-serif`;
-    ctx.fillText("Powered by STAR CATCH", size / 2, size - 80);
-
-    // Download
-    const link = document.createElement("a");
-    link.download = `${businessName.replace(/\s+/g, "-")}-QR-Code.png`;
-    link.href = cvs.toDataURL("image/png", 1.0);
-    link.click();
-
+  const showSuccessToast = useCallback((label: string) => {
+    setSuccessLabel(label);
     setShowSuccess(true);
     setTimeout(() => setShowSuccess(false), 3000);
-  }, [businessName, customText, qrBg, logoPreview]);
+  }, []);
 
-  /* ─── Print ─── */
+  /* ══════════════════════════════════════════════════════════════
+     HIGH-RES PNG POSTER (1600 × 2133 px ≈ 200 DPI at A5)
+     Brand-synced: logo, business name, brand accent bar, QR color
+     ══════════════════════════════════════════════════════════════ */
+  const downloadPNG = useCallback(async () => {
+    setIsExporting(true);
+    try {
+      const W = 1600;
+      const H = 2133;
+      const cvs = document.createElement("canvas");
+      cvs.width = W;
+      cvs.height = H;
+      const ctx = cvs.getContext("2d");
+      if (!ctx) return;
+
+      // Background
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillRect(0, 0, W, H);
+
+      // Brand accent top bar
+      ctx.fillStyle = qrFg;
+      ctx.fillRect(0, 0, W, 22);
+
+      // Logo (falls back to brand-colored initial)
+      const logoImg = await loadImage(logoPreview);
+      if (logoImg) {
+        const logoSize = 300;
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(W / 2, 320, logoSize / 2, 0, Math.PI * 2);
+        ctx.shadowColor = "rgba(0,0,0,0.12)";
+        ctx.shadowBlur = 30;
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fill();
+        ctx.restore();
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(W / 2, 320, logoSize / 2 - 8, 0, Math.PI * 2);
+        ctx.clip();
+        ctx.drawImage(logoImg, W / 2 - logoSize / 2, 320 - logoSize / 2, logoSize, logoSize);
+        ctx.restore();
+      } else {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(W / 2, 320, 150, 0, Math.PI * 2);
+        ctx.fillStyle = qrFg;
+        ctx.fill();
+        ctx.restore();
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = "bold 150px Inter, system-ui, sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText((businessName || "B").charAt(0).toUpperCase(), W / 2, 328);
+      }
+
+      // Stars
+      canvasStars(ctx, W / 2, 560, 5, 38, "#FBBF24");
+
+      // Business name
+      ctx.fillStyle = "#1E293B";
+      ctx.font = "bold 92px Inter, system-ui, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "alphabetic";
+      ctx.fillText(businessName, W / 2, 690);
+
+      // Subtitle
+      ctx.fillStyle = "#64748B";
+      ctx.font = "46px Inter, system-ui, sans-serif";
+      ctx.fillText(customText, W / 2, 760);
+
+      // QR (white card + brand-tinted border)
+      const qrData = getQRDataUrl();
+      const qrImg = qrData ? await loadImage(qrData) : null;
+      if (qrImg) {
+        const qrSize = 900;
+        const qrX = (W - qrSize) / 2;
+        const qrY = 850;
+        ctx.save();
+        ctx.fillStyle = "#FFFFFF";
+        ctx.shadowColor = "rgba(0,0,0,0.08)";
+        ctx.shadowBlur = 40;
+        ctx.beginPath();
+        ctx.roundRect(qrX - 36, qrY - 36, qrSize + 72, qrSize + 72, 40);
+        ctx.fill();
+        ctx.restore();
+        ctx.strokeStyle = `${qrFg}30`;
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.roundRect(qrX - 36, qrY - 36, qrSize + 72, qrSize + 72, 40);
+        ctx.stroke();
+        ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
+      }
+
+      // Brand accent divider
+      ctx.fillStyle = qrFg;
+      ctx.fillRect(W / 2 - 90, 1920, 180, 8);
+
+      // Footer
+      ctx.fillStyle = "#94A3B8";
+      ctx.font = "34px Inter, system-ui, sans-serif";
+      ctx.fillText("Powered by STAR CATCH", W / 2, 2010);
+      if (staffName) {
+        ctx.font = "30px Inter, system-ui, sans-serif";
+        ctx.fillStyle = qrFg;
+        ctx.fillText(`Served by ${staffName}`, W / 2, 2060);
+      }
+
+      const link = document.createElement("a");
+      link.download = `${businessName.replace(/\s+/g, "-")}-Poster.png`;
+      link.href = cvs.toDataURL("image/png", 1.0);
+      link.click();
+
+      showSuccessToast("High-res poster downloaded!");
+    } catch (e) {
+      console.error("PNG export failed:", e);
+    } finally {
+      setIsExporting(false);
+    }
+  }, [businessName, customText, qrFg, logoPreview, staffName, getQRDataUrl, showSuccessToast]);
+
+  /* ══════════════════════════════════════════════════════════════
+     PRINT-READY VECTOR PDF (A5 portrait / Table Tent landscape)
+     True vector text & shapes + 1200px embedded QR (~340 DPI)
+     ══════════════════════════════════════════════════════════════ */
+  const downloadPosterPDF = useCallback(
+    async (format: PosterFormat) => {
+      setIsExporting(true);
+      try {
+        const accent = hexToRGB(qrFg);
+        const gold: [number, number, number] = [251, 191, 36];
+
+        const isA5 = format === "a5";
+        const w = isA5 ? 148 : 210; // mm
+        const h = isA5 ? 210 : 148;
+
+        const pdf = new jsPDF({
+          orientation: isA5 ? "portrait" : "landscape",
+          unit: "mm",
+          format: [w, h],
+        });
+
+        // Background
+        pdf.setFillColor(255, 255, 255);
+        pdf.rect(0, 0, w, h, "F");
+
+        // Brand accent top bar
+        pdf.setFillColor(...accent);
+        pdf.rect(0, 0, w, 3.2, "F");
+
+        // Logo or brand-colored initial
+        const logoImg = await loadImage(logoPreview);
+        const logoSize = isA5 ? 34 : 28;
+        const logoY = isA5 ? 16 : 14;
+        if (logoImg) {
+          const dataUrl = (() => {
+            try {
+              const c = document.createElement("canvas");
+              const s = 512;
+              c.width = s;
+              c.height = s;
+              const cx2 = c.getContext("2d");
+              if (!cx2) return null;
+              cx2.drawImage(logoImg, 0, 0, s, s);
+              return c.toDataURL("image/png");
+            } catch {
+              return null;
+            }
+          })();
+          if (dataUrl) {
+            pdf.addImage(dataUrl, "PNG", w / 2 - logoSize / 2, logoY, logoSize, logoSize);
+          } else {
+            // CORS-blocked logo → branded initial fallback
+            pdf.setFillColor(...accent);
+            pdf.circle(w / 2, logoY + logoSize / 2, logoSize / 2, "F");
+            pdf.setTextColor(255, 255, 255);
+            pdf.setFont("helvetica", "bold");
+            pdf.setFontSize(logoSize * 0.7);
+            pdf.text(
+              (businessName || "B").charAt(0).toUpperCase(),
+              w / 2,
+              logoY + logoSize / 2 + logoSize * 0.12,
+              { align: "center" },
+            );
+          }
+        } else {
+          pdf.setFillColor(...accent);
+          pdf.circle(w / 2, logoY + logoSize / 2, logoSize / 2, "F");
+          pdf.setTextColor(255, 255, 255);
+          pdf.setFont("helvetica", "bold");
+          pdf.setFontSize(logoSize * 0.7);
+          pdf.text(
+            (businessName || "B").charAt(0).toUpperCase(),
+            w / 2,
+            logoY + logoSize / 2 + logoSize * 0.12,
+            { align: "center" },
+          );
+        }
+
+        // Stars
+        pdfStars(pdf, w / 2, logoY + logoSize + 10, 5, isA5 ? 3.6 : 3, gold);
+
+        // Business name (vector text — scales crisply at any print size)
+        pdf.setTextColor(30, 41, 59);
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(isA5 ? 22 : 18);
+        pdf.text(businessName, w / 2, logoY + logoSize + 20, { align: "center" });
+
+        // Subtitle
+        pdf.setTextColor(100, 116, 139);
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(isA5 ? 11 : 10);
+        pdf.text(customText, w / 2, logoY + logoSize + 27, { align: "center" });
+
+        // QR code — embedded from the hidden 1200px canvas (~340 DPI at 90mm)
+        const qrData = getQRDataUrl();
+        const qrSize = isA5 ? 92 : 62;
+        const qrY = isA5 ? logoY + logoSize + 36 : logoY + logoSize + 34;
+        if (qrData) {
+          pdf.setFillColor(255, 255, 255);
+          pdf.roundedRect(w / 2 - qrSize / 2 - 4, qrY - 4, qrSize + 8, qrSize + 8, 3, 3, "F");
+          pdf.setDrawColor(...accent);
+          pdf.setLineWidth(0.6);
+          pdf.roundedRect(w / 2 - qrSize / 2 - 4, qrY - 4, qrSize + 8, qrSize + 8, 3, 3, "S");
+          pdf.addImage(qrData, "PNG", w / 2 - qrSize / 2, qrY, qrSize, qrSize);
+        }
+
+        // Accent divider
+        const footerY = isA5 ? qrY + qrSize + 14 : qrY + qrSize + 12;
+        pdf.setFillColor(...accent);
+        pdf.roundedRect(w / 2 - 9, footerY, 18, 1.1, 0.5, 0.5, "F");
+
+        // Footer
+        pdf.setTextColor(148, 163, 184);
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(8.5);
+        pdf.text("Powered by STAR CATCH", w / 2, footerY + 6, { align: "center" });
+        if (staffName) {
+          pdf.setTextColor(...accent);
+          pdf.setFontSize(8);
+          pdf.text(`Served by ${staffName}`, w / 2, footerY + 10.5, { align: "center" });
+        }
+
+        pdf.save(`${businessName.replace(/\s+/g, "-")}-${isA5 ? "A5-Poster" : "Table-Tent"}.pdf`);
+        showSuccessToast(isA5 ? "A5 poster PDF downloaded!" : "Table tent PDF downloaded!");
+      } catch (e) {
+        console.error("PDF export failed:", e);
+      } finally {
+        setIsExporting(false);
+      }
+    },
+    [businessName, customText, qrFg, logoPreview, staffName, getQRDataUrl, showSuccessToast],
+  );
+
+  /* ─── Print (fixed: injects the real live preview incl. actual QR SVG) ─── */
   const handlePrint = useCallback(() => {
     const content = printRef.current;
     if (!content) return;
@@ -167,41 +455,19 @@ export default function QRCodeGenerator({
           <title>${businessName} - QR Code Standee</title>
           <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { font-family: 'Inter', system-ui, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f8fafc; }
-            .standee { background: white; border-radius: 16px; padding: 40px; text-align: center; box-shadow: 0 4px 24px rgba(0,0,0,0.08); max-width: 400px; width: 100%; }
-            .standee img { max-width: 200px; margin-bottom: 16px; border-radius: 12px; }
-            .standee h2 { font-size: 20px; color: #1e293b; margin-bottom: 8px; }
-            .standee p { font-size: 14px; color: #64748b; margin-bottom: 20px; }
-            .standee .footer { font-size: 11px; color: #94a3b8; margin-top: 20px; }
-            .stars { font-size: 28px; margin-bottom: 16px; }
+            body { font-family: 'Inter', system-ui, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #ffffff; }
+            svg { max-width: 100%; height: auto; }
           </style>
         </head>
-        <body>
-          <div class="standee">
-            ${logoPreview ? `<img src="${logoPreview}" alt="${businessName}" />` : ""}
-            <div class="stars">⭐ ⭐ ⭐ ⭐ ⭐</div>
-            <h2>${businessName}</h2>
-            <p>${customText}</p>
-            <div id="qr-container"></div>
-            <p class="footer">Powered by STAR CATCH</p>
-          </div>
-          <script>
-            window.onload = function() {
-              // Render QR code
-              const container = document.getElementById('qr-container');
-              const canvas = document.createElement('canvas');
-              // Copy from generator canvas would be complex; instead we'll add the QR as an image
-              container.innerHTML = '<p style="color:#94a3b8; font-size:12px;">Scan with your phone camera</p>';
-            };
-          </script>
-        </body>
+        <body>${content.innerHTML}</body>
       </html>
     `);
     printWindow.document.close();
     setTimeout(() => {
+      printWindow.focus();
       printWindow.print();
-    }, 500);
-  }, [businessName, customText, logoPreview]);
+    }, 400);
+  }, [businessName]);
 
   return (
     <div className="space-y-5">
@@ -212,7 +478,9 @@ export default function QRCodeGenerator({
         </div>
         <div>
           <h3 className="text-sm font-semibold text-white">QR Code Generator</h3>
-          <p className="text-xs text-[#A1A1AA]">Generate print-ready QR code posters</p>
+          <p className="text-xs text-[#A1A1AA]">
+            Print-ready posters — branding synced from your profile
+          </p>
         </div>
       </div>
 
@@ -315,22 +583,43 @@ export default function QRCodeGenerator({
             </div>
           )}
 
-          {/* Download Buttons */}
-          <div className="flex gap-2 pt-2">
-            <button
-              onClick={downloadPNG}
-              className="flex-1 h-10 rounded-xl bg-[#16A34A] hover:bg-[#15803D] text-white text-sm font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer"
-            >
-              <Download className="w-4 h-4" />
-              Download PNG
-            </button>
-            <button
-              onClick={handlePrint}
-              className="flex-1 h-10 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-white text-sm font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer"
-            >
-              <Printer className="w-4 h-4" />
-              Print Standee
-            </button>
+          {/* Export Buttons */}
+          <div className="space-y-2 pt-2">
+            <div className="flex gap-2">
+              <button
+                onClick={() => downloadPosterPDF("a5")}
+                disabled={isExporting}
+                className="flex-1 h-10 rounded-xl bg-[#16A34A] hover:bg-[#15803D] text-white text-sm font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+              >
+                <FileDown className="w-4 h-4" />
+                Download Poster (A5 PDF)
+              </button>
+              <button
+                onClick={() => downloadPosterPDF("tent")}
+                disabled={isExporting}
+                className="h-10 px-4 rounded-xl bg-[#16A34A]/15 border border-[#16A34A]/30 hover:bg-[#16A34A]/25 text-[#16A34A] text-sm font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+                title="Download Table Tent format (A5 landscape)"
+              >
+                Table Tent PDF
+              </button>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={downloadPNG}
+                disabled={isExporting}
+                className="flex-1 h-10 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-white text-sm font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+              >
+                <Download className="w-4 h-4" />
+                Download PNG (High-Res)
+              </button>
+              <button
+                onClick={handlePrint}
+                className="flex-1 h-10 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-white text-sm font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer"
+              >
+                <Printer className="w-4 h-4" />
+                Print Standee
+              </button>
+            </div>
           </div>
 
           {/* Success Toast */}
@@ -343,7 +632,7 @@ export default function QRCodeGenerator({
                 className="flex items-center gap-2 text-sm text-[#16A34A]"
               >
                 <CheckCircle2 className="w-4 h-4" />
-                QR code downloaded successfully!
+                {successLabel}
               </motion.div>
             )}
           </AnimatePresence>
@@ -358,6 +647,7 @@ export default function QRCodeGenerator({
               } w-full`}
               style={{
                 boxShadow: `0 8px 32px ${qrFg}15`,
+                borderTop: `4px solid ${qrFg}`,
               }}
             >
               {/* Logo */}
@@ -425,19 +715,6 @@ export default function QRCodeGenerator({
                 </div>
               </div>
 
-              {/* Hidden canvas for PNG download */}
-              <div style={{ position: "absolute", left: -9999, top: -9999 }}>
-                <QRCodeCanvas
-                  id="qr-download-canvas"
-                  value={qrValue}
-                  size={600}
-                  bgColor={qrBg}
-                  fgColor={qrFg}
-                  level="H"
-                  includeMargin={false}
-                />
-              </div>
-
               {/* Footer */}
               <div className="flex items-center justify-center gap-1.5 pt-2 border-t border-gray-100 mt-3">
                 <MessageCircle className="w-3 h-3 text-gray-400" />
@@ -454,6 +731,19 @@ export default function QRCodeGenerator({
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Hidden 1200px canvas — single source of truth for PNG + PDF exports */}
+      <div style={{ position: "absolute", left: -9999, top: -9999 }}>
+        <QRCodeCanvas
+          id="qr-download-canvas"
+          value={qrValue}
+          size={1200}
+          bgColor={qrBg}
+          fgColor={qrFg}
+          level="H"
+          includeMargin={false}
+        />
       </div>
     </div>
   );
