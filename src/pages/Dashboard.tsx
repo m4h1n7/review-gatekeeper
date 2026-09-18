@@ -120,6 +120,8 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<TabType>("overview");
   const [filter, setFilter] = useState<FilterRange>("week");
   const [chartDays, setChartDays] = useState(7);
+  // Staff leaderboard timeframe (mirrors `filter` so the same controls drive both)
+  const [leaderboardDays, setLeaderboardDays] = useState<number>(7);
   const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null);
 
   const subscription = useQuery(api.subscriptions.getCurrent);
@@ -154,7 +156,12 @@ export default function Dashboard() {
 
   const stats = useQuery(api.analytics.businessStats, selectedBusinessId ? { businessId: selectedBusinessId, filter } : "skip");
   const feedbacks = useQuery(api.analytics.recentFeedbacks, selectedBusinessId ? { businessId: selectedBusinessId, limit: 20 } : "skip");
-  const staffLeaderboard = useQuery(api.staff.getLeaderboard, overview?.businesses?.[0]?.id ? { businessId: overview.businesses[0].id } : "skip");
+  const staffLeaderboard = useQuery(
+    api.staff.getLeaderboard,
+    overview?.businesses?.[0]?.id && leaderboardDays != null
+      ? { businessId: overview.businesses[0].id, days: leaderboardDays }
+      : "skip",
+  );
 
   const handleSignOut = async () => { await signOut(); navigate("/"); };
 
@@ -1049,6 +1056,16 @@ export default function Dashboard() {
                   negativeFeedbacks: s.negativeFeedbacks,
                   conversionRate: s.conversionRate,
                 })) || []}
+            periodFilter={{
+              value: filter === "today" ? "all" : filter,
+              days: leaderboardDays,
+            }}
+            onPeriodChange={(value, days) => {
+              // Map back to FilterRange: 'week'↔week, 'month'↔month, 'all'↔today
+              setFilter((value === "week" ? "week" : value === "month" ? "month" : "today") as FilterRange);
+              setChartDays(days ?? 90);
+              setLeaderboardDays(days ?? 90);
+            }}
               />
             </GlassPanel>
           </div>

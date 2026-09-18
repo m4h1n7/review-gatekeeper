@@ -149,11 +149,15 @@ export const getBySlug = query({
 });
 
 /**
- * Leaderboard: Get scan/review counts per staff member for a business.
- * Returns sorted array (highest first) with total interactions and breakdown.
+ * Leaderboard: Get scan/review counts per staff member for a business,
+ * optionally limited to interactions created within the last N days.
+ *
+ * When `days` is provided, only interactions with `createdAt` within that
+ * window are counted — this powers the Today / This Week / This Month /
+ * All Time filter tabs in the dashboard without faking the numbers.
  */
 export const getLeaderboard = query({
-  args: { businessId: v.string() },
+  args: { businessId: v.string(), days: v.optional(v.number()) },
   handler: async (ctx, args) => {
     const members = await ctx.db
       .query("staffMembers")
@@ -162,15 +166,27 @@ export const getLeaderboard = query({
       )
       .collect();
 
+    const now = Date.now();
     const leaderboard = await Promise.all(
       members.map(async (member) => {
-        // Count all interactions attributed to this staff
-        const interactions = await ctx.db
+        // Base query for interactions attributed to this staff member
+        const baseQuery = ctx.db
           .query("interactions")
           .withIndex("by_staffId", (q: any) =>
             q.eq("staffId", member._id as string),
-          )
-          .collect();
+          );
+
+        // When `days` is set, narrow to interactions created within the window.
+        // The `by_staffId` index covers staffId only, so we fetch and filter
+        // client-side. For very high-volume businesses you can add a composite
+        // index [staffId, createdAt] and switch to `withIndex` + `filter`.
+        let interactions = await baseQuery.collect();
+        if (args.days !== undefined && args.days > 0) {
+          const cutoff = now - args.days * 24 * 60 * 60 * 1000;
+          interactions = interactions.filter(
+            (i) => (i as any).createdAt != null && (i as any).createdAt >= cutoff,
+          );
+        }
 
         const totalScans = interactions.length;
         const positiveReviews = interactions.filter(

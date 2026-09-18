@@ -86,12 +86,14 @@ const scaleIn = {
 export default function Review() {
   const { clientSlug } = useParams<{ clientSlug: string }>();
   const [searchParams] = useSearchParams();
-  const staffIdParam = searchParams.get("sid") || undefined;
+  // Support both ?staff=<slug> (primary NFC/QR param) and ?sid=<slug> (legacy)
+  const staffSlugParam = searchParams.get("staff") || searchParams.get("sid") || undefined;
   const staffInfo = useQuery(
     api.staff.getBySlug,
-    staffIdParam ? { slug: staffIdParam } : "skip",
+    staffSlugParam ? { slug: staffSlugParam } : "skip",
   );
-  const effectiveStaffId = staffInfo?.id || staffIdParam || undefined;
+  // Store the staff _id for attribution if a matching staff member was found
+  const effectiveStaffId = staffInfo?.id || undefined;
   const business = useQuery(
     api.businesses.getBySlug,
     clientSlug ? { slug: clientSlug } : "skip",

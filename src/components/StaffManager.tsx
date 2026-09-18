@@ -230,7 +230,9 @@ export default function StaffManager({
           <div className="space-y-2">
             {staffMembers.map((staff) => {
               const isExpanded = expandedStaff === staff.id;
-              const staffUrl = `${window.location.origin}/review/${businessSlug}?sid=${staff.slug}`;
+              // Primary NFC/QR link: /review/<slug>?staff=<staffSlug>
+              // Keep ?sid= backwards-compatible (still accepted by Review.tsx)
+              const staffUrl = `${window.location.origin}/review/${businessSlug}?staff=${staff.slug}`;
               return (
                 <motion.div
                   key={staff.id}
@@ -407,7 +409,7 @@ export default function StaffManager({
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     // Download as PNG via canvas
-                                    const svgEl = document.getElementById(`staff-qr-${staff.id}`);
+                                    const svgEl = document.getElementById(`staff-qr-png-${staff.id}`);
                                     if (!svgEl) return;
                                     const svgData = new XMLSerializer().serializeToString(svgEl);
                                     const canvas = document.createElement("canvas");
@@ -442,7 +444,7 @@ export default function StaffManager({
                                 {/* Hidden SVG for canvas rendering */}
                                 <div style={{ position: "absolute", left: -9999 }}>
                                   <QRCodeSVG
-                                    id={`staff-qr-${staff.id}`}
+                                    id={`staff-qr-png-${staff.id}`}
                                     value={staffUrl}
                                     size={400}
                                     bgColor="#FFFFFF"

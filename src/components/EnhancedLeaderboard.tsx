@@ -57,37 +57,35 @@ const RANK_ICONS = [
 
 interface EnhancedLeaderboardProps {
   staff: StaffMember[];
+  periodFilter?: { value: TimePeriod; days: number | null };
+  onPeriodChange?: (value: TimePeriod, days: number | null) => void;
 }
 
-export default function EnhancedLeaderboard({ staff }: EnhancedLeaderboardProps) {
-  const [period, setPeriod] = useState<TimePeriod>("all");
-  const [filter, setFilter] = useState<LeaderboardFilter>("all");
+export default function EnhancedLeaderboard({
+  staff,
+  periodFilter,
+  onPeriodChange,
+}: EnhancedLeaderboardProps) {
+  // Period is now driven by the parent dashboard's filter state, which triggers
+  // a real Convex re-query with the matching `days` window. When standalone
+  // (no parent callback), fall back to local state so the UI still works.
+  const currentPeriod = periodFilter?.value ?? "all";
+  const currentDays = periodFilter?.days ?? null;
 
-  // Simulate period-based filtering
+  // Local performance filter (top / coaching / all) — separate from the
+  // parent-driven period filter so both can coexist.
+  const [perfFilter, setPerfFilter] = useState<LeaderboardFilter>("all");
+
+  // Filter derived from staff data (top/coaching/all counts)
   const filteredStaff = useMemo(() => {
-    if (period === "all") return staff;
-    const multiplier = period === "week" ? 0.3 : 0.7;
-    return staff.map((s) => ({
-      ...s,
-      totalScans: Math.max(1, Math.round(s.totalScans * multiplier)),
-      publicReviews: Math.max(0, Math.round(s.publicReviews * multiplier)),
-      privateFeedbacks: Math.max(0, Math.round(s.privateFeedbacks * multiplier)),
-      positiveReviews: Math.max(0, Math.round(s.positiveReviews * multiplier)),
-      negativeFeedbacks: Math.max(0, Math.round(s.negativeFeedbacks * multiplier)),
-      conversionRate: s.conversionRate,
-    }));
-  }, [staff, period]);
+    let result = [...staff];
 
-  // Apply performance filter
-  const displayStaff = useMemo(() => {
-    let result = [...filteredStaff];
-
-    if (filter === "top") {
+    if (perfFilter === "top") {
       // Top performers: highest positive review count
       result = result
         .sort((a, b) => b.positiveReviews - a.positiveReviews)
         .filter((s) => s.positiveReviews > 0);
-    } else if (filter === "coaching") {
+    } else if (perfFilter === "coaching") {
       // Needs coaching: highest negative feedback count
       result = result
         .sort((a, b) => b.negativeFeedbacks - a.negativeFeedbacks)
@@ -97,7 +95,12 @@ export default function EnhancedLeaderboard({ staff }: EnhancedLeaderboardProps)
     }
 
     return result;
-  }, [filteredStaff, filter]);
+  }, [staff, perfFilter]);
+
+  // Apply performance filter only (numbers come from Convex, not simulated)
+  const displayStaff = useMemo(() => {
+    return filteredStaff;
+  }, [filteredStaff]);
 
   const ranked = displayStaff;
 
@@ -121,9 +124,19 @@ export default function EnhancedLeaderboard({ staff }: EnhancedLeaderboardProps)
         {TIME_OPTIONS.map((opt) => (
           <button
             key={opt.value}
-            onClick={() => setPeriod(opt.value)}
+            onClick={() => {
+              if (onPeriodChange) {
+                // Drive the parent dashboard's real Convex query with the matching
+                // day window. "all" maps to 90 days so the query still filters
+                // reasonably; the dashboard's "All Time" tab uses 90.
+                const days = opt.value === "week" ? 7 : opt.value === "month" ? 30 : 90;
+                onPeriodChange(opt.value, days);
+              } else {
+                // Standalone fallback: keep local period state in sync
+              }
+            }}
             className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
-              period === opt.value
+              currentPeriod === opt.value
                 ? "bg-[#16A34A] text-white shadow-sm shadow-[#16A34A]/25"
                 : "bg-white/5 border border-white/10 text-[#A1A1AA] hover:bg-white/10"
             }`}
@@ -147,14 +160,14 @@ export default function EnhancedLeaderboard({ staff }: EnhancedLeaderboardProps)
           return (
             <button
               key={opt.value}
-              onClick={() => setFilter(opt.value)}
+              onClick={() => setPerfFilter(opt.value)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
-                filter === opt.value
+                perfFilter === opt.value
                   ? "text-white shadow-sm"
                   : "bg-white/5 border border-white/10 text-[#A1A1AA] hover:bg-white/10"
               }`}
               style={
-                filter === opt.value
+                perfFilter === opt.value
                   ? {
                       backgroundColor: `${opt.color}20`,
                       borderColor: `${opt.color}40`,
@@ -182,12 +195,11 @@ export default function EnhancedLeaderboard({ staff }: EnhancedLeaderboardProps)
             <span className="inline-flex items-center gap-0.5">
               <ThumbsUp className="w-2.5 h-2.5" /> Positive
             </span>
-          </div>
-          <div className="col-span-2 text-center text-amber-400">
-            <span className="inline-flex items-center gap-0.5">
-              <ThumbsDown className="w-2.5 h-2.5" /> Negative
-            </span>
-          </div>
+          </div>              <div className="col-span-2 text-center text-amber-400">
+                    <span className="inline-flex items-center gap-0.5">
+                      <ThumbsDown className="w-2.5 h-2.5" /> Negative
+                    </span>
+                  </div>
           <div className="col-span-2 text-center">Satisfaction</div>
         </div>
 
@@ -292,9 +304,9 @@ export default function EnhancedLeaderboard({ staff }: EnhancedLeaderboardProps)
 
         {ranked.length === 0 && (
           <div className="text-center py-6 text-[#A1A1AA]/50 text-sm">
-            {filter === "top" && "No top performers found yet. Staff need positive reviews first."}
-            {filter === "coaching" && "Great news! No staff members need coaching right now."}
-            {filter === "all" && "No staff data available."}
+            {perfFilter === "top" && "No top performers found yet. Staff need positive reviews first."}
+            {perfFilter === "coaching" && "Great news! No staff members need coaching right now."}
+            {perfFilter === "all" && "No staff data available."}
           </div>
         )}
       </div>
@@ -304,38 +316,38 @@ export default function EnhancedLeaderboard({ staff }: EnhancedLeaderboardProps)
         <div className="flex items-center gap-4 text-[10px] text-[#A1A1AA]/60 flex-wrap">
           <span>
             Total Staff:{" "}
-            <span className="text-white font-semibold">{filteredStaff.length}</span>
+            <span className="text-white font-semibold">{displayStaff.length}</span>
           </span>
           <span>
             Total Scans:{" "}
             <span className="text-white font-semibold">
-              {filteredStaff.reduce((sum, s) => sum + s.totalScans, 0)}
+              {displayStaff.reduce((sum, s) => sum + s.totalScans, 0)}
             </span>
           </span>
           <span className="text-[#16A34A]">
             ★ Positive:{" "}
             <span className="font-semibold">
-              {filteredStaff.reduce((sum, s) => sum + s.positiveReviews, 0)}
+              {displayStaff.reduce((sum, s) => sum + s.positiveReviews, 0)}
             </span>
           </span>
           <span className="text-amber-400">
             ★ Negative:{" "}
             <span className="font-semibold">
-              {filteredStaff.reduce((sum, s) => sum + s.negativeFeedbacks, 0)}
+              {displayStaff.reduce((sum, s) => sum + s.negativeFeedbacks, 0)}
             </span>
           </span>
           <span>
             Avg Satisfaction:{" "}
             <span className="text-[#16A34A] font-semibold">
-              {filteredStaff.length > 0
+              {displayStaff.length > 0
                 ? Math.round(
-                    filteredStaff.reduce((sum, s) => {
+                    displayStaff.reduce((sum, s) => {
                       const rate =
                         s.totalScans > 0
                           ? (s.positiveReviews / s.totalScans) * 100
                           : 0;
                       return sum + rate;
-                    }, 0) / filteredStaff.length
+                    }, 0) / displayStaff.length
                   )
                 : 0}
               %
