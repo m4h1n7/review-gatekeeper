@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, useSearchParams } from "react-router";
 import { useMutation, useAction, useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
@@ -128,8 +128,46 @@ export default function Review() {
   const [logoFailed, setLogoFailed] = useState(false);
   const [redirectCountdown, setRedirectCountdown] = useState(10);
 
+  // Double-tap guards: one star selection / one public-review tap per visit
+  const lockRef = useRef(false);
+  const publicLockRef = useRef(false);
+
   // Dynamic brand theme
   const brand = useBrandTheme(business?.brandColor);
+
+  // Countdown for Google redirect
+  // Page-open tracking: every customer who opens the review page counts as a
+  // scan. One scan per browser session per business per day — sessionStorage
+  // token + server-side sessionKey dedup make reloads and double-taps free.
+  useEffect(() => {
+    if (!business) return;
+    // If a ?staff= param is present, wait for the staff lookup to resolve so
+    // the scan is attributed to the right staff member (or none).
+    if (staffSlugParam && staffInfo === undefined) return;
+    const sk = `sc:${business.id}`;
+    let token = sessionStorage.getItem(sk);
+    if (!token) {
+      token =
+        typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      sessionStorage.setItem(sk, token);
+    }
+    const day = new Date().toISOString().slice(0, 10);
+    try {
+      void logInteraction({
+        businessId: business.id,
+        businessSlug: business.slug,
+        rating: 0,
+        type: "scan",
+        staffId: effectiveStaffId,
+        sessionKey: `${business.id}|${day}|${token}`,
+      });
+    } catch {
+      // never block the customer flow over analytics
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [business?.id, staffSlugParam ? staffInfo : null]);
 
   // Countdown for Google redirect
   useEffect(() => {
@@ -150,25 +188,28 @@ export default function Review() {
   /* ─── Handlers ─── */
   const handleStarClick = async (rating: number) => {
     if (!business) return;
+    if (lockRef.current) return; // double-tap guard: one selection per visit
+    lockRef.current = true;
     setSelectedRating(rating);
 
-    // Log the star-tap interaction. 4-5★ inserts type="redirect" (this is the
-    // single redirect log — the old code double-logged via logPublicReview);
-    // 1-3★ inserts type="feedback_submitted" as the tap record.
-    try {
-      await logInteraction({
-        businessId: business.id,
-        businessSlug: business.slug,
-        rating,
-        type: rating >= 4 ? "redirect" : "feedback_submitted",
-        staffId: effectiveStaffId,
-      });
-    } catch (e) {
-      console.error("Failed to log interaction:", e);
-    }
-
     if (rating >= 4) {
-      // 4-5 stars → INSTANT new-tab redirect to the client's Google Review URL.
+      // Google Redirects counter: only 4-5★ selections that actually send the
+      // customer to the Google Review page get a "redirect" row. (1-3★ taps
+      // intentionally log NOTHING here — Private Feedback counts only on the
+      // real form submission via feedback.submit, preventing double-counts.)
+      try {
+        await logInteraction({
+          businessId: business.id,
+          businessSlug: business.slug,
+          rating,
+          type: "redirect",
+          staffId: effectiveStaffId,
+        });
+      } catch (e) {
+        console.error("Failed to log redirect:", e);
+      }
+
+      // INSTANT new-tab redirect to the client's Google Review URL.
       // window.open is called synchronously so it's not blocked by the browser's
       // popup blocker (which fires only for async/post-await navigations).
       if (business.reviewUrl) {
@@ -177,17 +218,20 @@ export default function Review() {
       // Show the branded thank-you (no countdown — the tab is already open)
       setView("redirecting");
       setRedirectCountdown(0);
-    } else {
-      // 1-3 stars: Business Pro gets dual-choice, others get simple feedback form
-      const isPro = business.planType === "pro";
-      setView(isPro ? "low-rating-options" : "feedback");
+      return;
     }
+
+    // 1-3 stars: Business Pro gets dual-choice, others get simple feedback form
+    const isPro = business.planType === "pro";
+    setView(isPro ? "low-rating-options" : "feedback");
   };
 
   // Public-review button on the dual-choice page (1-3★ path). Logs the public
   // review choice and shows the thank-you view. The countdown timer in the
   // redirecting view then navigates the same tab to the Google URL.
   const handlePublicReview = async () => {
+    if (publicLockRef.current) return; // double-tap guard
+    publicLockRef.current = true;
     if (business) {
       try {
         await logPublicReview({ businessId: business.id, businessSlug: business.slug, staffId: effectiveStaffId });

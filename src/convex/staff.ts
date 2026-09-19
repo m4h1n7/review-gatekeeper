@@ -188,7 +188,9 @@ export const getLeaderboard = query({
           );
         }
 
-        const totalScans = interactions.length;
+        // Scans = neutral page-open rows only. Redirects/feedbacks are outcome
+        // events, counted separately so the satisfaction rate stays meaningful.
+        const totalScans = interactions.filter((i) => i.type === "scan").length;
         const positiveReviews = interactions.filter(
           (i) => (i.type === "public_review" || i.type === "redirect") && i.rating >= 4,
         ).length;

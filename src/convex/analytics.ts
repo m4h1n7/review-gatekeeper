@@ -39,9 +39,10 @@ export const businessStats = query({
       )
       .collect();
 
-    const totalVisits = interactions.length;
+    const totalVisits = interactions.filter((i) => i.type === "scan").length;
     const redirects = interactions.filter((i) => i.type === "redirect");
     const feedbacks = interactions.filter((i) => i.type === "feedback_submitted");
+    const publicReviews = interactions.filter((i) => i.type === "public_review");
 
     const redirectCount = redirects.length;
     const feedbackCount = feedbacks.length;
@@ -50,12 +51,20 @@ export const businessStats = query({
     const feedbackPercentage =
       totalVisits > 0 ? Math.round((feedbackCount / totalVisits) * 100) : 0;
 
+    // Total Reviews = Google Redirects + Private Feedback submissions
+    // (public-review button taps count as redirect-type conversions)
+    const totalReviews = redirectCount + feedbackCount + publicReviews.length;
+    const conversionRate =
+      totalVisits > 0 ? Math.round((redirectCount / totalVisits) * 100) : 0;
+
     return {
       totalVisits,
       redirectCount,
       feedbackCount,
       redirectPercentage,
       feedbackPercentage,
+      totalReviews,
+      conversionRate,
     };
   },
 });
@@ -136,13 +145,14 @@ export const ratingTrend = query({
       dayMap[key] = { positive: 0, negative: 0 };
     }
 
-    // Tally each interaction into its day bucket
+    // Tally each interaction into its day bucket. "scan" rows are neutral
+    // page opens — they count toward Total Scans only, not the trend score.
     for (const interaction of allInteractions) {
       const date = new Date(interaction.createdAt).toISOString().slice(0, 10);
       if (dayMap[date]) {
-        if (interaction.type === "redirect") {
+        if (interaction.type === "redirect" || interaction.type === "public_review") {
           dayMap[date].positive += 1;
-        } else {
+        } else if (interaction.type === "feedback_submitted") {
           dayMap[date].negative += 1;
         }
       }
@@ -207,6 +217,7 @@ export const dashboardOverview = query({
     let totalVisits = 0;
     let totalRedirects = 0;
     let totalFeedbacks = 0;
+    let totalPublicReviews = 0;
 
     for (const biz of businesses) {
       const interactions = await ctx.db
@@ -216,11 +227,12 @@ export const dashboardOverview = query({
         )
         .collect();
 
-      totalVisits += interactions.length;
+      totalVisits += interactions.filter((i) => i.type === "scan").length;
       totalRedirects += interactions.filter((i) => i.type === "redirect").length;
       totalFeedbacks += interactions.filter(
         (i) => i.type === "feedback_submitted",
       ).length;
+      totalPublicReviews += interactions.filter((i) => i.type === "public_review").length;
     }
 
     return {
@@ -235,6 +247,11 @@ export const dashboardOverview = query({
       feedbackPercentage:
         totalVisits > 0
           ? Math.round((totalFeedbacks / totalVisits) * 100)
+          : 0,
+      totalReviews: totalRedirects + totalFeedbacks + totalPublicReviews,
+      conversionRate:
+        totalVisits > 0
+          ? Math.round((totalRedirects / totalVisits) * 100)
           : 0,
       businesses: businesses.map((b) => ({
         id: b._id,

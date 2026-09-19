@@ -58,6 +58,7 @@ import {
   Crown,
   Nfc,
   Bell,
+  ClipboardCheck,
 } from "lucide-react";
 import { useNavigate } from "react-router";
 
@@ -316,13 +317,19 @@ export default function Dashboard() {
     totalVisits: overview.totalVisits, redirectCount: overview.totalRedirects,
     feedbackCount: overview.totalFeedbacks, redirectPercentage: overview.redirectPercentage,
     feedbackPercentage: overview.feedbackPercentage,
+    totalReviews: (overview as any).totalReviews,
+    conversionRate: (overview as any).conversionRate,
   } : null;
 
   const businessName = overview?.businesses[0]?.name || user?.name || "your business";
   const reviewSlug = overview?.businesses[0]?.slug;
-  const conversionRate = displayStats?.totalVisits
-    ? Math.round((displayStats.redirectCount / displayStats.totalVisits) * 100)
-    : 0;
+  // Conversion rate = (Google Redirects / Total Scans) × 100 — computed
+  // server-side in Convex (analytics.businessStats / dashboardOverview) so it
+  // stays exact and reactive; the local fallback mirrors the same formula.
+  const conversionRate = displayStats?.conversionRate
+    ?? (displayStats?.totalVisits
+      ? Math.round((displayStats.redirectCount / displayStats.totalVisits) * 100)
+      : 0);
 
   // ROI calculation: blocked negative reviews x ৳750 estimated customer lifetime value
   const CUSTOMER_LTV = 750;
@@ -680,15 +687,17 @@ export default function Dashboard() {
         {/* ─── OVERVIEW TAB ─── */}
         {activeTab === "overview" && overview && (
           <>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              <StatCard icon={<Eye className="w-5 h-5 text-[#16A34A]" />} label="Total Taps" value={displayStats?.totalVisits ?? 0}
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+              <StatCard icon={<Eye className="w-5 h-5 text-[#16A34A]" />} label="Total Scans" value={displayStats?.totalVisits ?? 0}
                 sub={selectedBusinessId ? "This profile" : `Across ${overview.profileCount} profile(s)`} color="bg-[#16A34A]/10" />
               <StatCard icon={<Star className="w-5 h-5 text-emerald-400" />} label="Google Redirects" value={displayStats?.redirectCount ?? 0}
-                sub={`${displayStats?.redirectPercentage ?? 0}% of total`} color="bg-emerald-500/10" />
+                sub={`${displayStats?.redirectPercentage ?? 0}% of scans`} color="bg-emerald-500/10" />
               <StatCard icon={<MessageSquare className="w-5 h-5 text-amber-400" />} label="Private Feedback" value={displayStats?.feedbackCount ?? 0}
-                sub={unresolvedCount > 0 ? `${unresolvedCount} unresolved` : `${displayStats?.feedbackPercentage ?? 0}% of total`} color="bg-amber-500/10" />
+                sub={unresolvedCount > 0 ? `${unresolvedCount} unresolved` : `${displayStats?.feedbackPercentage ?? 0}% of scans`} color="bg-amber-500/10" />
+              <StatCard icon={<ClipboardCheck className="w-5 h-5 text-sky-400" />} label="Total Reviews" value={displayStats?.totalReviews ?? (displayStats ? (displayStats.redirectCount ?? 0) + (displayStats.feedbackCount ?? 0) : 0)}
+                sub="Redirects + feedback" color="bg-sky-500/10" />
               <StatCard icon={<TrendingUp className="w-5 h-5 text-[#16A34A]" />} label="Conversion Rate"
-                value={`${conversionRate}%`} sub="Positive review rate" color="bg-[#16A34A]/10" />
+                value={`${conversionRate}%`} sub="Scans → Google reviews" color="bg-[#16A34A]/10" />
             </div>
 
             {/* ROI & Revenue Saver Widget */}
@@ -780,7 +789,7 @@ export default function Dashboard() {
                   <div className="h-[220px] flex items-center justify-center">
                     <div className="text-center">
                       <BarChart3 className="w-10 h-10 text-[#A1A1AA]/20 mx-auto mb-3" />
-                      <p className="text-sm text-[#A1A1AA] mb-1">Total Reviews: {displayStats?.totalVisits ?? 0}</p>
+                      <p className="text-sm text-[#A1A1AA] mb-1">Total Reviews: {displayStats?.totalReviews ?? (displayStats ? (displayStats.redirectCount ?? 0) + (displayStats.feedbackCount ?? 0) : 0)}</p>
                       <p className="text-xs text-[#A1A1AA]/60">Simple count view</p>
                     </div>
                   </div>

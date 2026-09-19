@@ -239,11 +239,15 @@ export default defineSchema(
       staffName: v.optional(v.string()),
       timestamp: v.optional(v.number()),
       createdAt: v.number(),
+      // Dedup key for 'scan' events: businessId + date + client session token.
+      // One row per browser session per business per day.
+      sessionKey: v.optional(v.string()),
     })
       .index("by_businessId", ["businessId", "createdAt"])
       .index("by_staffId", ["staffId"])
       .index("by_timestamp", ["timestamp"])
-      .index("by_slug", ["businessSlug"]),
+      .index("by_slug", ["businessSlug"])
+      .index("by_sessionKey", ["sessionKey"]),
 
     payments: defineTable({
       userId: v.string(),

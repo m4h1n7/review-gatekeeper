@@ -110,10 +110,28 @@ export const logInteraction = mutation({
     businessId: v.string(),
     businessSlug: v.string(),
     rating: v.number(),
-    type: v.union(v.literal("redirect"), v.literal("feedback_submitted"), v.literal("public_review")),
+    type: v.union(
+      v.literal("redirect"),
+      v.literal("feedback_submitted"),
+      v.literal("public_review"),
+      v.literal("scan"),
+    ),
     staffId: v.optional(v.string()),
+    sessionKey: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    // Scan dedup: one "scan" row per business per client session per day.
+    // The browser sends a stable per-session token; repeated opens from the
+    // same session on the same day are idempotent (no duplicate rows on
+    // reloads or accidental double-taps).
+    if (args.type === "scan" && args.sessionKey) {
+      const existing = await ctx.db
+        .query("interactions")
+        .withIndex("by_sessionKey", (q) => q.eq("sessionKey", args.sessionKey))
+        .first();
+      if (existing) return { ok: true, deduped: true };
+    }
+
     await ctx.db.insert("interactions", {
       businessId: args.businessId,
       businessSlug: args.businessSlug,
@@ -121,6 +139,7 @@ export const logInteraction = mutation({
       type: args.type,
       createdAt: Date.now(),
       staffId: args.staffId,
+      sessionKey: args.sessionKey,
     });
     return { ok: true };
   },
