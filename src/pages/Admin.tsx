@@ -190,6 +190,14 @@ export default function Admin() {
   const [archiveTarget, setArchiveTarget] = useState<{ userId: string; name: string } | null>(null);
   const [archiveConfirmText, setArchiveConfirmText] = useState("");
 
+  // Suspend confirmation modal (destructive: cuts off client access instantly)
+  const [suspendModalOpen, setSuspendModalOpen] = useState(false);
+  const [suspendTarget, setSuspendTarget] = useState<{ userId: string; name: string; email: string } | null>(null);
+
+  // Payment approve confirmation modal (destructive: grants +30 days)
+  const [approveModalOpen, setApproveModalOpen] = useState(false);
+  const [approveTarget, setApproveTarget] = useState<{ paymentId: string; clientName: string; clientEmail: string; plan: string; amount?: number } | null>(null);
+
   // Session timeout (30 min inactivity)
   const lastActivityRef = useRef(Date.now());
   useEffect(() => {
@@ -341,25 +349,41 @@ export default function Admin() {
   };
 
   /* ─── Approve ────────────────────────────────────────────── */
-  const handleApprove = async (paymentId: string) => {
+  // Approving a payment grants the client a paid plan — destructive enough to
+  // warrant explicit confirmation before the mutation commits.
+  const openApproveModal = (payment: { id: string; clientName?: string; clientEmail?: string; plan: string; amount?: number }) => {
+    setApproveTarget({
+      paymentId: payment.id,
+      clientName: payment.clientName || "this client",
+      clientEmail: payment.clientEmail || "",
+      plan: payment.plan,
+      amount: payment.amount,
+    });
+    setApproveModalOpen(true);
+  };
+
+  const handleApprove = async () => {
+    if (!approveTarget) return;
     requirePin(async () => {
-    setProcessingId(paymentId);
-    try {
-      const result = await approvePayment({ paymentId });
-      toast.success("Client upgraded successfully!", {
-        description: `Subscription activated for ${result.plan === "starter" ? "Starter" : "Business Pro"} plan.`,
-      });
-      if (result.clientEmail) {
-        await sendEmail("/api/send-approval-email", {
-          to: result.clientEmail,
-          plan: result.plan,
-          clientName: result.clientName || "",
+      setProcessingId(approveTarget.paymentId);
+      try {
+        const result = await approvePayment({ paymentId: approveTarget.paymentId });
+        toast.success("Client upgraded successfully!", {
+          description: `Subscription activated for ${result.plan === "starter" ? "Starter" : "Business Pro"} plan.`,
         });
-        toast.success("Approval email sent!", { description: `Confirmation sent to ${result.clientEmail}` });
-      }
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Failed to approve");
-    } finally { setProcessingId(null); }
+        if (result.clientEmail) {
+          await sendEmail("/api/send-approval-email", {
+            to: result.clientEmail,
+            plan: result.plan,
+            clientName: result.clientName || "",
+          });
+          toast.success("Approval email sent!", { description: `Confirmation sent to ${result.clientEmail}` });
+        }
+        setApproveModalOpen(false);
+        setApproveTarget(null);
+      } catch (err: unknown) {
+        toast.error(err instanceof Error ? err.message : "Failed to approve");
+      } finally { setProcessingId(null); }
     });
   };
 
@@ -387,17 +411,9 @@ export default function Admin() {
   };
 
   /* ─── Extend Subscription ────────────────────────────────── */
-  const handleExtend = async (userId: string, clientName: string, plan: "starter" | "pro" = "pro") => {
-    const key = `extend-${userId}`;
-    setProcessingId(key);
-    try {
-      await extendSubscription({ userId, days: 30, plan });
-      toast.success(`Subscription extended by 30 days (${plan.toUpperCase()}) for ${clientName}`);
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Failed to extend");
-    } finally { setProcessingId(null); }
-  };
-
+  // All manual days adjustments go through SubscriptionExtendModal — the
+  // confirmation layer showing client email, current plan/expiry, proposed
+  // extension, and a Confirm button before the mutation commits.
   const openExtendModal = (userId: string, name: string, email: string, expiresAt: number | null, plan: string) => {
     setExtendTarget({ userId, name, email, expiresAt, plan });
     setExtendModalOpen(true);
@@ -444,15 +460,27 @@ export default function Admin() {
   };
 
   /* ─── Suspend / Activate / Delete Client ──────────────── */
-  const handleSuspend = async (userId: string, name: string) => {
+  // Suspend is destructive (cuts off the client's access instantly), so it
+  // opens a confirmation modal first; the PIN gate runs after confirmation.
+  const handleSuspend = (userId: string, name: string, email?: string) => {
+    setSuspendTarget({ userId, name, email: email ?? "" });
+    setSuspendModalOpen(true);
+    setOpenActionMenu(null);
+  };
+
+  const handleSuspendConfirm = async () => {
+    if (!suspendTarget) return;
     requirePin(async () => {
-    try {
-      await suspendClient({ userId });
-      toast.success(`${name} has been suspended`);
-      setOpenActionMenu(null);
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Failed");
-    }
+      try {
+        await suspendClient({ userId: suspendTarget.userId });
+        toast.success(`${suspendTarget.name} has been suspended`, {
+          description: "Their review portal is now inactive and dashboard is locked.",
+        });
+        setSuspendModalOpen(false);
+        setSuspendTarget(null);
+      } catch (err: unknown) {
+        toast.error(err instanceof Error ? err.message : "Failed");
+      }
     });
   };
   const handleActivate = async (userId: string, name: string) => {
@@ -1000,7 +1028,7 @@ export default function Admin() {
                             </td>
                             <td className="px-5 py-4 text-right">
                               <div className="flex items-center justify-end gap-2">
-                                <Button size="sm" onClick={() => handleApprove(payment.id)} disabled={processingId === payment.id}
+                                <Button size="sm" onClick={() => openApproveModal(payment)} disabled={processingId === payment.id}
                                   className="h-8 px-3 bg-[#16A34A] hover:bg-[#16A34A]/90 text-white text-xs font-semibold cursor-pointer">
                                   {processingId === payment.id
                                     ? <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -1047,7 +1075,7 @@ export default function Admin() {
                         <div><span className="text-[#A1A1AA]/60">Submitted</span><p className="text-white">{formatTime(payment.submittedAt)}</p></div>
                       </div>
                       <div className="flex gap-2">
-                        <Button size="sm" onClick={() => handleApprove(payment.id)} disabled={processingId === payment.id}
+                        <Button size="sm" onClick={() => openApproveModal(payment)} disabled={processingId === payment.id}
                           className="flex-1 h-9 bg-[#16A34A] hover:bg-[#16A34A]/90 text-white text-xs font-semibold cursor-pointer">
                           <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Approve
                         </Button>
@@ -1308,7 +1336,7 @@ export default function Admin() {
                                   <div className="absolute right-0 top-full mt-1 z-30 w-52 rounded-xl bg-[#18181B] border border-white/10 shadow-2xl p-1">
                                     {/* Standard actions */}
                                     {client.accountStatus !== "suspended" ? (
-                                      <button onClick={() => handleSuspend(client.userId, client.name)}
+                                      <button onClick={() => handleSuspend(client.userId, client.name, client.email)}
                                         className="w-full flex items-center gap-2 px-3 py-2 text-xs text-amber-400 hover:bg-amber-500/10 rounded-lg cursor-pointer transition-colors">
                                         <Pause className="w-3.5 h-3.5" /> Suspend Account
                                       </button>
@@ -1705,6 +1733,79 @@ export default function Admin() {
                 className={`flex-1 font-semibold cursor-pointer transition-all ${archiveConfirmText === `DELETE-${(archiveTarget.name).toUpperCase()}` ? "bg-red-600 hover:bg-red-700 text-white" : "bg-red-500/20 text-red-400/40 cursor-not-allowed"}`}>
                 <Trash2 className="w-4 h-4 mr-1.5" /> Archive Account
               </Button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* ═══ SUSPEND CLIENT CONFIRMATION MODAL ═══ */}
+      {suspendModalOpen && suspendTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+            className="bg-[#18181B] border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/15 flex items-center justify-center">
+                <Pause className="w-5 h-5 text-amber-400" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-white">Suspend Account</h3>
+                <p className="text-xs text-[#A1A1AA]">This action takes effect immediately</p>
+              </div>
+            </div>
+            <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-4 mb-4">
+              <p className="text-sm text-white font-semibold mb-1">Suspend &quot;{suspendTarget.name}&quot;?</p>
+              {suspendTarget.email && (
+                <p className="text-xs text-[#A1A1AA] mb-2">{suspendTarget.email}</p>
+              )}
+              <p className="text-xs text-[#A1A1AA] leading-relaxed">
+                The client will be <strong className="text-amber-400">signed out and locked out instantly</strong>,
+                their dashboard becomes inaccessible, and every NFC/QR review link stops working.
+                You can reactivate the account at any time.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => { setSuspendModalOpen(false); setSuspendTarget(null); }}
+                className="flex-1 border-white/10 text-[#A1A1AA] hover:bg-white/5 cursor-pointer">Cancel</Button>
+              <Button onClick={handleSuspendConfirm} disabled={processingId !== null}
+                className="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-semibold cursor-pointer disabled:opacity-50">
+                <Pause className="w-4 h-4 mr-1.5" /> Suspend Account
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* ═══ APPROVE PAYMENT CONFIRMATION MODAL ═══ */}
+      {approveModalOpen && approveTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+            className="bg-[#18181B] border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-[#16A34A]/15 flex items-center justify-center">
+                <CheckCircle2 className="w-5 h-5 text-[#16A34A]" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-white">Approve Payment</h3>
+                <p className="text-xs text-[#A1A1AA]">Confirm before granting subscription</p>
+              </div>
+            </div>
+            <div className="bg-[#16A34A]/5 border border-[#16A34A]/20 rounded-xl p-4 mb-4">
+              <p className="text-sm text-white font-semibold mb-1">Activate {approveTarget.plan === "starter" ? "Starter" : "Business Pro"} for {approveTarget.clientName}?</p>
+              {approveTarget.clientEmail && <p className="text-xs text-[#A1A1AA] mb-2">{approveTarget.clientEmail}</p>}
+              {approveTarget.amount !== undefined && approveTarget.amount !== null && (
+                <p className="text-xs text-[#A1A1AA] mb-2">Amount: <span className="text-white font-mono">৳{approveTarget.amount}</span></p>
+              )}
+              <p className="text-xs text-[#A1A1AA] leading-relaxed">
+                This grants <strong className="text-[#16A34A]">+30 days</strong> of paid service immediately,
+                unlocks their dashboard features, and reactivates all NFC/QR review links. An approval email is sent after confirming.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => { setApproveModalOpen(false); setApproveTarget(null); }}
+                className="flex-1 border-white/10 text-[#A1A1AA] hover:bg-white/5 cursor-pointer">Cancel</Button>
+              <Button onClick={handleApprove} disabled={processingId !== null}
+                className="flex-1 bg-[#16A34A] hover:bg-[#16A34A]/90 text-white font-semibold cursor-pointer disabled:opacity-50">
+                <CheckCircle2 className="w-4 h-4 mr-1.5" /> Confirm Approval</Button>
             </div>
           </motion.div>
         </div>
