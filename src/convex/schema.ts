@@ -132,6 +132,7 @@ export default defineSchema(
       name: v.string(),
       businessName: v.optional(v.string()),
       logoUrl: v.optional(v.string()),
+      logoStorageId: v.optional(v.string()),
       reviewUrl: v.string(),
       alertEmail: v.optional(v.string()),
       clientEmail: v.optional(v.string()),

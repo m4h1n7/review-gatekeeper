@@ -1,7 +1,16 @@
-import { mutation, query } from "./_generated/server";
+import { mutation, query, action } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { api } from "./_generated/api";
+
+/** Logo upload constraints shared by client and server */
+export const ALLOWED_LOGO_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/svg+xml",
+];
+const MAX_LOGO_BYTES = 5 * 1024 * 1024; // 5MB
 
 /**
  * Create a new business profile after onboarding.
@@ -199,6 +208,7 @@ export const updatePromo = mutation({
 export const updateBranding = mutation({
   args: {
     businessId: v.string(),
+    logoUrl: v.optional(v.string()),
     heroUrl: v.optional(v.string()),
     brandColor: v.optional(v.string()),
     welcomeMessage: v.optional(v.string()),
@@ -228,6 +238,7 @@ export const updateBranding = mutation({
     if ((business as any).userId !== userId) throw new Error("Unauthorized");
 
     const patch: Record<string, any> = {};
+    if (args.logoUrl !== undefined) patch.logoUrl = args.logoUrl || undefined;
     if (args.heroUrl !== undefined) patch.heroUrl = args.heroUrl;
     if (args.brandColor !== undefined) patch.brandColor = args.brandColor;
     if (args.welcomeMessage !== undefined) patch.welcomeMessage = args.welcomeMessage;
@@ -251,6 +262,79 @@ export const updateBranding = mutation({
     await ctx.db.patch(args.businessId as any, patch);
 
     return { ok: true };
+  },
+});
+
+/**
+ * Issue a short-lived upload URL for logo file storage.
+ * Auth required; the file itself is POSTed by the browser, then committed
+ * via updateBusinessLogo which enforces size/type/ownership validation.
+ */
+export const generateLogoUploadUrl = action({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Must be signed in");
+    return await ctx.storage.generateUploadUrl();
+  },
+});
+
+/**
+ * Commit an uploaded logo: validates ownership, type (JPEG/PNG/WEBP/SVG)
+ * and size (max 5MB), patches logoUrl, then best-effort deletes the
+ * previous stored file so storage doesn't grow unbounded.
+ */
+export const updateBusinessLogo = mutation({
+  args: {
+    businessId: v.string(),
+    storageId: v.string(),
+    contentType: v.string(),
+    sizeBytes: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Must be signed in");
+
+    const business = await ctx.db.get(args.businessId as any);
+    if (!business) throw new Error("Business not found");
+    if ((business as any).userId !== userId) throw new Error("Unauthorized");
+
+    if (!ALLOWED_LOGO_TYPES.includes(args.contentType)) {
+      throw new Error("Unsupported image format. Use JPEG, PNG, WEBP or SVG.");
+    }
+    if (args.sizeBytes > MAX_LOGO_BYTES) {
+      throw new Error("Image exceeds the 5MB limit.");
+    }
+
+    const previous = (business as any).logoStorageId as string | undefined;
+    const publicUrl = (await ctx.storage.getUrl(args.storageId as any)) ?? undefined;
+
+    await ctx.db.patch(args.businessId as any, {
+      logoUrl: publicUrl,
+      logoStorageId: args.storageId,
+    });
+
+    if (previous && previous !== args.storageId) {
+      try {
+        await ctx.storage.delete(previous as any);
+      } catch {
+        // best effort - old file may already be gone
+      }
+    }
+
+    return { ok: true };
+  },
+});
+
+/** Internal helper for cleanup of orphaned upload sessions if ever needed */
+export const getLogoStorageId = query({
+  args: { businessId: v.string() },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Must be signed in");
+    const business = await ctx.db.get(args.businessId as any);
+    if (!business || (business as any).userId !== userId) return null;
+    return ((business as any).logoStorageId as string | undefined) ?? null;
   },
 });
 
