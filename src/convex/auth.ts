@@ -139,10 +139,19 @@ async function generateAndSendOTP(
     process.env.RESEND_API_KEY ||
     (process.env.EMAIL_USER && process.env.EMAIL_PASS)
   );
+
+  // ── Dev / no-provider mode: log the OTP so the developer can test
+  //    the full reset flow without configuring an email provider.
+  //    The reset flow still progresses to the verification step.
   if (!providerConfigured) {
-    throw new Error(
-      "Email delivery is not configured. Please set RESEND_API_KEY (or SMTP credentials) in the Convex environment and try again.",
+    console.warn(
+      `[auth] ⚠️  No email provider configured. OTP for ${email}:`,
     );
+    console.warn(`[auth] ────  OTP CODE: ${token}  ────`);
+    console.warn(
+      `[auth] To receive real emails, set RESEND_API_KEY (primary) or EMAIL_USER/EMAIL_PASS (SMTP fallback) in the Convex dashboard.`,
+    );
+    return;
   }
 
   try {
