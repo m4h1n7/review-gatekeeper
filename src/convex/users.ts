@@ -235,6 +235,30 @@ export const sendSignupOtp = mutation({
 });
 
 /**
+ * Store a password-reset OTP on the user record as a fallback when email
+ * delivery fails (missing RESEND_API_KEY, SMTP rejection, domain restriction).
+ * The primary verification path still uses authVerificationCodes; this is
+ * a safety net so the admin can read the OTP from the Convex dashboard.
+ */
+export const storeResetOtp = mutation({
+  args: { email: v.string(), otp: v.string() },
+  handler: async (ctx, args) => {
+    // Find user by email
+    const user = await ctx.db
+      .query("users")
+      .withIndex("email", (q) => q.eq("email", args.email.toLowerCase()))
+      .first();
+    if (!user) return; // silent — don't reveal whether account exists
+
+    const expiry = Date.now() + 15 * 60 * 1000; // 15 minutes
+    await ctx.db.patch(user._id, {
+      resetOtp: args.otp,
+      resetOtpExpiry: expiry,
+    });
+  },
+});
+
+/**
  * Get the current user's role and routing info.
  * Returns: { role, isAdmin, email } for role-based redirect decisions.
  */

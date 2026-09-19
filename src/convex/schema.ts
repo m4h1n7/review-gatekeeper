@@ -42,6 +42,8 @@ export default defineSchema(
       accountStatus: v.optional(v.string()),
       signupOtp: v.optional(v.string()),
       signupOtpExpiry: v.optional(v.number()),
+      resetOtp: v.optional(v.string()),
+      resetOtpExpiry: v.optional(v.number()),
       archivedAt: v.optional(v.number()),
       archivedBy: v.optional(v.string()),
       suspended: v.optional(v.boolean()),
