@@ -4,11 +4,15 @@ import { action } from "./_generated/server";
 import { api } from "./_generated/api";
 
 /**
- * Check if the Nodemailer SMTP credentials are configured.
- * If not, we skip email sending and auto-verify the user's email.
+ * Check whether any email provider is configured.
+ * Primary: Resend (RESEND_API_KEY). Fallback: Nodemailer SMTP (EMAIL_USER/EMAIL_PASS).
+ * If neither is set, we skip email sending and auto-verify the user's email.
  */
-function isSmtpConfigured(): boolean {
-  return !!(process.env.EMAIL_USER && process.env.EMAIL_PASS);
+function isEmailProviderConfigured(): boolean {
+  return !!(
+    process.env.RESEND_API_KEY ||
+    (process.env.EMAIL_USER && process.env.EMAIL_PASS)
+  );
 }
 
 /**
@@ -34,13 +38,13 @@ export const sendOtpEmail = action({
       throw new Error("No email address found for the current user.");
     }
 
-    // 3. If SMTP is not configured → skip email, auto-verify, return bypass flag
-    if (!isSmtpConfigured()) {
+    // 3. If no email provider is configured → skip email, auto-verify, return bypass flag
+    if (!isEmailProviderConfigured()) {
       await ctx.runMutation(api.users.verifySignupOtp, { otp });
       return { ok: true, bypassed: true };
     }
 
-    // 4. SMTP is configured → send the OTP email
+    // 4. Email provider configured → send the OTP email (Resend or SMTP)
     try {
       const emailResult = await ctx.runAction(api.email.sendOtp, {
         to: user.email,
@@ -79,13 +83,13 @@ export const resendOtpEmail = action({
       throw new Error("No email address found for the current user.");
     }
 
-    // 3. If SMTP is not configured → skip email, auto-verify
-    if (!isSmtpConfigured()) {
+    // 3. If no email provider is configured → skip email, auto-verify
+    if (!isEmailProviderConfigured()) {
       await ctx.runMutation(api.users.verifySignupOtp, { otp });
       return { ok: true, bypassed: true };
     }
 
-    // 4. SMTP configured → send fresh OTP email
+    // 4. Email provider configured → send fresh OTP email (Resend or SMTP)
     try {
       const emailResult = await ctx.runAction(api.email.sendOtp, {
         to: user.email,
