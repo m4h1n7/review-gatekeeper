@@ -60,6 +60,33 @@ function validatePassword(pw: string): string[] {
   return errors;
 }
 
+/**
+ * Convert backend/auth errors into safe, user-friendly messages.
+ * Known friendly server messages pass through verbatim; raw Convex traces
+ * (e.g. "Uncaught Error: InvalidSecret") are masked with a generic message.
+ */
+const FRIENDLY_AUTH_MESSAGES = [
+  "Failed to send reset code. Please try again in a few minutes.",
+  "Failed to send the verification email. Please try again in a moment.",
+  "Email delivery is not configured",
+  "Invalid or expired reset code.",
+  "Too many failed attempts",
+  "An account with this email already exists",
+  "Password must be at least 8 characters",
+  "Password must contain",
+];
+
+function friendlyAuthError(err: unknown, fallback: string): string {
+  const raw = err instanceof Error ? err.message : String(err ?? "");
+  if (raw && FRIENDLY_AUTH_MESSAGES.some((m) => raw.includes(m))) {
+    // Trim long wrapped traces down to the friendly sentence itself
+    const match = FRIENDLY_AUTH_MESSAGES.find((m) => raw.includes(m))!;
+    const idx = raw.indexOf(match);
+    return raw.slice(idx, idx + match.length).replace(/\.$/, ".");
+  }
+  return fallback;
+}
+
 function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const { isLoading: authLoading, isAuthenticated, signIn, user } = useAuth();
   const navigate = useNavigate();
@@ -369,7 +396,12 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       setOtp("");
       setIsLoading(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not send reset code. Check your email.");
+      setError(
+        friendlyAuthError(
+          err,
+          "Failed to send reset code. Please try again.",
+        ),
+      );
       setIsLoading(false);
     }
   };
@@ -405,7 +437,9 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       });
       navigate(isSuperAdmin(resetEmail) ? "/admin" : redirect);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Invalid or expired code.");
+      setError(
+        friendlyAuthError(err, "Invalid or expired code. Please try again."),
+      );
       setIsLoading(false);
       setOtp("");
     }

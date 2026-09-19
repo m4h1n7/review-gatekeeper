@@ -19,10 +19,14 @@ import {
   createAccount,
   retrieveAccount,
   signInViaProvider,
+  modifyAccountCredentials,
+  invalidateSessions,
 } from "@convex-dev/auth/server";
 import { Email } from "@convex-dev/auth/providers/Email";
 import { RandomReader, generateRandomString } from "@oslojs/crypto/random";
 import { Scrypt } from "lucia";
+import { api } from "./_generated/api";
+import type { ActionCtx } from "./_generated/server";
 
 // ---------------------------------------------------------------------------
 // 1. Safe site-URL resolution
@@ -110,36 +114,60 @@ function validatePasswordRequirements(password: string): void {
 // 4. OTP email helper (never throws — returns boolean)
 // ---------------------------------------------------------------------------
 
+/** Error messages that are already user-friendly — re-thrown verbatim. */
+const FRIENDLY_EMAIL_ERRORS = [
+  "Failed to send",
+  "Email delivery is not configured",
+];
+
 /**
- * Send OTP email via the Convex HTTP endpoint (Nodemailer SMTP).
- * Returns true on success, false on failure — NEVER throws so auth flows
- * (Password signIn, reset, etc.) are never blocked by email delivery issues.
+ * Send the OTP / reset-code email through the Resend → SMTP pipeline in
+ * email.ts (Resend primary, Gmail SMTP fallback, default From:
+ * "StarCatch BD <mahinhosen870@gmail.com>").
+ *
+ * Called directly via `ctx.runAction` — no HTTP hop, no site-URL dependency.
+ * On failure it throws a user-friendly Error (wrapped safely by the callers)
+ * so the client shows "Failed to send reset code…" instead of a raw trace.
  */
 async function generateAndSendOTP(
+  ctx: ActionCtx,
   email: string,
   token: string,
   appName: string,
-): Promise<boolean> {
+): Promise<void> {
+  const providerConfigured = !!(
+    process.env.RESEND_API_KEY ||
+    (process.env.EMAIL_USER && process.env.EMAIL_PASS)
+  );
+  if (!providerConfigured) {
+    throw new Error(
+      "Email delivery is not configured. Please set RESEND_API_KEY (or SMTP credentials) in the Convex environment and try again.",
+    );
+  }
+
   try {
-    const siteUrl = getAuthSiteUrl();
-    if (!siteUrl) {
-      console.error("[auth] Cannot send OTP — no site URL configured");
-      return false;
-    }
-    const res = await fetch(`${siteUrl}/api/send-otp`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, otp: token, appName }),
+    const result = await ctx.runAction(api.email.sendOtp, {
+      to: email,
+      otp: token,
+      appName,
     });
-    if (!res.ok) {
-      const err = await res.text();
-      console.error(`[auth] OTP email failed (${res.status}): ${err}`);
-      return false;
+    if (!result?.ok) {
+      console.error(`[auth] OTP email rejected: ${result?.error ?? "unknown error"}`);
+      throw new Error(
+        "Failed to send the verification email. Please try again in a moment.",
+      );
     }
-    return true;
-  } catch (error) {
-    console.error("[auth] OTP email send error (non-fatal):", error);
-    return false;
+  } catch (err) {
+    if (
+      err instanceof Error &&
+      FRIENDLY_EMAIL_ERRORS.some((p) => err.message.startsWith(p))
+    ) {
+      throw err; // already user-friendly
+    }
+    console.error("[auth] OTP email send error:", err);
+    throw new Error(
+      "Failed to send the verification email. Please try again in a moment.",
+    );
   }
 }
 
@@ -159,9 +187,16 @@ function createOtpProvider(id: string) {
       };
       return generateRandomString(random, "0123456789", 6);
     },
-    async sendVerificationRequest({ identifier: email, token }) {
+    async sendVerificationRequest(params, ...ctxBox: unknown[]) {
+      // The library forwards the action ctx as a 2nd argument at runtime
+      // (untyped upstream — signIn.js uses "@ts-expect-error" for this).
+      const ctx = ctxBox[0] as ActionCtx;
+      const { identifier: email, token } = params as {
+        identifier: string;
+        token: string;
+      };
       const appName = process.env.VLY_APP_NAME || "STAR CATCH Reviews";
-      await generateAndSendOTP(email, token, appName);
+      await generateAndSendOTP(ctx, email, token, appName);
     },
   });
 }
@@ -318,14 +353,21 @@ const SafePassword = ConvexCredentials({
         });
       } catch (err: any) {
         const msg = String(err?.message || err);
-        if (
-          msg.includes("InvalidAccountId") ||
-          msg.includes("InvalidSecret")
-        ) {
+        // Unknown email → null (silent) so we don't reveal which emails exist.
+        // Email delivery failures surface as friendly errors instead of a crash.
+        if (msg.includes("InvalidAccountId") || msg.includes("InvalidSecret")) {
           console.warn(
             `[auth] Password reset requested for non-existent account: ${email}`,
           );
           return null;
+        }
+        if (
+          msg.startsWith("Failed to send") ||
+          msg.startsWith("Email delivery is not configured")
+        ) {
+          throw new Error(
+            "Failed to send reset code. Please try again in a few minutes.",
+          );
         }
         throw err;
       }
@@ -340,6 +382,8 @@ const SafePassword = ConvexCredentials({
         throw new Error("Missing new password for reset verification.");
       }
 
+      // ConvexCredentials does NOT auto-update credentials after authorize
+      // returns, so (like the upstream Password provider) we must do it here.
       try {
         const { account: resetAccount } = await retrieveAccount(ctx, {
           provider: "password",
@@ -359,8 +403,16 @@ const SafePassword = ConvexCredentials({
           throw new Error("Invalid or expired reset code.");
         }
 
-        // Password will be updated by the provider after authorize returns
-        return { userId };
+        // Actually update the stored password (hashes via the provider's
+        // crypto — same Scrypt used for sign-in), then invalidate every other
+        // active session for this user (stolen sessions die on password change).
+        await modifyAccountCredentials(ctx, {
+          provider: "password",
+          account: { id: email, secret: newPassword },
+        });
+        await invalidateSessions(ctx, { userId, except: [sessionId] });
+
+        return { userId, sessionId };
       } catch (err: any) {
         throw err;
       }
