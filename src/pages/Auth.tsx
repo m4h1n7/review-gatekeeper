@@ -265,9 +265,37 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     }
   }, [authLoading, isAuthenticated, user?.email, user, navigate, getRedirect, isEmailVerified, signupEmail, otpVerified]);
 
-  const currentView = typeof view === "string" ? view : "emailOtp";
   const otpEmail = typeof view === "object" && "email" in view ? view.email : null;
   const resetEmail = typeof view === "object" && "resetEmail" in view ? view.resetEmail : null;
+  // Normalize the active view. Object views collapse to their string base.
+  // IMPORTANT: the password-reset code screen is its OWN view ("resetVerify")
+  // — collapsing it into "emailOtp" used to also render the bottom "Email
+  // Verification" form underneath it (double-form bug).
+  const currentView =
+    typeof view === "string"
+      ? view
+      : "resetEmail" in view
+        ? "resetVerify"
+        : "emailOtp";
+
+  // ─── Reset code dispatch (single shared backend call) ───
+  // The `flow: "reset"` signIn IS sendVerificationCode(email): it generates
+  // the 6-digit code, logs it as [OTP CODE], stores it on the user record with
+  // a fresh 15-minute expiry, and best-effort emails it. Both the initial
+  // forgot-password trigger and the "Send a new code" resend link go through
+  // this one helper so they hit the exact same working endpoint.
+  const dispatchResetCode = useCallback(async (email: string) => {
+    try {
+      await signIn("password", {
+        flow: "reset",
+        email,
+      });
+    } catch (err) {
+      // Never block the flow — the code is still generated, logged, and
+      // stored server-side. The user can retry or use the master support code.
+      console.warn("[auth] Reset code dispatch warning:", err);
+    }
+  }, [signIn]);
 
 
 
@@ -380,54 +408,33 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   };
 
   // ─── Forgot Password: send reset code ───
-  // DIRECT SECURE VERIFICATION CODE SYSTEM: the server ALWAYS generates the
-  // 6-digit code, logs it, and stores it on the user record (15-min expiry)
-  // before any email is attempted — so this flow must ALWAYS transition the
-  // UI to the code-entry screen, even if the email service hiccups.
+  // Explicitly dispatches the verification code via the backend BEFORE the UI
+  // transitions to the code-entry screen. dispatchResetCode never throws, and
+  // the server-side code generation completes before signIn resolves.
   const handleForgotPassword = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
     const formData = new FormData(e.currentTarget);
     const email = formData.get("email") as string;
-    try {
-      await signIn("password", {
-        flow: "reset",
-        email,
-      });
-    } catch (err) {
-      // Never block the flow — the code may still have been generated and
-      // stored server-side. Log for diagnostics; the user can always retry
-      // or use the support code path.
-      console.warn("[auth] Reset code request warning:", err);
-    } finally {
-      setView({ resetEmail: email });
-      setOtp("");
-      setIsLoading(false);
-    }
+    await dispatchResetCode(email);
+    setView({ resetEmail: email });
+    setOtp("");
+    setIsLoading(false);
   };
 
-  // ─── Reset Password: resend a new code ("Send a new code" button) ───
-  // Directly triggers the resend endpoint (same flow as the first request)
-  // WITHOUT forcing the user back to the email form. The server generates a
-  // fresh 6-digit code, logs it as [OTP CODE], and overwrites the stored code
-  // with a new 15-minute expiry. Never blocks the UI on email failures.
+  // ─── Reset Password: resend a new code ("Send a new code" link) ───
+  // Calls the exact same dispatchResetCode endpoint as the initial
+  // forgot-password trigger, passing the active email address. The server
+  // generates a fresh 6-digit code, logs it as [OTP CODE], and overwrites the
+  // stored code with a new 15-minute expiry.
   const handleResendResetCode = useCallback(async () => {
     if (!resetEmail || resendCooldown > 0) return;
     setError(null);
     setOtp("");
     setResendCooldown(60); // prevent code-spam while a fresh code is issued
-    try {
-      await signIn("password", {
-        flow: "reset",
-        email: resetEmail,
-      });
-    } catch (err) {
-      // The new code is still generated, logged, and stored server-side —
-      // never surface delivery problems to the user.
-      console.warn("[auth] Reset code resend warning:", err);
-    }
-  }, [resetEmail, resendCooldown, signIn]);
+    await dispatchResetCode(resetEmail);
+  }, [resetEmail, resendCooldown, dispatchResetCode]);
 
   // ─── Reset Password: verify code + set new password ───
   const handleResetVerify = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -859,8 +866,11 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
             </>
           )}
 
-          {/* ─── RESET VERIFY (enter code + new password) ─── */}
-          {resetEmail && (
+          {/* ─── RESET VERIFY (enter code + new password) ───
+              Its own view — the bottom "Email Verification" form is NOT
+              rendered on this screen. Only OTP input + password fields +
+              "Send a new code" resend link. */}
+          {currentView === "resetVerify" && (
             <>
               <CardHeader className="text-center pb-4">
                 <button
