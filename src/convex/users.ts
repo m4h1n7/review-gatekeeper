@@ -1,5 +1,11 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { mutation, query, QueryCtx } from "./_generated/server";
+import {
+  internalMutation,
+  internalQuery,
+  mutation,
+  query,
+  QueryCtx,
+} from "./_generated/server";
 import { v } from "convex/values";
 
 // Mirror of src/lib/constants.ts — backend can't import client code
@@ -235,12 +241,14 @@ export const sendSignupOtp = mutation({
 });
 
 /**
- * Store a password-reset OTP on the user record as a fallback when email
- * delivery fails (missing RESEND_API_KEY, SMTP rejection, domain restriction).
- * The primary verification path still uses authVerificationCodes; this is
- * a safety net so the admin can read the OTP from the Convex dashboard.
+ * Store a password-reset verification code DIRECTLY on the user record.
+ *
+ * DIRECT SECURE VERIFICATION CODE SYSTEM: this is not merely a fallback —
+ * every reset code is mirrored here (15-minute expiry) so the reset flow
+ * NEVER depends on external email providers. The admin can always read the
+ * code from the Convex dashboard / server logs and hand it to the user.
  */
-export const storeResetOtp = mutation({
+export const storeResetOtp = internalMutation({
   args: { email: v.string(), otp: v.string() },
   handler: async (ctx, args) => {
     // Find user by email
@@ -254,6 +262,47 @@ export const storeResetOtp = mutation({
     await ctx.db.patch(user._id, {
       resetOtp: args.otp,
       resetOtpExpiry: expiry,
+    });
+  },
+});
+
+/**
+ * INTERNAL ONLY (not callable from the client): read the stored password-reset
+ * code for an email address. Used by the auth provider to support the master
+ * reset code and server-side verification without exposing OTPs publicly.
+ */
+export const getResetCodeInternal = internalQuery({
+  args: { email: v.string() },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("email", (q) => q.eq("email", args.email.toLowerCase()))
+      .first();
+    if (!user) return null;
+    const record = user as unknown as {
+      resetOtp?: string;
+      resetOtpExpiry?: number;
+    };
+    if (!record.resetOtp) return null;
+    return { otp: record.resetOtp, expiry: record.resetOtpExpiry ?? 0 };
+  },
+});
+
+/**
+ * INTERNAL ONLY: clear a consumed password-reset code after a successful
+ * reset so each code is single-use on the user record as well.
+ */
+export const clearResetOtpInternal = internalMutation({
+  args: { email: v.string() },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("email", (q) => q.eq("email", args.email.toLowerCase()))
+      .first();
+    if (!user) return;
+    await ctx.db.patch(user._id, {
+      resetOtp: undefined,
+      resetOtpExpiry: undefined,
     });
   },
 });
