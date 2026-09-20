@@ -123,7 +123,8 @@ async function sendEmail(params: SendEmailParams): Promise<SendEmailResult> {
         return { ok: true, provider: "resend", id: data?.id };
       }
     } catch (err) {
-      console.error("Resend SDK crashed, falling back to SMTP:", err);
+      console.error("Email Error:", err);
+      console.error("[email] Resend SDK crashed, falling back to SMTP.");
     }
   }
 
@@ -150,7 +151,7 @@ async function sendEmail(params: SendEmailParams): Promise<SendEmailResult> {
       // dialog, e.g. "535-5.7.8 Username and Password not accepted"), `code`
       // and `command`. Print everything so the exact rejection is visible.
       const e = err as { response?: string; code?: string; command?: string };
-      console.error("SMTP ERROR:", err);
+      console.error("Email Error:", err);
       console.error(
         `[email] SMTP send failed → to=${params.to}` +
           ` | code=${e?.code ?? "?"}` +

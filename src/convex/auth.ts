@@ -170,9 +170,11 @@ async function generateAndSendOTP(
 ): Promise<void> {
   // ── 1. ALWAYS log the code so it is retrievable from Convex dashboard logs ──
   // Printed immediately after generation, BEFORE any email is attempted, so
-  // testing is never blocked by provider outages or spam filters.
+  // testing is never blocked by provider outages or spam filters. Both the
+  // bracketed and === formats are printed so either grep finds the code.
   console.info("====================================");
   console.info(`[OTP CODE]: ${token}  — for ${email} (expires in 15 minutes)`);
+  console.log("=== OTP CODE ===", token);
   console.info("====================================");
 
   // ── 2. ALWAYS save the code directly on the user record (15-min expiry) ──
