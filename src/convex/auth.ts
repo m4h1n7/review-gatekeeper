@@ -219,8 +219,15 @@ async function generateAndSendOTP(
 }
 
 // ---------------------------------------------------------------------------
-// 5. Email OTP providers (sign-in verification + password reset)
+// 5. Email OTP provider (sign-in verification + password reset)
 // ---------------------------------------------------------------------------
+// IMPORTANT: There is exactly ONE Email provider instance, registered as
+// "email-otp" in the providers array below. The password-reset flows reuse
+// this SAME instance — a separately-named instance (e.g. "password-reset-email")
+// that isn't registered in the providers array makes the library throw
+// `Provider \`password-reset-email\` is not configured` during code creation
+// and makes verification permanently fail (the code's provider can never be
+// resolved from the registered config).
 
 function createOtpProvider(id: string) {
   return Email({
@@ -260,7 +267,6 @@ function createOtpProvider(id: string) {
 }
 
 const emailOtp = createOtpProvider("email-otp");
-const passwordResetEmail = createOtpProvider("password-reset-email");
 
 // ---------------------------------------------------------------------------
 // 6. Password provider with graceful InvalidSecret handling
@@ -405,7 +411,10 @@ const SafePassword = ConvexCredentials({
           provider: "password",
           account: { id: email },
         });
-        return await signInViaProvider(ctx, passwordResetEmail, {
+        // Dispatch through the REGISTERED email-otp provider. The accountId
+        // anchors the verification code to the user's existing password
+        // account, so verification later signs in the original user.
+        return await signInViaProvider(ctx, emailOtp, {
           accountId: account._id,
           params,
         });
@@ -471,7 +480,12 @@ const SafePassword = ConvexCredentials({
           account: { id: email },
         });
 
-        const result = await signInViaProvider(ctx, passwordResetEmail, {
+        // Verify the code through the REGISTERED email-otp provider — the
+        // same id the code row was created with during flow "reset". Using
+        // an unregistered provider id here throws
+        // `Provider \`...\` is not configured` inside the library's code
+        // lookup and breaks verification permanently.
+        const result = await signInViaProvider(ctx, emailOtp, {
           params: effectiveParams,
         });
 
