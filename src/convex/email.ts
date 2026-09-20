@@ -43,9 +43,17 @@ function isResendConfigured(): boolean {
   return !!process.env.RESEND_API_KEY;
 }
 
+/** Gmail/SMTP credentials — accepts both EMAIL_USER/EMAIL_PASS and SMTP_USER/SMTP_PASS. */
+function getSmtpUser(): string | undefined {
+  return process.env.EMAIL_USER || process.env.SMTP_USER;
+}
+function getSmtpPass(): string | undefined {
+  return process.env.EMAIL_PASS || process.env.SMTP_PASS;
+}
+
 /** True when the Nodemailer SMTP fallback has its credentials. */
 function isSmtpConfigured(): boolean {
-  return !!(process.env.EMAIL_USER && process.env.EMAIL_PASS);
+  return !!(getSmtpUser() && getSmtpPass());
 }
 
 /** True when any email provider is usable (drives the OTP dev-bypass). */
@@ -78,8 +86,8 @@ async function getTransporter() {
       port: 465,
       secure: true,
       auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
+        user: getSmtpUser(),
+        pass: getSmtpPass(),
       },
     });
   }

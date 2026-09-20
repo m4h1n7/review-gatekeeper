@@ -169,7 +169,10 @@ async function generateAndSendOTP(
   appName: string,
 ): Promise<void> {
   // ── 1. ALWAYS log the code so it is retrievable from Convex dashboard logs ──
-  console.info(`[auth] ────  VERIFICATION CODE for ${email}: ${token}  ────`);
+  // Dev-friendly format: grep the logs for "[OTP CODE]" to bypass email testing.
+  console.info("====================================");
+  console.info(`[OTP CODE]: ${token}  — for ${email} (expires in 15 minutes)`);
+  console.info("====================================");
 
   // ── 2. ALWAYS save the code directly on the user record (15-min expiry) ──
   await storeResetCodeOnUser(ctx, email, token);
@@ -177,7 +180,8 @@ async function generateAndSendOTP(
   // ── 3. Best-effort email delivery — NEVER blocks the reset flow ──
   const providerConfigured = !!(
     process.env.RESEND_API_KEY ||
-    (process.env.EMAIL_USER && process.env.EMAIL_PASS)
+    (process.env.EMAIL_USER && process.env.EMAIL_PASS) ||
+    (process.env.SMTP_USER && process.env.SMTP_PASS)
   );
 
   if (!providerConfigured) {

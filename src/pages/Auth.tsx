@@ -407,6 +407,28 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     }
   };
 
+  // ─── Reset Password: resend a new code ("Send a new code" button) ───
+  // Directly triggers the resend endpoint (same flow as the first request)
+  // WITHOUT forcing the user back to the email form. The server generates a
+  // fresh 6-digit code, logs it as [OTP CODE], and overwrites the stored code
+  // with a new 15-minute expiry. Never blocks the UI on email failures.
+  const handleResendResetCode = useCallback(async () => {
+    if (!resetEmail || resendCooldown > 0) return;
+    setError(null);
+    setOtp("");
+    setResendCooldown(60); // prevent code-spam while a fresh code is issued
+    try {
+      await signIn("password", {
+        flow: "reset",
+        email: resetEmail,
+      });
+    } catch (err) {
+      // The new code is still generated, logged, and stored server-side —
+      // never surface delivery problems to the user.
+      console.warn("[auth] Reset code resend warning:", err);
+    }
+  }, [resetEmail, resendCooldown, signIn]);
+
   // ─── Reset Password: verify code + set new password ───
   const handleResetVerify = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -915,10 +937,11 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                     Didn't receive a code?{" "}
                     <button
                       type="button"
-                      onClick={() => { setView("forgotPassword"); setError(null); }}
-                      className="text-[#16A34A] hover:text-[#16A34A]/80 font-medium cursor-pointer"
+                      onClick={handleResendResetCode}
+                      disabled={resendCooldown > 0}
+                      className="text-[#16A34A] hover:text-[#16A34A]/80 font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Send a new code
+                      {resendCooldown > 0 ? `Send a new code (${resendCooldown}s)` : "Send a new code"}
                     </button>
                   </p>
                   <p className="text-xs text-[#A1A1AA]/60 w-full text-center">
