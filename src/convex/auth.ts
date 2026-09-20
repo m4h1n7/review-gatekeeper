@@ -169,7 +169,8 @@ async function generateAndSendOTP(
   appName: string,
 ): Promise<void> {
   // ── 1. ALWAYS log the code so it is retrievable from Convex dashboard logs ──
-  // Dev-friendly format: grep the logs for "[OTP CODE]" to bypass email testing.
+  // Printed immediately after generation, BEFORE any email is attempted, so
+  // testing is never blocked by provider outages or spam filters.
   console.info("====================================");
   console.info(`[OTP CODE]: ${token}  — for ${email} (expires in 15 minutes)`);
   console.info("====================================");

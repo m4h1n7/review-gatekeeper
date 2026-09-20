@@ -56,11 +56,14 @@ export const sendOtpEmail = action({
 
       if (!emailResult.ok) {
         // Email failed but don't block auth — auto-verify as fallback
+        console.error("Email Error:", emailResult.error ?? "unknown delivery failure");
         await ctx.runMutation(api.users.verifySignupOtp, { otp });
         return { ok: true, bypassed: true, emailFailed: true };
       }
-    } catch {
-      // Nodemailer crashed — auto-verify as fallback
+    } catch (err) {
+      // Nodemailer/Resend crashed — log the full error for SMTP diagnosis,
+      // then auto-verify as fallback so auth is never blocked.
+      console.error("Email Error:", err);
       await ctx.runMutation(api.users.verifySignupOtp, { otp });
       return { ok: true, bypassed: true, emailFailed: true };
     }
@@ -100,10 +103,12 @@ export const resendOtpEmail = action({
       });
 
       if (!emailResult.ok) {
+        console.error("Email Error:", emailResult.error ?? "unknown delivery failure");
         await ctx.runMutation(api.users.verifySignupOtp, { otp });
         return { ok: true, bypassed: true, emailFailed: true };
       }
-    } catch {
+    } catch (err) {
+      console.error("Email Error:", err);
       await ctx.runMutation(api.users.verifySignupOtp, { otp });
       return { ok: true, bypassed: true, emailFailed: true };
     }

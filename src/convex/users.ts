@@ -231,6 +231,11 @@ export const sendSignupOtp = mutation({
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expiry = Date.now() + 15 * 60 * 1000; // 15 minutes
 
+    // IMMEDIATE FALLBACK: always visible in the terminal/logs regardless of
+    // whether the email actually delivers. Devs can complete verification
+    // with this code even when Gmail/SMTP is blocking messages.
+    console.log("=== OTP CODE ===", otp);
+
     await ctx.db.patch(userId, {
       signupOtp: otp,
       signupOtpExpiry: expiry,
