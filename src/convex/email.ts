@@ -119,6 +119,7 @@ async function sendEmail(params: SendEmailParams): Promise<SendEmailResult> {
         // Resend-level rejection (invalid key, validation, rate limit) → fallback
         console.error("Resend send failed, falling back to SMTP:", error);
       } else {
+        console.info(`[email] Resend send OK → ${params.to} (id ${data?.id})`);
         return { ok: true, provider: "resend", id: data?.id };
       }
     } catch (err) {
@@ -130,18 +131,42 @@ async function sendEmail(params: SendEmailParams): Promise<SendEmailResult> {
   if (isSmtpConfigured()) {
     try {
       const transporter = await getTransporter();
+      // GMAIL DELIVERABILITY RULE: the From header MUST exactly match the
+      // authenticated SMTP user, otherwise Gmail silently drops the message.
+      // Never inherit the Resend/custom-domain From here.
+      const smtpFrom = `${DEFAULT_FROM_NAME} <${getSmtpUser()}>`;
       const info = await transporter.sendMail({
-        from,
+        from: smtpFrom,
         to: params.to,
         subject: params.subject,
         html: params.html,
         text: params.text,
         replyTo: params.replyTo,
       });
+      console.info(`[email] SMTP send OK → ${params.to} (from ${smtpFrom}, messageId ${info?.messageId})`);
       return { ok: true, provider: "smtp", id: info?.messageId };
     } catch (err) {
-      console.error("SMTP fallback also failed:", err);
-      return { ok: false, provider: "none", error: err instanceof Error ? err.message : String(err) };
+      // Full SMTP diagnostics — Nodemailer errors carry `response` (raw SMTP
+      // dialog, e.g. "535-5.7.8 Username and Password not accepted"), `code`
+      // and `command`. Print everything so the exact rejection is visible.
+      const e = err as { response?: string; code?: string; command?: string };
+      console.error("SMTP ERROR:", err);
+      console.error(
+        `[email] SMTP send failed → to=${params.to}` +
+          ` | code=${e?.code ?? "?"}` +
+          ` | command=${e?.command ?? "?"}` +
+          ` | response=${e?.response ?? "?"}`,
+      );
+      if (e?.code === "EAUTH" || String(e?.response ?? "").includes("5.7.8")) {
+        console.error(
+          "[email] Gmail rejected the credentials — EMAIL_PASS/SMTP_PASS must be a 16-character App Password (Google Account → Security → 2-Step Verification → App passwords), NOT the normal account password.",
+        );
+      }
+      return {
+        ok: false,
+        provider: "none",
+        error: err instanceof Error ? err.message : String(err),
+      };
     }
   }
 

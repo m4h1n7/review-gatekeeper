@@ -5,13 +5,15 @@ import { api } from "./_generated/api";
 
 /**
  * Check whether any email provider is configured.
- * Primary: Resend (RESEND_API_KEY). Fallback: Nodemailer SMTP (EMAIL_USER/EMAIL_PASS).
- * If neither is set, we skip email sending and auto-verify the user's email.
+ * Primary: Resend (RESEND_API_KEY). Fallback: Nodemailer SMTP
+ * (EMAIL_USER/EMAIL_PASS or SMTP_USER/SMTP_PASS aliases).
+ * If none is set, we skip email sending and auto-verify the user's email.
  */
 function isEmailProviderConfigured(): boolean {
   return !!(
     process.env.RESEND_API_KEY ||
-    (process.env.EMAIL_USER && process.env.EMAIL_PASS)
+    (process.env.EMAIL_USER && process.env.EMAIL_PASS) ||
+    (process.env.SMTP_USER && process.env.SMTP_PASS)
   );
 }
 
