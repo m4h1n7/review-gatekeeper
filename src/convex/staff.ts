@@ -2,6 +2,35 @@ import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
+const SUPER_ADMIN_EMAILS = ["mahinhosen870@gmail.com", "atazwar103@gmail.com", "starcatchbd@gmail.com"];
+
+/**
+ * Business Pro gate: the Staff Management system (staff members, staff QR
+ * links, leaderboard) is a Pro-tier feature. Starter-plan users must upgrade
+ * before any staff mutation is accepted. Super admins bypass the check.
+ */
+async function assertStaffAccess(ctx: any, userId: any): Promise<void> {
+  const user = await ctx.db.get(userId);
+  if (user && SUPER_ADMIN_EMAILS.includes(user.email?.toLowerCase() ?? "")) return;
+
+  const sub = await ctx.db
+    .query("subscriptions")
+    .withIndex("by_userId", (q: any) => q.eq("userId", userId))
+    .first();
+
+  const hasPro =
+    !!sub &&
+    sub.status === "active" &&
+    (sub.plan === "pro" || sub.plan === "trial") &&
+    (!sub.expiresAt || sub.expiresAt > Date.now());
+
+  if (!hasPro) {
+    throw new Error(
+      "Staff Management is a Business Pro feature. Upgrade your plan to add and manage staff.",
+    );
+  }
+}
+
 /** Create a new staff member for a business */
 export const create = mutation({
   args: {
@@ -18,6 +47,9 @@ export const create = mutation({
     const business = await ctx.db.get(args.businessId as any);
     if (!business) throw new Error("Business not found");
     if ((business as any).userId !== userId) throw new Error("Unauthorized");
+
+    // Business Pro gate — Starter plans cannot create staff members
+    await assertStaffAccess(ctx, userId);
 
     // Generate unique staff slug from name
     const baseSlug = args.name
@@ -72,6 +104,9 @@ export const update = mutation({
     if (!business || (business as any).userId !== userId)
       throw new Error("Unauthorized");
 
+    // Business Pro gate — Starter plans cannot edit staff members
+    await assertStaffAccess(ctx, userId);
+
     const patch: Record<string, any> = {};
     if (args.name !== undefined) patch.name = args.name;
     if (args.role !== undefined) patch.role = args.role;
@@ -97,6 +132,9 @@ export const remove = mutation({
     const business = await ctx.db.get((staff as any).businessId as any);
     if (!business || (business as any).userId !== userId)
       throw new Error("Unauthorized");
+
+    // Business Pro gate — Starter plans cannot delete staff members
+    await assertStaffAccess(ctx, userId);
 
     await ctx.db.delete(args.staffId as any);
     return { ok: true };

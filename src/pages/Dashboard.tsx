@@ -239,18 +239,49 @@ export default function Dashboard() {
   // ── Locked state: no active plan or expired trial ──
   const isLocked = !hasPaidAccess.hasAccess && !hasPaidAccess.isLoading;
 
+  // ── Business Pro feature gate ──
+  // Starter Plan unlocks: Overview, Review Link, Printable QR generator,
+  // Private Inbox. Pro-only: Staff & QR system, NFC Review Card assets.
+  // Super admins bypass the gate.
+  const isSuperAdminUser = isSuperAdmin(user?.email);
+  const isStarterOnly =
+    !isLocked &&
+    !isSuperAdminUser &&
+    subscription?.plan === "starter" &&
+    subscription?.status === "active" &&
+    subscription?.expiresAt !== undefined &&
+    subscription.expiresAt > Date.now();
+  const hasProFeatures = !isStarterOnly;
+
   const [showPaywall, setShowPaywall] = useState(false);
   const [showTrialExpired, setShowTrialExpired] = useState(false);
+  // When set, the paywall opens pre-focused on Business Pro with a
+  // feature-specific reason (e.g. clicking the locked Staff & QR tab).
+  const [proPaywallReason, setProPaywallReason] = useState<string | null>(null);
+
+  const openProPaywall = (reason: string) => {
+    setProPaywallReason(reason);
+    setShowPaywall(true);
+  };
 
   // Show paywall modal on first load for users without a plan
   useEffect(() => {
     if (hasPaidAccess.isLoading) return; // wait for subscription to load
     if (isLocked) {
+      setProPaywallReason(null);
       setShowPaywall(true);
     } else if (isTrial && isExpired) {
       setShowTrialExpired(true);
     }
   }, [hasPaidAccess.isLoading, isLocked, isTrial, isExpired]);
+
+  // Live tier downgrade: if a user loses Business Pro (suspension, expiry,
+  // plan change) while viewing the Pro-only Staff & QR tab, bounce them back
+  // to Overview immediately — no stale access.
+  useEffect(() => {
+    if (!isStarterOnly) return;
+    if (activeTab === "staff") setActiveTab("overview");
+  }, [isStarterOnly, activeTab]);
 
   const stats = useQuery(api.analytics.businessStats, selectedBusinessId ? { businessId: selectedBusinessId, filter } : "skip");
   const feedbacks = useQuery(api.analytics.recentFeedbacks, selectedBusinessId ? { businessId: selectedBusinessId, limit: 20 } : "skip");
@@ -343,17 +374,19 @@ export default function Dashboard() {
     { id: "overview", label: "Overview", icon: <BarChart3 className="w-4 h-4" /> },
     { id: "reviews", label: "Get Reviews", icon: <Star className="w-4 h-4" />, locked: isLocked },
     { id: "inbox", label: "Private Inbox", icon: <Inbox className="w-4 h-4" />, badge: !isLocked && unresolvedCount > 0 ? unresolvedCount : undefined, locked: isLocked, action: isLocked ? undefined : () => navigate("/dashboard/feedback") },
-    { id: "staff", label: "Staff & QR", icon: <Users className="w-4 h-4" />, locked: isLocked },
+    // Staff & QR is a Business Pro feature — Starter users see the paywall
+    { id: "staff", label: "Staff & QR", icon: <Users className="w-4 h-4" />, locked: isLocked || isStarterOnly },
   ];
 
   return (
     <div className="min-h-screen">
       <PaywallModal
         open={showPaywall}
-        onClose={() => setShowPaywall(false)}
-        reason={isExpired
+        onClose={() => { setShowPaywall(false); setProPaywallReason(null); }}
+        plan={proPaywallReason ? "pro" : undefined}
+        reason={proPaywallReason ?? (isExpired
           ? "Your subscription has expired. Renew via bKash or Nagad to regain full access."
-          : "Complete your subscription to unlock full dashboard access. Pay via bKash, Nagad, or card."}
+          : "Complete your subscription to unlock full dashboard access. Pay via bKash, Nagad, or card.")}
       />
 
       {/* Trial Expired Payment Modal */}
@@ -611,6 +644,11 @@ export default function Dashboard() {
           {tabs.map((tab) => (
             <button key={tab.id} onClick={() => {
               if (tab.locked) {
+                if (tab.id === "staff" && isStarterOnly) {
+                  openProPaywall("Staff Management, staff-specific QR links, and the performance leaderboard are Business Pro features. Upgrade to Business Pro to unlock the Staff & QR system.");
+                } else {
+                  setProPaywallReason(null);
+                }
                 setShowPaywall(true);
                 return;
               }
@@ -963,14 +1001,31 @@ export default function Dashboard() {
               )}
             </GlassPanel>
 
-            {/* QR Code */}
+            {/* QR Code — full Printable QR generator included in Starter Plan */}
             {reviewSlug && (
-              <PrintableQR slug={reviewSlug} businessName={overview.businesses[0]?.name || businessName} isPro={!!isPro} />
+              <PrintableQR slug={reviewSlug} businessName={overview.businesses[0]?.name || businessName} />
             )}
 
-            {/* NFC Card Preview */}
+            {/* NFC Card Preview — PRO FEATURE (Business Pro only) */}
             {reviewSlug && (
-              <GlassPanel className="p-6">
+              <GlassPanel className={`p-6 relative overflow-hidden ${hasProFeatures ? "" : "opacity-70"}`}>
+                {!hasProFeatures && (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#0D0D0D]/70 backdrop-blur-[1px]">
+                    <div className="text-center px-4">
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#16A34A]/15 border border-[#16A34A]/25 text-[#16A34A] text-xs font-semibold mb-2">
+                        <Star className="w-3 h-3 fill-[#16A34A]" /> PRO FEATURE
+                      </div>
+                      <p className="text-xs text-[#A1A1AA] mb-3">Upgrade to Business Pro to unlock the NFC Review Card designer with printable PDF & vector assets</p>
+                      <Button
+                        onClick={() => openProPaywall("The NFC Review Card Preview — interactive CR80 card, Download Printable Card PDF, Front/Back SVG, and print tools — is a Business Pro feature. Upgrade to unlock it.")}
+                        size="sm"
+                        className="bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-semibold cursor-pointer"
+                      >
+                        Upgrade to Business Pro
+                      </Button>
+                    </div>
+                  </div>
+                )}
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-9 h-9 rounded-xl bg-[#16A34A]/10 flex items-center justify-center">
                     <Nfc className="w-5 h-5 text-[#16A34A]" />
