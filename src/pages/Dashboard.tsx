@@ -7,29 +7,15 @@ import { PrintableQR } from "@/components/PrintableQR";
 import QRCodeGenerator from "@/components/QRCodeGenerator";
 import NFCCardPreview from "@/components/NFCCardPreview";
 import StaffManager from "@/components/StaffManager";
-import AIAssistant from "@/components/AIAssistant";
-import WhatsAppAlertConfig from "@/components/WhatsAppAlertConfig";
 import EnhancedLeaderboard from "@/components/EnhancedLeaderboard";
 import { PaywallModal } from "@/components/PaywallModal";
 import { TrialExpiredModal } from "@/components/TrialExpiredModal";
-import { MonthlyReport } from "@/components/MonthlyReport";
 import { SubscriptionGuard, useHasAccess } from "@/components/SubscriptionGuard";
 import { isSuperAdmin } from "@/components/SuperAdminGuard";
 import { motion } from "framer-motion";
 import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
-import {
   LogOut,
-  Eye,
   Star,
-  MessageSquare,
   TrendingUp,
   Calendar,
   Shield,
@@ -51,16 +37,15 @@ import {
   AlertTriangle,
   Users,
   Trophy,
-  Sparkles,
   User,
   Zap,
   ArrowRight,
   Crown,
   Nfc,
-  Bell,
-  ClipboardCheck,
 } from "lucide-react";
 import { useNavigate } from "react-router";
+import { NotificationBell, GlassPanel, type NotificationItem } from "@/components/DashboardWidgets";
+import OverviewTab from "@/components/OverviewTab";
 
 type TabType = "overview" | "reviews" | "inbox" | "staff";
 type FilterRange = "today" | "week" | "month" | "all";
@@ -73,137 +58,6 @@ const FILTER_OPTIONS: { value: FilterRange; label: string; days: number }[] = [
 ];
 
 /* ─── Real-time Notification Bell ─── */
-type NotificationItem = {
-  id: string;
-  type: string;
-  title: string;
-  message: string;
-  read: boolean;
-  createdAt: number;
-  actionUrl?: string | null;
-};
-
-function NotificationBell({
-  notifications,
-  onMarkAllRead,
-}: {
-  notifications: NotificationItem[] | undefined;
-  onMarkAllRead: () => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const navigate = useNavigate();
-  const unread = (notifications ?? []).filter((n) => !n.read).length;
-
-  return (
-    <div className="relative">
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="relative w-9 h-9 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 flex items-center justify-center transition-colors cursor-pointer"
-        aria-label="Notifications"
-      >
-        <Bell className="w-4 h-4 text-[#A1A1AA]" />
-        {unread > 0 && (
-          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center animate-pulse">
-            {unread > 9 ? "9+" : unread}
-          </span>
-        )}
-      </button>
-
-      {open && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full mt-2 w-80 max-h-[420px] overflow-y-auto rounded-2xl bg-[#18181B] border border-white/10 shadow-2xl z-50">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 sticky top-0 bg-[#18181B]">
-              <p className="text-sm font-semibold text-white">Notifications</p>
-              {unread > 0 && (
-                <button
-                  onClick={onMarkAllRead}
-                  className="text-[11px] text-[#16A34A] hover:underline cursor-pointer font-medium"
-                >
-                  Mark all read
-                </button>
-              )}
-            </div>
-            {!notifications || notifications.length === 0 ? (
-              <p className="px-4 py-8 text-center text-xs text-[#A1A1AA]/50">
-                No notifications yet — new private feedback will appear here in real time.
-              </p>
-            ) : (
-              notifications.map((n) => (
-                <button
-                  key={n.id}
-                  onClick={() => {
-                    setOpen(false);
-                    if (!n.read) onMarkAllRead();
-                    if (n.actionUrl) navigate(n.actionUrl);
-                  }}
-                  className={`w-full text-left px-4 py-3 border-b border-white/5 hover:bg-white/[0.04] transition-colors cursor-pointer ${
-                    !n.read ? "bg-[#16A34A]/[0.06]" : ""
-                  }`}
-                >
-                  <div className="flex items-start gap-2.5">
-                    {!n.read && <span className="w-2 h-2 rounded-full bg-[#16A34A] mt-1.5 shrink-0 animate-pulse" />}
-                    <div className="min-w-0 flex-1">
-                      <p className={`text-xs font-semibold truncate ${!n.read ? "text-white" : "text-[#A1A1AA]"}`}>{n.title}</p>
-                      <p className="text-[11px] text-[#A1A1AA]/70 mt-0.5 line-clamp-2">{n.message}</p>
-                      <p className="text-[10px] text-[#A1A1AA]/40 mt-1">
-                        {new Date(n.createdAt).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
-                      </p>
-                    </div>
-                  </div>
-                </button>
-              ))
-            )}
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-function GlassPanel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return (
-    <div className={`rounded-2xl border border-white/10 bg-[#18181B]/70 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.3)] ${className}`}>
-      {children}
-    </div>
-  );
-}
-
-function StatCard({ icon, label, value, sub, color }: {
-  icon: React.ReactNode; label: string; value: string | number; sub?: string; color: string;
-}) {
-  return (
-    <GlassPanel className="p-5">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-xs font-medium text-[#A1A1AA] uppercase tracking-wider mb-1">{label}</p>
-          <p className="text-3xl font-extrabold text-white tabular-nums">{value}</p>
-          {sub && <p className="text-xs text-[#A1A1AA]/60 mt-1">{sub}</p>}
-        </div>
-        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${color}`}>{icon}</div>
-      </div>
-    </GlassPanel>
-  );
-}
-
-function CustomTooltip({ active, payload, label }: any) {
-  if (active && payload && payload.length) {
-    const item = payload[0]?.payload;
-    return (
-      <div className="bg-[#18181B]/95 backdrop-blur-xl border border-white/10 rounded-lg px-3 py-2 shadow-xl">
-        <p className="text-xs text-[#A1A1AA] mb-1">{label}</p>
-        <p className="text-sm font-bold text-white">Rating Score: {payload[0].value}</p>
-        {item && (
-          <div className="flex items-center gap-3 mt-1">
-            <span className="text-[10px] text-[#16A34A]">+{item.positive} positive</span>
-            <span className="text-[10px] text-amber-400">-{item.negative} negative</span>
-          </div>
-        )}
-      </div>
-    );
-  }
-  return null;
-}
 
 export default function Dashboard() {
   const { user, signOut } = useAuth();
@@ -241,7 +95,8 @@ export default function Dashboard() {
 
   // ── Business Pro feature gate ──
   // Starter Plan unlocks: Overview, Review Link, Printable QR generator,
-  // Private Inbox. Pro-only: Staff & QR system, NFC Review Card assets.
+  // Private Inbox, and a read-only preview of the Staff & QR hub.
+  // Pro-only (fully interactive): Staff & QR actions, NFC Review Card assets.
   // Super admins bypass the gate.
   const isSuperAdminUser = isSuperAdmin(user?.email);
   const isStarterOnly =
@@ -275,13 +130,6 @@ export default function Dashboard() {
     }
   }, [hasPaidAccess.isLoading, isLocked, isTrial, isExpired]);
 
-  // Live tier downgrade: if a user loses Business Pro (suspension, expiry,
-  // plan change) while viewing the Pro-only Staff & QR tab, bounce them back
-  // to Overview immediately — no stale access.
-  useEffect(() => {
-    if (!isStarterOnly) return;
-    if (activeTab === "staff") setActiveTab("overview");
-  }, [isStarterOnly, activeTab]);
 
   const stats = useQuery(api.analytics.businessStats, selectedBusinessId ? { businessId: selectedBusinessId, filter } : "skip");
   const feedbacks = useQuery(api.analytics.recentFeedbacks, selectedBusinessId ? { businessId: selectedBusinessId, limit: 20 } : "skip");
@@ -370,12 +218,14 @@ export default function Dashboard() {
 
   const unresolvedCount = feedbacks?.filter((fb) => (fb as any).status === "unresolved").length ?? 0;
 
-  const tabs: { id: TabType; label: string; icon: React.ReactNode; badge?: number; locked?: boolean; action?: () => void }[] = [
+  const tabs: { id: TabType; label: string; icon: React.ReactNode; badge?: number; locked?: boolean; proBadge?: boolean; action?: () => void }[] = [
     { id: "overview", label: "Overview", icon: <BarChart3 className="w-4 h-4" /> },
     { id: "reviews", label: "Get Reviews", icon: <Star className="w-4 h-4" />, locked: isLocked },
     { id: "inbox", label: "Private Inbox", icon: <Inbox className="w-4 h-4" />, badge: !isLocked && unresolvedCount > 0 ? unresolvedCount : undefined, locked: isLocked, action: isLocked ? undefined : () => navigate("/dashboard/feedback") },
     // Staff & QR is a Business Pro feature — Starter users see the paywall
-    { id: "staff", label: "Staff & QR", icon: <Users className="w-4 h-4" />, locked: isLocked || isStarterOnly },
+    // Staff & QR is explorable on Starter as a blurred read-only preview —
+    // the upgrade prompt lives inside the page, not on the tab click.
+    { id: "staff", label: "Staff & QR", icon: <Users className="w-4 h-4" />, locked: isLocked, proBadge: isStarterOnly },
   ];
 
   return (
@@ -644,11 +494,7 @@ export default function Dashboard() {
           {tabs.map((tab) => (
             <button key={tab.id} onClick={() => {
               if (tab.locked) {
-                if (tab.id === "staff" && isStarterOnly) {
-                  openProPaywall("Staff Management, staff-specific QR links, and the performance leaderboard are Business Pro features. Upgrade to Business Pro to unlock the Staff & QR system.");
-                } else {
-                  setProPaywallReason(null);
-                }
+                setProPaywallReason(null);
                 setShowPaywall(true);
                 return;
               }
@@ -665,6 +511,9 @@ export default function Dashboard() {
               }`}>
               {tab.icon} {tab.label}
               {tab.locked && <Lock className="w-3 h-3 text-[#A1A1AA]/40 ml-0.5" />}
+              {tab.proBadge && (
+                <span className="ml-1 px-1.5 py-px text-[9px] font-bold rounded bg-[#16A34A]/15 border border-[#16A34A]/30 text-[#16A34A]">PRO</span>
+              )}
               {tab.badge !== undefined && (
                 <span className="ml-1 px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-red-500/20 text-red-400">
                   {tab.badge}
@@ -725,253 +574,21 @@ export default function Dashboard() {
         {/* ─── OVERVIEW TAB ─── */}
         {activeTab === "overview" && overview && (
           <>
-            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-              <StatCard icon={<Eye className="w-5 h-5 text-[#16A34A]" />} label="Total Scans" value={displayStats?.totalVisits ?? 0}
-                sub={selectedBusinessId ? "This profile" : `Across ${overview.profileCount} profile(s)`} color="bg-[#16A34A]/10" />
-              <StatCard icon={<Star className="w-5 h-5 text-emerald-400" />} label="Google Redirects" value={displayStats?.redirectCount ?? 0}
-                sub={`${displayStats?.redirectPercentage ?? 0}% of scans`} color="bg-emerald-500/10" />
-              <StatCard icon={<MessageSquare className="w-5 h-5 text-amber-400" />} label="Private Feedback" value={displayStats?.feedbackCount ?? 0}
-                sub={unresolvedCount > 0 ? `${unresolvedCount} unresolved` : `${displayStats?.feedbackPercentage ?? 0}% of scans`} color="bg-amber-500/10" />
-              <StatCard icon={<ClipboardCheck className="w-5 h-5 text-sky-400" />} label="Total Reviews" value={displayStats?.totalReviews ?? (displayStats ? (displayStats.redirectCount ?? 0) + (displayStats.feedbackCount ?? 0) : 0)}
-                sub="Redirects + feedback" color="bg-sky-500/10" />
-              <StatCard icon={<TrendingUp className="w-5 h-5 text-[#16A34A]" />} label="Conversion Rate"
-                value={`${conversionRate}%`} sub="Scans → Google reviews" color="bg-[#16A34A]/10" />
-            </div>
-
-            {/* ROI & Revenue Saver Widget */}
-            <GlassPanel className="p-5 mb-6">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-[#16A34A]/10 flex items-center justify-center">
-                    <TrendingUp className="w-6 h-6 text-[#16A34A]" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-[#A1A1AA] uppercase tracking-wider">Estimated Saved Revenue</p>
-                    <p className="text-2xl font-extrabold text-white">৳{savedRevenue.toLocaleString()}</p>
-                    <p className="text-[10px] text-[#A1A1AA]/60 mt-0.5">
-                      Based on {displayStats?.feedbackCount ?? 0} blocked negative reviews × ৳{CUSTOMER_LTV} customer lifetime value
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#16A34A]/10 border border-[#16A34A]/20">
-                  <Star className="w-4 h-4 text-[#16A34A] fill-[#16A34A]" />
-                  <span className="text-xs font-bold text-[#16A34A]">
-                    STAR CATCH ROI: {roiMultiple > 0 ? `${roiMultiple}x` : '—'} Subscription Value
-                  </span>
-                </div>
-              </div>
-            </GlassPanel>
-
-            {/* Funnel Conversion Metrics */}
-            <GlassPanel className="p-5 mb-6">
-              <h3 className="text-sm font-semibold text-white mb-4">Tap → Conversion Funnel</h3>
-              <div className="flex flex-col sm:flex-row items-stretch gap-0">
-                <div className="flex-1 p-4 rounded-xl bg-white/[0.03] border border-white/5 text-center relative">
-                  <p className="text-[10px] text-[#A1A1AA] uppercase tracking-wider mb-1">Total Scans</p>
-                  <p className="text-2xl font-extrabold text-white">{displayStats?.totalVisits ?? 0}</p>
-                  <p className="text-[10px] text-[#A1A1AA]/60 mt-1">NFC / QR / Link taps</p>
-                  <div className="hidden sm:flex absolute -right-3 top-1/2 -translate-y-1/2 z-10 w-6 h-6 rounded-full bg-[#18181B] border border-white/10 items-center justify-center">
-                    <span className="text-[#A1A1AA] text-xs">→</span>
-                  </div>
-                </div>
-                <div className="flex-1 p-4 rounded-xl bg-[#16A34A]/[0.04] border border-[#16A34A]/15 text-center relative">
-                  <p className="text-[10px] text-[#16A34A]/80 uppercase tracking-wider mb-1">Google Reviews</p>
-                  <p className="text-2xl font-extrabold text-[#16A34A]">{displayStats?.redirectCount ?? 0}</p>
-                  <p className="text-[10px] text-[#16A34A]/60 mt-1">{displayStats?.redirectPercentage ?? 0}% of scans</p>
-                  <div className="hidden sm:flex absolute -right-3 top-1/2 -translate-y-1/2 z-10 w-6 h-6 rounded-full bg-[#18181B] border border-white/10 items-center justify-center">
-                    <span className="text-[#A1A1AA] text-xs">→</span>
-                  </div>
-                </div>
-                <div className="flex-1 p-4 rounded-xl bg-amber-500/[0.04] border border-amber-500/15 text-center">
-                  <p className="text-[10px] text-amber-400/80 uppercase tracking-wider mb-1">Private Feedback</p>
-                  <p className="text-2xl font-extrabold text-amber-400">{displayStats?.feedbackCount ?? 0}</p>
-                  <p className="text-[10px] text-amber-400/60 mt-1">{displayStats?.feedbackPercentage ?? 0}% of scans</p>
-                </div>
-              </div>
-              <div className="mt-4 flex items-center justify-center gap-2 p-3 rounded-lg bg-[#16A34A]/[0.06] border border-[#16A34A]/15">
-                <TrendingUp className="w-4 h-4 text-[#16A34A]" />
-                <p className="text-xs text-[#A1A1AA]">
-                  Positive conversion rate: <span className="text-[#16A34A] font-bold">{conversionRate}%</span> of all scans redirected to Google Reviews
-                </p>
-              </div>
-            </GlassPanel>
-
-            {/* Chart */}
-            <GlassPanel className="p-6 mb-6 relative overflow-hidden">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-semibold text-white">Rating Performance Trend</h3>
-                <div className="flex items-center gap-4">
-                  <span className="text-[10px] text-[#A1A1AA] flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-full bg-[#16A34A]" /> Score (net daily)</span>
-                </div>
-              </div>
-              {isPro ? (
-                <div className="h-[220px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={trend || []}>
-                      <defs>
-                        <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#16A34A" stopOpacity={0.3} />
-                          <stop offset="95%" stopColor="#16A34A" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                      <XAxis dataKey="day" stroke="#A1A1AA" fontSize={10} tickLine={false} axisLine={false} />
-                      <YAxis stroke="#A1A1AA" fontSize={10} tickLine={false} axisLine={false} domain={[0, 100]} tickFormatter={(v: number) => v.toFixed(0)} />
-                      <Tooltip content={<CustomTooltip />} />
-                      <Area type="monotone" dataKey="score" stroke="#16A34A" strokeWidth={2} fill="url(#g)" />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <>
-                  <div className="h-[220px] flex items-center justify-center">
-                    <div className="text-center">
-                      <BarChart3 className="w-10 h-10 text-[#A1A1AA]/20 mx-auto mb-3" />
-                      <p className="text-sm text-[#A1A1AA] mb-1">Total Reviews: {displayStats?.totalReviews ?? (displayStats ? (displayStats.redirectCount ?? 0) + (displayStats.feedbackCount ?? 0) : 0)}</p>
-                      <p className="text-xs text-[#A1A1AA]/60">Simple count view</p>
-                    </div>
-                  </div>
-                  {!isLocked && (
-                    <div className="absolute inset-0 bg-[#0D0D0D]/60 backdrop-blur-[1px] flex items-center justify-center">
-                      <div className="text-center px-6">
-                        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#16A34A]/15 border border-[#16A34A]/25 text-[#16A34A] text-xs font-semibold mb-3">
-                          <Star className="w-3 h-3 fill-[#16A34A]" /> PRO FEATURE
-                        </div>
-                        <p className="text-sm font-semibold text-white mb-1">Dynamic Trend Analysis</p>
-                        <p className="text-xs text-[#A1A1AA] mb-4">Upgrade to Business Pro to unlock the interactive daily rating chart</p>
-                        <Button onClick={() => navigate("/pricing")} size="sm"
-                          className="bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-semibold cursor-pointer">
-                          Upgrade to Business Pro
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
-            </GlassPanel>
-
-            {/* Breakdown bar */}
-            <GlassPanel className="p-5">
-              <h3 className="text-sm font-semibold text-white mb-3">Rating Breakdown</h3>
-              <div className="h-3 rounded-full bg-white/5 overflow-hidden flex">
-                <div className="bg-[#16A34A] transition-all duration-500" style={{ width: `${displayStats?.redirectPercentage ?? 0}%` }} />
-                <div className="bg-amber-500 transition-all duration-500" style={{ width: `${displayStats?.feedbackPercentage ?? 0}%` }} />
-              </div>
-              <div className="flex items-center justify-between mt-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-full bg-[#16A34A]" />
-                  <span className="text-xs text-[#A1A1AA]">Google Redirects ({displayStats?.redirectPercentage ?? 0}%)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-                  <span className="text-xs text-[#A1A1AA]">Private Feedback ({displayStats?.feedbackPercentage ?? 0}%)</span>
-                </div>
-              </div>
-            </GlassPanel>
-
-            {/* Monthly Report Export */}
-            <GlassPanel className="p-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-semibold text-white">Monthly Performance Report</h3>
-                  <p className="text-xs text-[#A1A1AA] mt-0.5">Export a detailed PDF summary with feedback breakdown</p>
-                </div>
-                <MonthlyReport
-                  data={{
-                    businessName,
-                    totalScans: displayStats?.totalVisits ?? 0,
-                    totalRedirects: displayStats?.redirectCount ?? 0,
-                    totalFeedbacks: displayStats?.feedbackCount ?? 0,
-                    conversionRate,
-                    feedbacks: feedbacks?.map((fb) => ({
-                      customerName: fb.customerName,
-                      rating: fb.rating,
-                      message: fb.message ?? "",
-                      createdAt: fb.createdAt,
-                      status: (fb as any).status ?? "unresolved",
-                    })) ?? [],
-                    starDistribution: (() => {
-                      const dist: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-                      feedbacks?.forEach((fb) => {
-                        dist[fb.rating] = (dist[fb.rating] || 0) + 1;
-                      });
-                      dist[5] += displayStats?.redirectCount ?? 0;
-                      return dist;
-                    })(),
-                  }}
-                  isPro={!!isPro}
-                  filterLabel={FILTER_OPTIONS.find((f) => f.value === filter)?.label ?? "All Time"}
-                />
-              </div>
-            </GlassPanel>
-
-            {/* AI Auto-Reply Assistant (Pro Feature) */}
-            <GlassPanel className={`p-5 relative overflow-hidden ${!isPro ? 'opacity-70' : ''}`}>
-              {!isPro && (
-                <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#0D0D0D]/70 backdrop-blur-[1px]">
-                  <div className="text-center px-4">
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#16A34A]/15 border border-[#16A34A]/25 text-[#16A34A] text-xs font-semibold mb-2">
-                      <Star className="w-3 h-3 fill-[#16A34A]" /> PRO FEATURE
-                    </div>
-                    <p className="text-xs text-[#A1A1AA] mb-3">Upgrade to Business Pro to unlock AI Auto-Reply Assistant</p>
-                    <Button onClick={() => navigate("/pricing")} size="sm"
-                      className="bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-semibold cursor-pointer">
-                      Upgrade Now
-                    </Button>
-                  </div>
-                </div>
-              )}
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-[#16A34A]/10 flex items-center justify-center">
-                  <Sparkles className="w-5 h-5 text-[#16A34A]" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-white">AI Auto-Reply Assistant</h3>
-                  <p className="text-xs text-[#A1A1AA]">Generate smart responses to customer feedback</p>
-                </div>
-              </div>
-              <AIAssistant businessName={businessName} />
-            </GlassPanel>
-
-            {/* WhatsApp Alert Configurator (Pro Feature) */}
-            <GlassPanel className={`p-5 relative overflow-hidden ${!isPro ? 'opacity-70' : ''}`}>
-              {!isPro && (
-                <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#0D0D0D]/70 backdrop-blur-[1px]">
-                  <div className="text-center px-4">
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#16A34A]/15 border border-[#16A34A]/25 text-[#16A34A] text-xs font-semibold mb-2">
-                      <Star className="w-3 h-3 fill-[#16A34A]" /> PRO FEATURE
-                    </div>
-                    <p className="text-xs text-[#A1A1AA] mb-3">Upgrade to Business Pro to unlock WhatsApp Instant Alerts</p>
-                    <Button onClick={() => navigate("/pricing")} size="sm"
-                      className="bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-semibold cursor-pointer">
-                      Upgrade Now
-                    </Button>
-                  </div>
-                </div>
-              )}
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-[#25D366]/10 flex items-center justify-center">
-                  <MessageCircle className="w-5 h-5 text-[#25D366]" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-white">WhatsApp Instant Alerts</h3>
-                  <p className="text-xs text-[#A1A1AA]">Get real-time notifications for private feedback</p>
-                </div>
-              </div>
-              <WhatsAppAlertConfig
-                businessName={businessName}
-                latestFeedback={
-                  feedbacks && feedbacks.length > 0
-                    ? {
-                        customerName: feedbacks[0].customerName,
-                        rating: feedbacks[0].rating,
-                        message: feedbacks[0].message ?? "No details provided.",
-                        createdAt: feedbacks[0].createdAt,
-                      }
-                    : null
-                }
-              />
-            </GlassPanel>
+            <OverviewTab
+              profileCount={overview.profileCount}
+              displayStats={displayStats}
+              unresolvedCount={unresolvedCount}
+              selectedBusinessId={selectedBusinessId}
+              conversionRate={conversionRate}
+              savedRevenue={savedRevenue}
+              roiMultiple={roiMultiple}
+              isPro={!!isPro}
+              isLocked={isLocked}
+              trend={trend}
+              feedbacks={feedbacks}
+              businessName={businessName}
+              filterLabel={FILTER_OPTIONS.find((f) => f.value === filter)?.label ?? "All Time"}
+            />
           </>
         )}
 
@@ -1227,7 +844,31 @@ export default function Dashboard() {
             message="Subscribe to a plan to unlock staff management, QR code generation, and performance tracking."
             enabled={isLocked}
           >
-          <div className="space-y-6">
+          <div className="relative space-y-6">
+            {/* Starter Plan: non-intrusive inline PRO banner — no auto-popup on
+                tab click. The full hub below is a blurred read-only preview;
+                any action attempt opens the upgrade modal. */}
+            {!hasProFeatures && (
+              <div className="relative z-20 flex flex-col sm:flex-row items-center justify-between gap-3 rounded-xl border border-[#16A34A]/25 bg-[#16A34A]/10 px-4 py-3">
+                <div className="flex items-center gap-2.5 text-center sm:text-left">
+                  <div className="w-8 h-8 shrink-0 rounded-lg bg-[#16A34A]/20 flex items-center justify-center">
+                    <Star className="w-4 h-4 text-[#16A34A] fill-[#16A34A]" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-white">PRO FEATURE — Staff Management</p>
+                    <p className="text-[11px] text-[#A1A1AA]">Explore the hub below — add staff, share QR links, and download cards by upgrading to Business Pro.</p>
+                  </div>
+                </div>
+                <Button onClick={() => openProPaywall("Staff Management, staff-specific QR links, and the performance leaderboard are Business Pro features. Upgrade to unlock the Staff & QR system.")} size="sm" className="bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-semibold cursor-pointer shrink-0">Upgrade to Business Pro</Button>
+              </div>
+            )}
+            {/* Invisible catcher over the blurred preview: any click on a
+                disabled control opens the upgrade modal. */}
+            {!hasProFeatures && (
+              <div className="absolute inset-0 z-10 cursor-pointer" title="Upgrade to Business Pro to unlock Staff Management" onClick={() => openProPaywall("The Staff & QR hub is read-only on Starter. Upgrade to Business Pro to add staff, copy links, and download QR codes.")} />
+            )}
+            {/* Blurred, non-interactive preview of the full hub */}
+            <div className={`space-y-6 ${hasProFeatures ? "" : "pointer-events-none blur-[3px] opacity-60"}`}>
             {/* QR Code Generator */}
             <GlassPanel className="p-5">
               <QRCodeGenerator
@@ -1284,6 +925,7 @@ export default function Dashboard() {
             }}
               />
             </GlassPanel>
+            </div>
           </div>
           </SubscriptionGuard>
         )}
