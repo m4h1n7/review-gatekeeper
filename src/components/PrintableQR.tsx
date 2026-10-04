@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { QRCodeSVG, QRCodeCanvas } from "qrcode.react";
 import { Button } from "@/components/ui/button";
 import { Download, Printer, Star, Upload, Palette } from "lucide-react";
+import { buildQrSvgMarkup, QR_EXPORT_SIZE } from "@/lib/qrSvgExport";
 
 interface PrintableQRProps {
   slug: string;
@@ -16,35 +17,57 @@ interface PrintableQRProps {
 export function PrintableQR({ slug, businessName }: PrintableQRProps) {
   const reviewUrl = `${window.location.origin}/review/${slug}`;
   const printRef = useRef<HTMLDivElement>(null);
+  const qrExportRef = useRef<SVGSVGElement | null>(null);
   const [downloading, setDownloading] = useState<"svg" | "png" | null>(null);
   const [accentColor, setAccentColor] = useState("#16A34A");
   const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
 
+  /**
+   * Download a self-contained, full-size SVG of the QR code.
+   *
+   * Two bugs this replaces:
+   *  1. It used `printRef.querySelector("svg")`, which matched the *lucide
+   *     Star icon* in the header — not the QR code. Whenever no logo was
+   *     uploaded, the "Download SVG" button saved a 16x16 star.
+   *  2. It scraped the on-screen 180px preview, so the file had no quiet zone
+   *     and came out at preview size.
+   *
+   * The QR modules are now emitted natively as <path> geometry scaled into a
+   * 500x500 viewBox. The brand badge is native <rect>/<path> too; an uploaded
+   * logo is embedded as a self-contained data: URL (never an external link)
+   * and is always aspect-fit inside a fixed box so it cannot be stretched.
+   */
   const downloadSVG = () => {
+    const src = qrExportRef.current;
+    if (!src) return;
     setDownloading("svg");
-    const svgEl = printRef.current?.querySelector("svg");
-    if (!svgEl) return;
-    const svgData = new XMLSerializer().serializeToString(svgEl);
-    const blob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `star-catch-qr-${slug}.svg`;
-    a.click();
-    URL.revokeObjectURL(url);
-    setTimeout(() => setDownloading(null), 500);
+    try {
+      const markup = buildQrSvgMarkup(src, { accentColor, logoDataUrl });
+      const blob = new Blob([markup], { type: "image/svg+xml;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `star-catch-qr-${slug}.svg`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setTimeout(() => setDownloading(null), 500);
+    }
   };
 
   const downloadPNG = () => {
-    setDownloading("png");
     const canvas = printRef.current?.querySelector("canvas");
     if (!canvas) return;
-    const url = canvas.toDataURL("image/png");
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `star-catch-qr-${slug}.png`;
-    a.click();
-    setTimeout(() => setDownloading(null), 500);
+    setDownloading("png");
+    try {
+      const url = canvas.toDataURL("image/png");
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `star-catch-qr-${slug}.png`;
+      a.click();
+    } finally {
+      setTimeout(() => setDownloading(null), 500);
+    }
   };
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -156,8 +179,20 @@ export function PrintableQR({ slug, businessName }: PrintableQRProps) {
             </div>
           </div>
 
-          {/* Canvas for PNG download (hidden) */}
-          <div className="absolute opacity-0 pointer-events-none">
+          {/* Export sources (hidden) */}
+          <div className="absolute opacity-0 pointer-events-none" aria-hidden="true">
+            {/* Full-size, quiet-zone-inclusive source for the SVG download.
+                Kept out of the visible preview and out of `querySelector`
+                lookups so the export can never pick up a decorative icon. */}
+            <QRCodeSVG
+              ref={qrExportRef}
+              value={reviewUrl}
+              size={QR_EXPORT_SIZE}
+              level="H"
+              bgColor="#FFFFFF"
+              fgColor="#18181B"
+              includeMargin={true}
+            />
             <QRCodeCanvas
               value={reviewUrl}
               size={400}
@@ -165,12 +200,6 @@ export function PrintableQR({ slug, businessName }: PrintableQRProps) {
               bgColor="#FFFFFF"
               fgColor="#18181B"
               includeMargin={true}
-              imageSettings={{
-                src: "",
-                height: 0,
-                width: 0,
-                excavate: false,
-              }}
             />
           </div>
 
