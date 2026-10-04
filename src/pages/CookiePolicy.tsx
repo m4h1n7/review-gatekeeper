@@ -5,6 +5,7 @@ import {
   Globe, Scale, Mail, RefreshCw, Ban,
 } from "lucide-react";
 import { useConsent } from "@/components/CookieConsent";
+import { legalStamp } from "@/lib/legalConfig";
 
 const ACCENT = "#16A34A";
 const CONTACT_EMAIL = "starcatchbd@gmail.com";
@@ -142,7 +143,7 @@ export default function CookiePolicy() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-white">Cookie Policy</h1>
-            <p className="text-xs text-[#A1A1AA]">Last updated: October 4, 2026 &middot; Effective immediately</p>
+            <p className="text-xs text-[#A1A1AA]">{legalStamp("cookie-policy")}</p>
           </div>
         </div>
 

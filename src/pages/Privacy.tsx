@@ -2,6 +2,7 @@ import { useNavigate } from "react-router";
 import { DataCollectionBlock } from "@/components/DataCollectionInfo";
 import { ThirdPartyBlock } from "@/components/ThirdPartyNotice";
 import { ListChecks } from "lucide-react";
+import { legalStamp } from "@/lib/legalConfig";
 import { Button } from "@/components/ui/button";
 import { Star, ArrowLeft, Lock, Mail, ShieldCheck, Database, Users, Eye, Cookie, Globe, Scale, Baby, AlertTriangle, RefreshCw } from "lucide-react";
 
@@ -124,7 +125,7 @@ export default function Privacy() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-white">Privacy Policy</h1>
-            <p className="text-xs text-[#A1A1AA]">Last updated: October 4, 2026 &middot; Effective immediately</p>
+            <p className="text-xs text-[#A1A1AA]">{legalStamp("privacy")}</p>
           </div>
         </div>
 

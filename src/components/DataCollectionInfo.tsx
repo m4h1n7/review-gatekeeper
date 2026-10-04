@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
+import { useModalKeyboard } from "@/hooks/useModalKeyboard";
 import {
   ShieldCheck, User, Building2, MessageSquare, Activity, CreditCard,
   Users, Bell, X, Ban, ChevronDown, ListChecks,
@@ -548,19 +549,11 @@ export function DataCollectionBlock() {
 /** Modal variant, opened from a button. */
 export function DataCollectionModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const navigate = useNavigate();
+  const panelRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
-  }, [open, onClose]);
+  // Shared trap: Escape closes, focus enters the dialog, Tab/Shift+Tab cycle
+  // inside it, and focus returns to the triggering footer button on close.
+  useModalKeyboard(open, onClose, panelRef);
 
   return (
     <AnimatePresence>
@@ -574,6 +567,7 @@ export function DataCollectionModal({ open, onClose }: { open: boolean; onClose:
           <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" onClick={onClose} />
 
           <motion.div
+            ref={panelRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby="data-collection-title"

@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Star, ArrowLeft, FileCode2, ShieldCheck, Image as ImageIcon } from "lucide-react";
+import { copyrightLine, legalStamp } from "@/lib/legalConfig";
 
 const ACCENT = "#16A34A";
 
@@ -44,12 +45,17 @@ export default function OpenSourceLicenses() {
 
       <nav className="relative z-20 px-4 sm:px-6 py-5 border-b border-white/5">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => navigate("/")}>
+          <button
+            type="button"
+            aria-label="STAR CATCH — go to home page"
+            onClick={() => navigate("/")}
+            className="flex items-center gap-2.5 cursor-pointer text-left"
+          >
             <div className="w-8 h-8 rounded-lg bg-[#16A34A] flex items-center justify-center shadow-lg shadow-[#16A34A]/25">
               <Star className="w-4 h-4 text-white fill-white" />
             </div>
             <span className="font-bold text-sm text-white tracking-wide">STAR CATCH</span>
-          </div>
+          </button>
           <Button variant="outline" size="sm" onClick={() => navigate(-1)} className="border-white/10 bg-white/5 hover:bg-white/10 text-[#A1A1AA] cursor-pointer text-xs">
             <ArrowLeft className="w-3.5 h-3.5 mr-1.5" /> Back
           </Button>
@@ -63,7 +69,7 @@ export default function OpenSourceLicenses() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-white">Open-Source Licenses &amp; Asset Credits</h1>
-            <p className="text-xs text-[#A1A1AA]">Last updated: October 4, 2026</p>
+            <p className="text-xs text-[#A1A1AA]">{legalStamp("open-source-licenses")}</p>
           </div>
         </div>
 
@@ -193,8 +199,7 @@ export default function OpenSourceLicenses() {
           <section>
             <h2 className="text-lg font-semibold text-white mb-3">Attribution</h2>
             <p className="text-sm text-[#A1A1AA] leading-relaxed">
-              © {new Date().getFullYear()} STAR CATCH. All rights reserved. Licences are reproduced in
-              summary for transparency; the linked projects remain authoritative. If you believe any
+              {copyrightLine()} Licences are reproduced in summary for transparency; the linked projects remain authoritative. If you believe any
               asset is misattributed or improperly licensed, please contact us at{" "}
               <a href="mailto:starcatchbd@gmail.com" className="text-[#16A34A] hover:underline break-all">
                 starcatchbd@gmail.com

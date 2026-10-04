@@ -5,6 +5,7 @@ import {
   AlertTriangle, CreditCard, Gavel, RefreshCw,
   Scale, Mail, Database, Link2,
 } from "lucide-react";
+import { legalStamp } from "@/lib/legalConfig";
 
 const ACCENT = "#16A34A";
 const CONTACT_EMAIL = "starcatchbd@gmail.com";
@@ -100,7 +101,7 @@ export default function Terms() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-white">Terms of Service</h1>
-            <p className="text-xs text-[#A1A1AA]">Last updated: October 4, 2026 &middot; Effective immediately</p>
+            <p className="text-xs text-[#A1A1AA]">{legalStamp("terms")}</p>
           </div>
         </div>
 

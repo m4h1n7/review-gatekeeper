@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { DataCollectionButton } from "@/components/DataCollectionInfo";
 import { ThirdPartyButton } from "@/components/ThirdPartyNotice";
 import { LegalNotices } from "@/components/LegalNotices";
+import { HighContrastToggle } from "@/components/AccessibilityControls";
+import { copyrightLine } from "@/lib/legalConfig";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/use-auth";
@@ -723,13 +725,13 @@ export default function Landing() {
                 <ThirdPartyButton className="hover:text-white transition-colors cursor-pointer text-left" />
                 <button onClick={() => navigate("/cookie-policy")} className="hover:text-white transition-colors cursor-pointer text-left">Cookie Policy</button>
                 <button onClick={() => navigate("/refund-policy")} className="hover:text-white transition-colors cursor-pointer text-left">Refund &amp; Cancellation Policy</button>
+                <p className="text-[10px] text-zinc-600 uppercase tracking-wider mt-2">Accessibility</p>
+                <HighContrastToggle className="mt-0.5 self-start" />
               </div>
             </div>
           </div>
           <div className="border-t border-white/[0.06] pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-xs text-zinc-600">
-              © {new Date().getFullYear()} STAR CATCH. All rights reserved.
-            </p>
+            <p className="text-xs text-zinc-600">{copyrightLine()}</p>
             <div className="flex items-center gap-4 text-xs text-zinc-600">
               <a href="mailto:starcatchbd@gmail.com" className="hover:text-white transition-colors">starcatchbd@gmail.com</a>
               <span>·</span>

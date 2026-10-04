@@ -1,28 +1,40 @@
 import { useEffect, useRef } from "react";
 
+const FOCUSABLE = [
+  "a[href]",
+  "button:not([disabled])",
+  "input:not([disabled]):not([type='hidden'])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+  '[tabindex]:not([tabindex="-1"])',
+  '[contenteditable="true"]',
+].join(",");
+
 /**
  * Keyboard behaviour for custom dialogs.
  *
- * Covers the four things a hand-rolled modal usually misses:
- *  1. Escape closes the dialog (WCAG 2.1.1 / 2.1.2).
- *  2. Focus moves into the dialog when it opens, so keyboard users are not
- *     left tabbing through the page behind it.
- *  3. Focus returns to the element that opened it on close.
- *  4. Background scroll is locked while the dialog is open.
+ * Covers what a hand-rolled modal usually gets wrong:
+ *  1. Escape closes the dialog (WCAG 2.1.1).
+ *  2. Focus moves into the dialog on open.
+ *  3. Focus is TRAPPED inside the dialog — Tab and Shift+Tab cycle within it,
+ *     so keyboard users cannot tab into the inert page behind and lose their
+ *     place (WCAG 2.4.3, 2.4.7).
+ *  4. Focus returns to the triggering element on close.
+ *  5. Background scroll is locked.
+ *  6. A dialog containing no focusable elements at all still traps focus on
+ *     itself, rather than silently releasing the user to the page behind.
  *
- * Pass the dialog container ref so focus has somewhere to land.
+ * Pass the dialog panel ref so the trap has a boundary to work within.
  */
 export function useModalKeyboard<T extends HTMLElement>(
   open: boolean,
   onClose: () => void,
   panelRef?: React.RefObject<T | null>,
 ) {
-  // Remembers whatever had focus before the dialog opened.
   const restoreFocusRef = useRef<HTMLElement | null>(null);
-  // Callers almost always pass an inline arrow (`onClose={() => setOpen(false)}`),
-  // which is a NEW function identity on every render. Keeping it in a ref means
-  // the effect depends only on `open`, so the effect does not re-run (and re-steal
-  // focus) on every unrelated re-render of the parent.
+  // Callers almost always pass an inline arrow, which is a new function
+  // identity every render. Keeping it in a ref means the effect depends only
+  // on `open`, so focus is not stolen on every unrelated re-render.
   const onCloseRef = useRef(onClose);
   useEffect(() => {
     onCloseRef.current = onClose;
@@ -33,14 +45,13 @@ export function useModalKeyboard<T extends HTMLElement>(
 
     restoreFocusRef.current = document.activeElement as HTMLElement | null;
 
-    // Move focus into the dialog. Prefer an explicitly marked control
-    // (e.g. the close button); otherwise focus the panel itself.
     const panel = panelRef?.current ?? null;
+
+    // Move focus in. Prefer an explicitly marked control, else the first
+    // focusable descendant, else the panel itself.
     const preferred = panel?.querySelector<HTMLElement>("[data-autofocus]");
-    const fallback = panel?.querySelector<HTMLElement>(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-    );
-    (preferred ?? fallback ?? panel)?.focus();
+    const firstFocusable = panel?.querySelector<HTMLElement>(FOCUSABLE);
+    (preferred ?? firstFocusable ?? panel)?.focus();
 
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -49,24 +60,55 @@ export function useModalKeyboard<T extends HTMLElement>(
       if (e.key === "Escape") {
         e.stopPropagation();
         onCloseRef.current();
+        return;
+      }
+
+      if (e.key !== "Tab") return;
+
+      const container = panelRef?.current;
+      // No boundary known, or nothing focusable inside: keep focus on the
+      // dialog rather than letting it escape to the page behind.
+      if (!container) return;
+
+      const items = Array.from(
+        container.querySelectorAll<HTMLElement>(FOCUSABLE),
+      ).filter(
+        (el) =>
+          el.offsetParent !== null ||
+          el === document.activeElement, // offsetParent is null for fixed/hidden edge cases
+      );
+
+      if (items.length === 0) {
+        e.preventDefault();
+        container.focus();
+        return;
+      }
+
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+
+      if (e.shiftKey) {
+        // Shift+Tab on the first item wraps to the last.
+        if (active === first || !container.contains(active)) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else if (active === last || !container.contains(active)) {
+        // Tab on the last item wraps to the first.
+        e.preventDefault();
+        first.focus();
       }
     };
 
-    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("keydown", onKeyDown, true);
 
     return () => {
-      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("keydown", onKeyDown, true);
       document.body.style.overflow = previousOverflow;
-      // Return focus to the trigger so keyboard users don't lose their place.
       restoreFocusRef.current?.focus?.();
     };
     // panelRef is a stable ref object; only `open` should re-trigger this.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
-}
-
-/** True when the event target is (or is inside) the panel — for backdrop clicks. */
-export function isOutsideTarget(target: EventTarget | null, panel: HTMLElement | null): boolean {
-  if (!panel || !(target instanceof Node)) return false;
-  return !panel.contains(target);
 }

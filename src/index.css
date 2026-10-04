@@ -136,6 +136,61 @@
   --a11y-focus: #16a34a;
 }
 
+/* ─────────────────────────────────────────────────────────────
+   High-contrast mode.
+
+   Toggled by ComplianceProvider, which sets `hc-mode` on <html>.
+   It raises every muted token to full-contrast rather than trying to
+   patch individual components — so modals, banners, buttons and
+   popups all update from one class on the root element.
+
+   Muted text goes from 6.9:1 to 19.4:1 against the panel; focus
+   ring brightens so it stays visible on the lighter surfaces.
+   ───────────────────────────────────────────────────────────── */
+.hc-mode {
+  --a11y-text: #ffffff;
+  --a11y-text-muted: #ffffff;
+  --a11y-text-subtle: #f2f2f2;
+  --a11y-focus: #4ade80;
+}
+
+.hc-mode body {
+  background: #000000 !important;
+  color: #ffffff !important;
+}
+
+/* Force readable text wherever the app used a low-opacity white. */
+.hc-mode [class*="text-white/15"],
+.hc-mode [class*="text-white/20"],
+.hc-mode [class*="text-white/25"],
+.hc-mode [class*="text-white/30"],
+.hc-mode [class*="text-white/35"],
+.hc-mode [class*="text-white/40"],
+.hc-mode [class*="text-zinc-500"],
+.hc-mode [class*="text-zinc-600"],
+.hc-mode [class*="text-[#A1A1AA]"],
+.hc-mode [class*="text-[#71717A]"] {
+  color: #ffffff !important;
+}
+
+/* Stronger borders and panel surfaces so edges stay legible. */
+.hc-mode [class*="border-white/"] {
+  border-color: rgba(255, 255, 255, 0.55) !important;
+}
+.hc-mode [class*="bg-[#18181B]"],
+.hc-mode [class*="bg-[#0D0D0D]"] {
+  background-color: #000000 !important;
+}
+
+/* Reduced-motion opt-in, independent of the OS setting. */
+.reduce-motion *,
+.reduce-motion *::before,
+.reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
 @layer utilities {
   /* NOTE: `.sr-only` is intentionally NOT redefined here. Tailwind already
      ships it, the codebase already uses it (dialog, command, carousel,

@@ -3,6 +3,8 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
 import { LegalNotices } from "@/components/LegalNotices";
+import { HighContrastToggle } from "@/components/AccessibilityControls";
+import { copyrightLine } from "@/lib/legalConfig";
 import { Shield, CheckCircle2, Zap, BarChart3, Bell, Star } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { PaywallModal } from "@/components/PaywallModal";
@@ -174,10 +176,11 @@ export default function Pricing() {
               </span>
             </div>
           </div>
-          <p className="text-xs text-[#A1A1AA]/60">
-            © {new Date().getFullYear()} STAR CATCH. All rights reserved.
-          </p>
-          <LegalNotices />
+          <p className="text-xs text-[#A1A1AA]/60">{copyrightLine()}</p>
+          <div className="flex items-center gap-3">
+            <HighContrastToggle />
+            <LegalNotices />
+          </div>
         </div>
       </footer>
     </div>
