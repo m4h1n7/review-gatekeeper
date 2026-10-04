@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { PrintableQR } from "@/components/PrintableQR";
+import { DataCollectionButton } from "@/components/DataCollectionInfo";
 import QRCodeGenerator from "@/components/QRCodeGenerator";
 import NFCCardPreview from "@/components/NFCCardPreview";
 import StaffManager from "@/components/StaffManager";
@@ -945,6 +946,8 @@ export default function Dashboard() {
               <button onClick={() => navigate("/terms")} className="hover:text-white transition-colors cursor-pointer whitespace-nowrap">Terms of Service</button>
               <span className="text-[#A1A1AA]/20">·</span>
               <button onClick={() => navigate("/privacy")} className="hover:text-white transition-colors cursor-pointer whitespace-nowrap">Privacy Policy</button>
+              <span className="text-[#A1A1AA]/20">·</span>
+              <DataCollectionButton className="hover:text-white transition-colors cursor-pointer whitespace-nowrap" />
               <span className="text-[#A1A1AA]/20">·</span>
               <button onClick={() => navigate("/cookie-policy")} className="hover:text-white transition-colors cursor-pointer whitespace-nowrap">Cookie Policy</button>
               <span className="text-[#A1A1AA]/20">·</span>

@@ -1,4 +1,6 @@
 import { useNavigate } from "react-router";
+import { DataCollectionBlock } from "@/components/DataCollectionInfo";
+import { ListChecks } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Star, ArrowLeft, Lock, Mail, ShieldCheck, Database, Users, Eye, Cookie, Globe, Scale, Baby, AlertTriangle, RefreshCw } from "lucide-react";
 
@@ -192,7 +194,7 @@ export default function Privacy() {
                   ],
                   [
                     <strong className="text-white">Activity &amp; usage logs</strong>,
-                    <>NFC taps and QR scans, timestamps, device and browser type, referring page, session identifiers, staff attribution links (<code className="text-[11px] text-white/80">?staff=…</code>), scan and review counts, dashboard visits, and IP address where necessary for security.</>,
+                    <>NFC taps and QR scans, timestamps, session identifiers, staff attribution links (<code className="text-[11px] text-white/80">?staff=…</code>), scan and review counts, and dashboard visits. We do not collect your IP address, browser, or device type — see the full field-level list below.</>,
                     <>To generate your analytics dashboard, monthly reports, and staff performance leaderboard, and to detect fraud.</>,
                   ],
                   [
@@ -207,7 +209,7 @@ export default function Privacy() {
                   ],
                   [
                     <strong className="text-white">Technical data</strong>,
-                    <>Browser type, operating system, screen dimensions, language, and error logs generated while you use the Platform.</>,
+                    <>Error and diagnostic logs generated while you use the Platform, used only to diagnose faults. We do not read your browser type, operating system, screen dimensions, or IP address.</>,
                     <>To diagnose faults and improve reliability and user experience.</>,
                   ],
                 ]}
@@ -215,6 +217,14 @@ export default function Privacy() {
               <p className="text-sm text-[#A1A1AA] leading-relaxed">
                 <strong className="text-white">We do not collect</strong> sensitive categories of personal data such as national ID numbers, biometric data, health records, political opinions, or religious beliefs. We also do not knowingly collect data from anyone under 18 (see Section 11).
               </p>
+
+              <div className="pt-2 mt-2 border-t border-white/[0.07]">
+                <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                  <ListChecks className="w-4 h-4" style={{ color: "#16A34A" }} />
+                  Field-level detail: every data point and its exact purpose
+                </h3>
+                <DataCollectionBlock />
+              </div>
             </Section>
 
             <Section id="use" icon={<Eye className="w-4 h-4" />} title="3. How We Use Your Information">
