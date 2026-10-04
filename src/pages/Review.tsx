@@ -355,7 +355,7 @@ export default function Review() {
         <div className="fixed inset-0 -z-10 bg-[#0A0A0B]" />
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-2 border-white/10 border-t-white/60 rounded-full animate-spin" />
-          <p className="text-white/40 text-xs tracking-wide">Loading…</p>
+          <p className="text-white/60 text-xs tracking-wide">Loading…</p>
         </div>
       </div>
     );
@@ -371,7 +371,7 @@ export default function Review() {
             <AlertTriangle className="w-6 h-6 text-red-400" />
           </div>
           <h1 className="text-xl font-bold text-white mb-2">Link Unavailable</h1>
-          <p className="text-white/40 text-sm leading-relaxed">
+          <p className="text-white/60 text-sm leading-relaxed">
             This review link is invalid or has been deactivated.
           </p>
         </motion.div>
@@ -412,11 +412,11 @@ export default function Review() {
             <Clock className={`w-6 h-6 ${isExpired || isCancelled ? "text-red-400" : "text-amber-400"}`} />
           </div>
           <h1 className="text-xl font-bold text-white mb-2">Service Inactive</h1>
-          <p className="text-white/40 text-sm leading-relaxed mb-6">
+          <p className="text-white/60 text-sm leading-relaxed mb-6">
             This review portal is currently inactive. Please contact the business administrator.
           </p>
           <div className="p-4 rounded-2xl border border-white/[0.06] bg-white/[0.02]">
-            <p className="text-xs text-white/25 mb-2 font-medium uppercase tracking-wider">Business</p>
+            <p className="text-xs text-white/60 mb-2 font-medium uppercase tracking-wider">Business</p>
             <p className="text-sm text-white/50 font-semibold">{business.name}</p>
             {isPending && (
               <p className="text-[11px] text-amber-400/60 mt-2">
@@ -458,7 +458,7 @@ export default function Review() {
             <Clock className="w-6 h-6 text-amber-400" />
           </div>
           <h1 className="text-xl font-bold text-white mb-2">Review Portal Paused</h1>
-          <p className="text-white/40 text-sm leading-relaxed">
+          <p className="text-white/60 text-sm leading-relaxed">
             This business has temporarily paused review collection. Please try again later or contact the business directly.
           </p>
         </motion.div>
@@ -717,8 +717,8 @@ function StarRatingView({
         transition={{ delay: 0.45 }}
         className="flex items-center justify-between w-full max-w-[300px] sm:max-w-[340px] mt-2 px-1"
       >
-        <span className="text-[10px] text-white/20 font-medium">Poor</span>
-        <span className="text-[10px] text-white/20 font-medium">Excellent</span>
+        <span className="text-[10px] text-white/60 font-medium">Poor</span>
+        <span className="text-[10px] text-white/60 font-medium">Excellent</span>
       </motion.div>
 
       {/* Trust Badge */}
@@ -838,7 +838,7 @@ function LowRatingOptionsView({
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-[15px] font-semibold text-white mb-0.5">{privateLabel}</p>
-              <p className="text-xs text-white/35 leading-snug">{privateDesc}</p>
+              <p className="text-xs text-white/60 leading-snug">{privateDesc}</p>
             </div>
           </div>
         </motion.button>
@@ -847,7 +847,7 @@ function LowRatingOptionsView({
         {showPublicOption && (
           <div className="flex items-center gap-4 px-2">
             <div className="flex-1 h-px bg-white/[0.06]" />
-            <span className="text-[10px] text-white/20 font-medium tracking-widest">OR</span>
+            <span className="text-[10px] text-white/60 font-medium tracking-widest">OR</span>
             <div className="flex-1 h-px bg-white/[0.06]" />
           </div>
         )}
@@ -868,7 +868,7 @@ function LowRatingOptionsView({
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-[15px] font-semibold text-white mb-0.5">{publicLabel}</p>
-                <p className="text-xs text-white/35 leading-snug">{publicDesc}</p>
+                <p className="text-xs text-white/60 leading-snug">{publicDesc}</p>
               </div>
               <ExternalLink className="w-4 h-4 text-white/15 group-hover:text-white/30 transition-colors shrink-0" />
             </div>

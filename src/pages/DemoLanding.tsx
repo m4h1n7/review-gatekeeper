@@ -492,8 +492,8 @@ function StarRatingView({
         transition={{ delay: 0.45 }}
         className="flex items-center justify-between w-full max-w-[300px] sm:max-w-[340px] mt-2 px-1"
       >
-        <span className="text-[10px] text-white/20 font-medium">Poor</span>
-        <span className="text-[10px] text-white/20 font-medium">Excellent</span>
+        <span className="text-[10px] text-white/60 font-medium">Poor</span>
+        <span className="text-[10px] text-white/60 font-medium">Excellent</span>
       </motion.div>
 
       {/* Trust Badge */}
@@ -612,7 +612,7 @@ function LowRatingOptionsView({
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-[15px] font-semibold text-white mb-0.5">{privateLabel}</p>
-              <p className="text-xs text-white/35 leading-snug">{privateDesc}</p>
+              <p className="text-xs text-white/60 leading-snug">{privateDesc}</p>
             </div>
           </div>
         </motion.button>
@@ -621,7 +621,7 @@ function LowRatingOptionsView({
         {showPublicOption && (
           <div className="flex items-center gap-4 px-2">
             <div className="flex-1 h-px bg-white/[0.06]" />
-            <span className="text-[10px] text-white/20 font-medium tracking-widest">OR</span>
+            <span className="text-[10px] text-white/60 font-medium tracking-widest">OR</span>
             <div className="flex-1 h-px bg-white/[0.06]" />
           </div>
         )}
@@ -642,7 +642,7 @@ function LowRatingOptionsView({
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-[15px] font-semibold text-white mb-0.5">{publicLabel}</p>
-                <p className="text-xs text-white/35 leading-snug">{publicDesc}</p>
+                <p className="text-xs text-white/60 leading-snug">{publicDesc}</p>
               </div>
               <ExternalLink className="w-4 h-4 text-white/15 group-hover:text-white/30 transition-colors shrink-0" />
             </div>
@@ -709,7 +709,7 @@ function RedirectView({
           transition={{ duration: 1, ease: "easeInOut" }}
         />
       </div>
-      <p className="text-[11px] text-white/25 mb-4">          Redirecting in {Math.max(1, Math.ceil(countdown / 10))}s…
+      <p className="text-[11px] text-white/60 mb-4">          Redirecting in {Math.max(1, Math.ceil(countdown / 10))}s…
       </p>
       {reviewUrl ? (
         <a
