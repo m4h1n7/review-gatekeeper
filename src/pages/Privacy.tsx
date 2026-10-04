@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router";
 import { DataCollectionBlock } from "@/components/DataCollectionInfo";
+import { ThirdPartyBlock } from "@/components/ThirdPartyNotice";
 import { ListChecks } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Star, ArrowLeft, Lock, Mail, ShieldCheck, Database, Users, Eye, Cookie, Globe, Scale, Baby, AlertTriangle, RefreshCw } from "lucide-react";
@@ -299,6 +300,17 @@ export default function Privacy() {
                 <p className="text-sm text-[#A1A1AA] leading-relaxed">
                   <strong className="text-white">No sale of personal data.</strong> Private feedback submitted by end users (1-3 star ratings) is processed solely to inform the relevant business owner. It is never sold, traded, or shared with third-party data brokers, marketing agencies, or any unrelated entity.
                 </p>
+              </div>
+
+              <div className="pt-2 mt-2 border-t border-white/[0.07]">
+                <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                  <Globe className="w-4 h-4" style={{ color: "#16A34A" }} />
+                  Audit of third-party embeds and external services
+                </h3>
+                <p className="text-sm text-[#A1A1AA] leading-relaxed mb-3">
+                  We audited the entire codebase for third-party embeds. The Platform contains no iframes, no third-party scripts, and no tracking pixels. The full list of external services we connect to — what each one actually receives, and when — is below.
+                </p>
+                <ThirdPartyBlock />
               </div>
             </Section>
 

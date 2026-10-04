@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
 import { DataCollectionButton } from "@/components/DataCollectionInfo";
+import { ThirdPartyButton } from "@/components/ThirdPartyNotice";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/use-auth";
@@ -712,6 +713,7 @@ export default function Landing() {
                 <button onClick={() => navigate("/terms")} className="hover:text-white transition-colors cursor-pointer text-left">Terms of Service</button>
                 <button onClick={() => navigate("/privacy")} className="hover:text-white transition-colors cursor-pointer text-left">Privacy Policy</button>
                 <DataCollectionButton className="hover:text-white transition-colors cursor-pointer text-left" />
+                <ThirdPartyButton className="hover:text-white transition-colors cursor-pointer text-left" />
                 <button onClick={() => navigate("/cookie-policy")} className="hover:text-white transition-colors cursor-pointer text-left">Cookie Policy</button>
                 <button onClick={() => navigate("/refund-policy")} className="hover:text-white transition-colors cursor-pointer text-left">Refund &amp; Cancellation Policy</button>
               </div>
