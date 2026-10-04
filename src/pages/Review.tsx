@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { ConsentCheckbox } from "@/components/ConsentCheckbox";
 import {
   Send,
   CheckCircle2,
@@ -124,6 +125,8 @@ export default function Review() {
   const [selectedRating, setSelectedRating] = useState<number | null>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [form, setForm] = useState({ name: "", phone: "", email: "", message: "" });
+  const [hasConsent, setHasConsent] = useState(false);
+  const [consentError, setConsentError] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [logoFailed, setLogoFailed] = useState(false);
   const [redirectCountdown, setRedirectCountdown] = useState(10);
@@ -249,6 +252,12 @@ export default function Review() {
   const handleFeedbackSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!business) return;
+    // Consent is required before any personal data is collected or submitted.
+    if (!hasConsent) {
+      setConsentError(true);
+      return;
+    }
+    setConsentError(false);
     setIsSubmitting(true);
     try {
       const tagLabels = selectedTags.join(", ");
@@ -539,6 +548,12 @@ export default function Review() {
                 onToggleTag={toggleTag}
                 onFormChange={setForm}
                 onSubmit={handleFeedbackSubmit}
+                hasConsent={hasConsent}
+                onConsentChange={(v) => {
+                  setHasConsent(v);
+                  if (v) setConsentError(false);
+                }}
+                showConsentError={consentError}
                 onBack={() => setView(business.planType === "pro" ? "low-rating-options" : "rating")}
               />
             </motion.div>
@@ -947,6 +962,9 @@ function FeedbackView({
   onFormChange,
   onSubmit,
   onBack,
+  hasConsent,
+  onConsentChange,
+  showConsentError,
 }: {
   brandColor: string;
   heading: string;
@@ -957,6 +975,9 @@ function FeedbackView({
   onFormChange: (f: typeof form) => void;
   onSubmit: (e: React.FormEvent) => void;
   onBack: () => void;
+  hasConsent: boolean;
+  onConsentChange: (v: boolean) => void;
+  showConsentError: boolean;
 }) {
   const inputClass =
     "h-11 bg-white/[0.03] border-white/[0.08] text-white text-sm placeholder:text-white/20 focus:border-white/20 focus:ring-1 focus:ring-white/10 transition-all rounded-xl";
@@ -1072,6 +1093,14 @@ function FeedbackView({
             className="min-h-[72px] bg-white/[0.03] border-white/[0.08] text-white text-sm placeholder:text-white/20 focus:border-white/20 focus:ring-1 focus:ring-white/10 transition-all rounded-xl resize-none"
           />
         </div>
+
+        <ConsentCheckbox
+          checked={hasConsent}
+          onChange={onConsentChange}
+          showError={showConsentError}
+          accentColor={brandColor}
+          className="pt-1"
+        />
 
         <motion.button
           type="submit"

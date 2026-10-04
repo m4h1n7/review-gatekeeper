@@ -4,9 +4,58 @@ import {
   Star, ArrowLeft, Cookie, ShieldCheck, ChartLine, Megaphone, Settings,
   Globe, Scale, Mail, RefreshCw, Ban,
 } from "lucide-react";
+import { useConsent } from "@/components/CookieConsent";
 
 const ACCENT = "#16A34A";
 const CONTACT_EMAIL = "starcatchbd@gmail.com";
+
+/** Shows the visitor's stored consent state and lets them reopen the banner. */
+function CookieConsentControls() {
+  const { consent, hasDecided, openBanner, acceptAll, rejectNonEssential } = useConsent();
+
+  const label = consent.analytics
+    ? "Analytics and Marketing allowed"
+    : consent.marketing
+      ? "Marketing allowed only"
+      : "Essential only";
+
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/[0.03] p-5 space-y-3">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <p className="text-sm font-semibold text-white">Your current choice</p>
+          <p className="text-xs text-[#A1A1AA] mt-0.5">
+            {hasDecided ? label : "No choice recorded yet — you will be asked on your next visit."}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={openBanner}
+          className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl border border-white/10 bg-white/[0.05] hover:bg-white/[0.09] text-[#A1A1AA] hover:text-white text-xs font-medium transition-colors cursor-pointer whitespace-nowrap"
+        >
+          <Settings className="w-3.5 h-3.5" />
+          Change preferences
+        </button>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={acceptAll}
+          className="text-[11px] px-3 py-1.5 rounded-lg bg-[#16A34A] hover:bg-[#16A34A]/90 text-white font-medium transition-colors cursor-pointer"
+        >
+          Accept all
+        </button>
+        <button
+          type="button"
+          onClick={rejectNonEssential}
+          className="text-[11px] px-3 py-1.5 rounded-lg border border-white/10 bg-white/[0.03] hover:bg-white/[0.07] text-[#A1A1AA] font-medium transition-colors cursor-pointer"
+        >
+          Reject non-essential
+        </button>
+      </div>
+    </div>
+  );
+}
 
 function GlassPanel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
@@ -58,7 +107,6 @@ const TOC = [
 
 export default function CookiePolicy() {
   const navigate = useNavigate();
-
   return (
     <div className="min-h-screen">
       <div className="fixed inset-0 -z-10">
@@ -242,11 +290,15 @@ export default function CookiePolicy() {
 
             <Section id="consent" icon={<Scale className="w-4 h-4" />} title="7. Consent & How to Control Cookies">
               <p className="text-sm text-[#A1A1AA] leading-relaxed">
-                Because we only use strictly necessary cookies, the Platform is fully functional without consent. If we ever introduce analytics or marketing technologies that are not essential, we will implement a consent mechanism that asks you before any non-essential cookie is set, and you may withdraw that consent at any time through the same control.
+                We ask for your consent the first time you visit the Platform. A cookie consent banner appears with three options: <strong className="text-white">Accept All</strong>, <strong className="text-white">Reject Non-Essential</strong>, or <strong className="text-white">Customize Preferences</strong>, where you can enable or disable Analytics and Marketing individually. Strictly Necessary cookies are always on because the Platform cannot function without them.
               </p>
               <p className="text-sm text-[#A1A1AA] leading-relaxed">
-                You are always free to accept, reject, or delete non-essential cookies. Your choice will not affect access to the core review features, which rely only on essential storage.
+                Your choice is stored on your device so we do not ask again on every visit. Because we only use strictly necessary cookies by default, the Platform is fully functional whether you accept or reject. If we ever introduce analytics or marketing technologies that are not essential, they will be gated behind your consent and cannot load until you allow them.
               </p>
+              <p className="text-sm text-[#A1A1AA] leading-relaxed">
+                You are always free to change your mind. Use the button below to revisit your preferences, or clear your browser storage to reset the banner to its first-visit state.
+              </p>
+              <CookieConsentControls />
             </Section>
 
             <Section id="browser-settings" icon={<Settings className="w-4 h-4" />} title="8. Managing Cookies in Your Browser">

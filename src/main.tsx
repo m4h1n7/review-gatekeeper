@@ -8,6 +8,7 @@ import { ConvexReactClient } from "convex/react";
 import React, { StrictMode, useEffect, lazy, Suspense } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router";
+import { ConsentProvider, CookieConsentBanner } from "./components/CookieConsent";
 import { WhatsAppWidget } from "@/components/WhatsAppWidget";
 import "./index.css";
 
@@ -132,6 +133,7 @@ createRoot(document.getElementById("root")!).render(
         <VlyToolbar />
       </ToolbarErrorBoundary>
       <ConvexAuthProvider client={convex}>
+        <ConsentProvider>
         <BrowserRouter>
           <RouteSyncer />
           <Suspense fallback={<RouteLoading />}>
@@ -194,6 +196,8 @@ createRoot(document.getElementById("root")!).render(
         </BrowserRouter>
         <Toaster />
         <WhatsAppWidget />
+        <CookieConsentBanner />
+        </ConsentProvider>
       </ConvexAuthProvider>
     </RootErrorBoundary>
   </StrictMode>,

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ConsentCheckbox } from "@/components/ConsentCheckbox";
 import { useMutation } from "convex/react";
 import { api } from "../convex/_generated/api";
 import {
@@ -30,6 +31,8 @@ export function PaywallModal({ open, onClose, onSuccess, reason, plan: initialPl
   const [trxId, setTrxId] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [hasConsent, setHasConsent] = useState(false);
+  const [consentError, setConsentError] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const submitPayment = useMutation(api.payments.submit);
@@ -42,6 +45,12 @@ export function PaywallModal({ open, onClose, onSuccess, reason, plan: initialPl
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Consent is required before a sender phone number is submitted.
+    if (!hasConsent) {
+      setConsentError(true);
+      return;
+    }
+    setConsentError(false);
     setSubmitting(true);
     try {
       await submitPayment({
@@ -309,9 +318,19 @@ export function PaywallModal({ open, onClose, onSuccess, reason, plan: initialPl
                       />
                     </div>
 
+                    <ConsentCheckbox
+                      checked={hasConsent}
+                      onChange={(v) => {
+                        setHasConsent(v);
+                        if (v) setConsentError(false);
+                      }}
+                      showError={consentError}
+                      className="pt-1"
+                    />
+
                     <Button
                       type="submit"
-                      disabled={submitting || !senderNumber || !trxId}
+                      disabled={submitting || !senderNumber || !trxId || !hasConsent}
                       className="w-full h-12 bg-[#16A34A] hover:bg-[#16A34A]/90 text-white font-semibold shadow-lg shadow-[#16A34A]/25 hover:shadow-[#16A34A]/40 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {submitting ? (

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { QRCodeSVG } from "qrcode.react";
+import { ConsentCheckbox } from "@/components/ConsentCheckbox";
 import {
   Settings,
   Smartphone,
@@ -72,6 +73,8 @@ export default function LiveDemoPreview() {
     showQR: false,
   });
   const [feedbackName, setFeedbackName] = useState("");
+  const [feedbackConsent, setFeedbackConsent] = useState(false);
+  const [feedbackConsentError, setFeedbackConsentError] = useState(false);
   const [feedbackWhatsapp, setFeedbackWhatsapp] = useState("");
   const [feedbackMessage, setFeedbackMessage] = useState("");
   const [logoLoaded, setLogoLoaded] = useState(false);
@@ -122,12 +125,18 @@ export default function LiveDemoPreview() {
   const handleFeedbackSubmit = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
+      // Consent is required before any personal data is collected or submitted.
+      if (!feedbackConsent) {
+        setFeedbackConsentError(true);
+        return;
+      }
+      setFeedbackConsentError(false);
       setSubmittedAt(Date.now());
       setStep("thank-you");
       setShowAlert(true);
       setTimeout(() => setShowAlert(false), 4000);
     },
-    [],
+    [feedbackConsent],
   );
 
 
@@ -582,6 +591,17 @@ export default function LiveDemoPreview() {
                             />
                           </div>
                         </div>
+
+                        <ConsentCheckbox
+                          checked={feedbackConsent}
+                          onChange={(v) => {
+                            setFeedbackConsent(v);
+                            if (v) setFeedbackConsentError(false);
+                          }}
+                          showError={feedbackConsentError}
+                          accentColor={config.brandColor}
+                          compact
+                        />
 
                         {/* ─── Premium Submit Button ─── */}
                         <motion.button

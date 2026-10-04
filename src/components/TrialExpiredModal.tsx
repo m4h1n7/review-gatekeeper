@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { useMutation } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { X, CheckCircle2, Smartphone, Copy, Send } from "lucide-react";
+import { ConsentCheckbox } from "@/components/ConsentCheckbox";
 
 interface TrialExpiredModalProps {
   open: boolean;
@@ -18,6 +19,8 @@ export function TrialExpiredModal({ open, onClose, onSuccess }: TrialExpiredModa
   const [trxId, setTrxId] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [hasConsent, setHasConsent] = useState(false);
+  const [consentError, setConsentError] = useState(false);
   const [copied, setCopied] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<"starter" | "pro">("pro");
 
@@ -31,6 +34,12 @@ export function TrialExpiredModal({ open, onClose, onSuccess }: TrialExpiredModa
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Consent is required before a sender phone number is submitted.
+    if (!hasConsent) {
+      setConsentError(true);
+      return;
+    }
+    setConsentError(false);
     setSubmitting(true);
     try {
       await submitPayment({
@@ -154,7 +163,16 @@ export function TrialExpiredModal({ open, onClose, onSuccess }: TrialExpiredModa
                       <Input placeholder="10-character TrxID" value={trxId} onChange={(e) => setTrxId(e.target.value)}
                         className="h-11 bg-white/5 border-white/10 text-white placeholder:text-[#A1A1AA]/40 focus:border-[#16A34A] font-mono" maxLength={10} required />
                     </div>
-                    <Button type="submit" disabled={submitting || !senderNumber || !trxId}
+                    <ConsentCheckbox
+                      checked={hasConsent}
+                      onChange={(v) => {
+                        setHasConsent(v);
+                        if (v) setConsentError(false);
+                      }}
+                      showError={consentError}
+                      className="pt-1"
+                    />
+                    <Button type="submit" disabled={submitting || !senderNumber || !trxId || !hasConsent}
                       className="w-full h-12 bg-[#16A34A] hover:bg-[#16A34A]/90 text-white font-semibold shadow-lg shadow-[#16A34A]/25 cursor-pointer disabled:opacity-50">
                       {submitting ? <div className="flex items-center gap-2"><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Submitting...</div>
                         : <div className="flex items-center gap-2"><Send className="w-4 h-4" />Submit Payment</div>}
