@@ -32,6 +32,7 @@ const Terms = lazy(() => import("./pages/Terms.tsx"));
 const Privacy = lazy(() => import("./pages/Privacy.tsx"));
 const RefundPolicy = lazy(() => import("./pages/RefundPolicy.tsx"));
 const CookiePolicy = lazy(() => import("./pages/CookiePolicy.tsx"));
+const OpenSourceLicenses = lazy(() => import("./pages/OpenSourceLicenses.tsx"));
 
 // Simple loading fallback for route transitions
 function RouteLoading() {
@@ -192,6 +193,7 @@ createRoot(document.getElementById("root")!).render(
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/refund-policy" element={<RefundPolicy />} />
               <Route path="/cookie-policy" element={<CookiePolicy />} />
+              <Route path="/open-source-licenses" element={<OpenSourceLicenses />} />
               <Route path="/account-suspended" element={<AccountSuspended />} />
               <Route path="/account-archived" element={<AccountArchived />} />
               <Route path="*" element={<NotFound />} />

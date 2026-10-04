@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
+import { LegalNotices } from "@/components/LegalNotices";
 import { Shield, CheckCircle2, Zap, BarChart3, Bell, Star } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { PaywallModal } from "@/components/PaywallModal";
@@ -174,8 +175,9 @@ export default function Pricing() {
             </div>
           </div>
           <p className="text-xs text-[#A1A1AA]/60">
-            © {new Date().getFullYear()} STAR CATCH Reviews and Feedback Agency Bd. Protect your reputation.
+            © {new Date().getFullYear()} STAR CATCH. All rights reserved.
           </p>
+          <LegalNotices />
         </div>
       </footer>
     </div>

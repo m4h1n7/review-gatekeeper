@@ -4,6 +4,7 @@ import { useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
 import { DataCollectionButton } from "@/components/DataCollectionInfo";
 import { ThirdPartyButton } from "@/components/ThirdPartyNotice";
+import { LegalNotices } from "@/components/LegalNotices";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/use-auth";
@@ -727,7 +728,7 @@ export default function Landing() {
           </div>
           <div className="border-t border-white/[0.06] pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-xs text-zinc-600">
-              © {new Date().getFullYear()} STAR CATCH Reviews and Feedback Agency Bd. All rights reserved.
+              © {new Date().getFullYear()} STAR CATCH. All rights reserved.
             </p>
             <div className="flex items-center gap-4 text-xs text-zinc-600">
               <a href="mailto:starcatchbd@gmail.com" className="hover:text-white transition-colors">starcatchbd@gmail.com</a>
@@ -737,6 +738,8 @@ export default function Landing() {
               <a href="tel:+8801673903919" className="hover:text-white transition-colors">+880 1673-903919</a>
             </div>
           </div>
+
+          <LegalNotices />
         </div>
       </footer>
     </div>
