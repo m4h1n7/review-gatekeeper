@@ -103,10 +103,12 @@ export function PaywallModal({ open, onClose, onSuccess, reason, plan: initialPl
           >
             {/* Close button */}
             <button
+              type="button"
               onClick={onClose}
+              aria-label="Close upgrade dialog"
               className="absolute top-4 right-4 p-1 rounded-full hover:bg-white/10 transition-colors z-10 cursor-pointer"
             >
-              <X className="w-5 h-5 text-[#A1A1AA]" />
+              <X className="w-5 h-5 text-[#A1A1AA]" aria-hidden="true" />
             </button>
 
             {/* Header */}

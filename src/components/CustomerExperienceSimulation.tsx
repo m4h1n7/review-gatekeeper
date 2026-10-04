@@ -199,9 +199,9 @@ function GoogleReviewScreen({ onBack }: { onBack: () => void }) {
     <div className="absolute inset-0 flex flex-col">
       {/* Simulated Google header */}
       <div className="bg-white px-4 py-3 flex items-center gap-3">
-        <button onClick={onBack} className="cursor-pointer">
-          <ArrowLeft className="w-4 h-4 text-gray-600" />
-        </button>
+    <button type="button" onClick={onBack} aria-label="Go back to previous step" className="cursor-pointer">
+      <ArrowLeft className="w-4 h-4 text-gray-600" aria-hidden="true" />
+    </button>
         <p className="text-sm font-medium text-gray-800">Google Review</p>
       </div>
       <div className="flex-1 bg-white px-4 py-4">

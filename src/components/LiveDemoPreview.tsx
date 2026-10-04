@@ -430,7 +430,7 @@ export default function LiveDemoPreview() {
                               <img
                                 ref={logoRef}
                                 src={config.logoUrl}
-                                alt="Business logo"
+                                alt={`${config.businessName} logo`}
                                 className="w-full h-full object-cover"
                                 onLoad={() => setLogoLoaded(true)}
                                 onError={() => setLogoLoaded(false)}

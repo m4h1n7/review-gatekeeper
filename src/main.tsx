@@ -134,9 +134,13 @@ createRoot(document.getElementById("root")!).render(
       </ToolbarErrorBoundary>
       <ConvexAuthProvider client={convex}>
         <ConsentProvider>
+        <a href="#main-content" className="skip-link">
+          Skip to main content
+        </a>
         <BrowserRouter>
           <RouteSyncer />
           <Suspense fallback={<RouteLoading />}>
+            <div id="main-content" tabIndex={-1} className="outline-none">
             <Routes>
               <Route path="/" element={<Landing />} />
               <Route
@@ -192,6 +196,7 @@ createRoot(document.getElementById("root")!).render(
               <Route path="/account-archived" element={<AccountArchived />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
+            </div>
           </Suspense>
         </BrowserRouter>
         <Toaster />

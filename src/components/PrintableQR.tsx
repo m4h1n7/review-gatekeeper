@@ -118,7 +118,9 @@ export function PrintableQR({ slug, businessName }: PrintableQRProps) {
           {/* Logo + brand */}
           <div className="flex items-center gap-1.5">
             {logoDataUrl ? (
-              <img src={logoDataUrl} alt="Logo" className="w-6 h-6 rounded object-contain" />
+              // Decorative: the adjacent "STAR CATCH" text already names the
+              // brand, so alt text here would duplicate it for screen readers.
+              <img src={logoDataUrl} alt="" className="w-6 h-6 rounded object-contain" />
             ) : (
               <Star className="w-4 h-4" style={{ color: accentColor, fill: accentColor }} />
             )}

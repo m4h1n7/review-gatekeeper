@@ -87,9 +87,9 @@ export function TrialExpiredModal({ open, onClose, onSuccess }: TrialExpiredModa
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
             className="relative w-full max-w-md max-h-[90vh] overflow-y-auto rounded-3xl border border-white/10 bg-[#18181B]/95 backdrop-blur-2xl shadow-2xl"
           >
-            <button onClick={onClose}
+            <button type="button" onClick={onClose} aria-label="Close subscription dialog"
               className="absolute top-4 right-4 p-1 rounded-full hover:bg-white/10 transition-colors z-10 cursor-pointer">
-              <X className="w-5 h-5 text-[#A1A1AA]" />
+              <X className="w-5 h-5 text-[#A1A1AA]" aria-hidden="true" />
             </button>
             <div className="bg-red-500 p-8 text-center">
               <div className="w-16 h-16 mx-auto rounded-2xl bg-white/20 flex items-center justify-center mb-4">

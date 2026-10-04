@@ -308,10 +308,12 @@ export default function PlanDemoModal({ isOpen, onClose, initialPlan = "starter"
                   <h3 className="text-base font-bold text-white">Plan Preview</h3>
                 </div>
                 <button
+                  type="button"
                   onClick={onClose}
+                  aria-label="Close plan preview"
                   className="w-8 h-8 rounded-lg bg-white/[0.06] hover:bg-white/[0.1] flex items-center justify-center transition-colors cursor-pointer"
                 >
-                  <X className="w-4 h-4 text-zinc-400" />
+                  <X className="w-4 h-4 text-zinc-400" aria-hidden="true" />
                 </button>
               </div>
 

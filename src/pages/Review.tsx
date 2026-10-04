@@ -666,7 +666,7 @@ function StarRatingView({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3 }}
-        className="text-white/35 text-sm mb-8 text-center"
+        className="text-white/60 text-sm mb-8 text-center"
       >
         {subtitleMsg}
       </motion.p>
@@ -766,7 +766,7 @@ function LowRatingOptionsView({
       {/* Back */}
       <button
         onClick={onBack}
-        className="self-start flex items-center gap-1.5 text-white/30 text-xs mb-6 hover:text-white/50 transition-colors cursor-pointer"
+        className="self-start flex items-center gap-1.5 text-white/60 text-xs mb-6 hover:text-white/80 transition-colors cursor-pointer"
       >
         <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M19 12H5M12 19l-7-7 7-7" />
@@ -797,7 +797,7 @@ function LowRatingOptionsView({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.25 }}
-          className="text-sm text-white/35 leading-relaxed max-w-xs mx-auto"
+          className="text-sm text-white/60 leading-relaxed max-w-xs mx-auto"
         >
           {subtitle}
         </motion.p>
@@ -987,7 +987,7 @@ function FeedbackView({
       {/* Back */}
       <button
         onClick={onBack}
-        className="flex items-center gap-1.5 text-white/30 text-xs mb-5 hover:text-white/50 transition-colors cursor-pointer"
+        className="flex items-center gap-1.5 text-white/60 text-xs mb-5 hover:text-white/80 transition-colors cursor-pointer"
       >
         <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M19 12H5M12 19l-7-7 7-7" />

@@ -138,7 +138,7 @@ export default function Onboarding() {
                       <div className="relative">
                         <img
                           src={logoUrl.trim()}
-                          alt="Business Logo Preview"
+                          alt="Preview of the logo your customers will see on the review page"
                           className="w-20 h-20 rounded-2xl object-cover border-2 border-white/10 shadow-lg"
                           onError={(e) => {
                             (e.target as HTMLImageElement).style.display = "none";

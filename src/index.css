@@ -90,4 +90,83 @@
   [role="button"]:not([disabled]) {
     cursor: pointer;
   }
+
+  /* WCAG 2.4.7 Focus Visible — previously only shadcn primitives had this,
+     so hand-written buttons/links in pages and components had no visible
+     keyboard focus indicator. This applies one ring to everything focusable.
+     Guarded by @supports so browsers without :focus-visible keep their native
+     outline rather than having it removed by the rule below. */
+}
+
+/* WCAG 2.4.7 Focus Visible */
+@supports selector(:focus-visible) {
+  :focus-visible {
+    outline: 2px solid var(--a11y-focus);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  /* Suppress the ring for mouse/touch clicks, keeping it for keyboard. */
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+}
+
+/* ────────────────────────────────────────────���────────────────
+   Accessibility tokens
+
+   Contrast ratios measured against the two backgrounds this app
+   actually uses (page #0D0D0D and panel #18181B):
+
+     --a11y-text        17.72:1 on panel   AAA
+     --a11y-text-muted   6.91:1 on panel   AA  (body/secondary text)
+     --a11y-text-subtle  5.27:1 on panel   AA  (helper text — the floor)
+     --a11y-focus        5.38:1 vs panel   AA  (non-text, 3:1 required)
+
+   Rule of thumb enforced here: white opacity >= 0.50 for any text a
+   user needs to read. Below that (white/45 and lower) it fails WCAG AA
+   and is reserved for borders, dividers and purely decorative marks.
+   ───────────────────────────────────────────────────────────── */
+:root {
+  --a11y-text: #ffffff;
+  --a11y-text-muted: #a1a1aa;
+  --a11y-text-subtle: #8c8c8d;
+  --a11y-focus: #16a34a;
+}
+
+@layer utilities {
+  /* NOTE: `.sr-only` is intentionally NOT redefined here. Tailwind already
+     ships it, the codebase already uses it (dialog, command, carousel,
+     breadcrumb), and shadowing a built-in utility in the same layer risks
+     subtle regressions for no benefit. */
+
+  /* Skip link — off-screen until focused, then visible. Uses the same
+     off-screen technique as sr-only rather than relying on it. */
+  .skip-link {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    z-index: 200;
+  }
+  .skip-link:focus {
+    left: 1rem;
+    top: 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    background: #16a34a;
+    color: #ffffff;
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+}
+
+/* WCAG 2.3.3 / 2.2.2 — honour a user's reduced-motion preference. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

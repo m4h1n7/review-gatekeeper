@@ -193,7 +193,7 @@ export default function BusinessCustomizer({
                 <div className="mt-3 flex items-center gap-3">
                   <img
                     src={config.logoUrl}
-                    alt="Logo preview"
+                    alt={`${businessName} logo preview`}
                     className="w-12 h-12 rounded-xl object-cover border border-white/10"
                     onLoad={() => setLogoLoaded(true)}
                     onError={() => setLogoLoaded(false)}

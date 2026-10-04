@@ -78,10 +78,12 @@ export default function SubscriptionExtendModal({
                   </p>
                 </div>
                 <button
+                  type="button"
                   onClick={onClose}
+                  aria-label="Close subscription extension dialog"
                   className="p-1.5 rounded-lg hover:bg-white/10 text-[#A1A1AA] transition-colors cursor-pointer"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-5 h-5" aria-hidden="true" />
                 </button>
               </div>
             </div>

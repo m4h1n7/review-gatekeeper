@@ -129,8 +129,8 @@ function RejectModal({
             <XCircle className="w-5 h-5 text-red-400" />
             <h3 className="text-sm font-semibold text-white">Reject Payment</h3>
           </div>
-          <button onClick={onClose} className="text-[#A1A1AA] hover:text-white cursor-pointer">
-            <X className="w-4 h-4" />
+          <button type="button" onClick={onClose} aria-label="Close reject payment dialog" className="text-[#A1A1AA] hover:text-white cursor-pointer">
+            <X className="w-4 h-4" aria-hidden="true" />
           </button>
         </div>
         <p className="text-xs text-[#A1A1AA] mb-3">

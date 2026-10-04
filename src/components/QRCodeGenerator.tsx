@@ -701,9 +701,12 @@ export default function QRCodeGenerator({
                         className="bg-white rounded-full flex items-center justify-center shadow-md"
                         style={{ width: 40, height: 40 }}
                       >
+                        {/* Decorative: this logo sits inside the centre of a
+                            scannable QR code and carries no information the
+                            surrounding business name does not already convey. */}
                         <img
                           src={logoPreview}
-                          alt="Logo"
+                          alt=""
                           className="w-8 h-8 rounded-full object-cover"
                           onError={(e) => {
                             (e.target as HTMLImageElement).style.display = "none";
