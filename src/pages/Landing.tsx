@@ -710,6 +710,7 @@ export default function Landing() {
               <div className="flex flex-col gap-2 text-xs text-zinc-500">
                 <button onClick={() => navigate("/terms")} className="hover:text-white transition-colors cursor-pointer text-left">Terms of Service</button>
                 <button onClick={() => navigate("/privacy")} className="hover:text-white transition-colors cursor-pointer text-left">Privacy Policy</button>
+                <button onClick={() => navigate("/cookie-policy")} className="hover:text-white transition-colors cursor-pointer text-left">Cookie Policy</button>
                 <button onClick={() => navigate("/refund-policy")} className="hover:text-white transition-colors cursor-pointer text-left">Refund &amp; Cancellation Policy</button>
               </div>
             </div>

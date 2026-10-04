@@ -419,6 +419,8 @@ export default function Privacy() {
             <span className="text-white/15">&bull;</span>
             <button onClick={() => navigate("/refund-policy")} className="hover:text-white transition-colors cursor-pointer">Refund Policy</button>
             <span className="text-white/15">&bull;</span>
+            <button onClick={() => navigate("/cookie-policy")} className="hover:text-white transition-colors cursor-pointer">Cookie Policy</button>
+            <span className="text-white/15">&bull;</span>
             <button onClick={() => navigate("/pricing")} className="hover:text-white transition-colors cursor-pointer">Pricing</button>
           </div>
           <Button onClick={() => navigate("/")} className="bg-[#16A34A] hover:bg-[#16A34A]/90 text-white font-semibold cursor-pointer">

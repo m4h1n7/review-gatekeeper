@@ -946,6 +946,8 @@ export default function Dashboard() {
               <span className="text-[#A1A1AA]/20">·</span>
               <button onClick={() => navigate("/privacy")} className="hover:text-white transition-colors cursor-pointer whitespace-nowrap">Privacy Policy</button>
               <span className="text-[#A1A1AA]/20">·</span>
+              <button onClick={() => navigate("/cookie-policy")} className="hover:text-white transition-colors cursor-pointer whitespace-nowrap">Cookie Policy</button>
+              <span className="text-[#A1A1AA]/20">·</span>
               <button onClick={() => navigate("/refund-policy")} className="hover:text-white transition-colors cursor-pointer whitespace-nowrap">Refund Policy</button>
             </div>
           </div>

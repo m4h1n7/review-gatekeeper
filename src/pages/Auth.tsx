@@ -710,6 +710,8 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                       <button type="button" onClick={() => window.open("/terms", "_blank")} className="text-[#16A34A] hover:underline">Terms of Service</button>
                       {' '}and{' '}
                       <button type="button" onClick={() => window.open("/privacy", "_blank")} className="text-[#16A34A] hover:underline">Privacy Policy</button>
+                      {', '}
+                      <button type="button" onClick={() => window.open("/cookie-policy", "_blank")} className="text-[#16A34A] hover:underline">Cookie Policy</button>
                     </span>
                   </label>
 
