@@ -90,18 +90,21 @@
   [role="button"]:not([disabled]) {
     cursor: pointer;
   }
-
-  /* WCAG 2.4.7 Focus Visible — previously only shadcn primitives had this,
-     so hand-written buttons/links in pages and components had no visible
-     keyboard focus indicator. This applies one ring to everything focusable.
-     Guarded by @supports so browsers without :focus-visible keep their native
-     outline rather than having it removed by the rule below. */
 }
 
-/* WCAG 2.4.7 Focus Visible */
+/* WCAG 2.4.7 Focus Visible.
+
+   Deliberately UNLAYERED. Unlayered CSS beats every @layer, so this ring wins
+   against Tailwind utilities such as `focus:outline-none`, which ~20 inputs
+   across Admin/Onboarding/LiveDemoPreview use together with a faint
+   `focus:border` tint that falls well short of the 3:1 required for a
+   non-text indicator. Putting this in @layer base let those utilities win.
+
+   Guarded by @supports so browsers without :focus-visible keep their native
+   outline instead of having it stripped by the rule below. */
 @supports selector(:focus-visible) {
   :focus-visible {
-    outline: 2px solid var(--a11y-focus);
+    outline: 3px solid var(--a11y-focus);
     outline-offset: 2px;
     border-radius: 4px;
   }

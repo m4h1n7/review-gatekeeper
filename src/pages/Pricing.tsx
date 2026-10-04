@@ -41,8 +41,10 @@ export default function Pricing() {
       {/* Navbar */}
       <nav className="relative z-20 px-4 sm:px-6 py-5 border-b border-white/5">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div
-            className="flex items-center gap-2.5 cursor-pointer"
+          <button
+            type="button"
+            aria-label="STAR CATCH — go to home page"
+            className="flex items-center gap-2.5 cursor-pointer text-left"
             onClick={() => navigate("/")}
           >
             <div className="w-9 h-9 rounded-xl bg-[#16A34A]/15 flex items-center justify-center">
@@ -56,7 +58,7 @@ export default function Pricing() {
                 Reviews and Feedback Agency Bd
               </span>
             </div>
-          </div>
+          </button>
           <Button
             onClick={() => navigate(isAuthenticated ? "/dashboard" : "/auth")}
             className="bg-[#16A34A] hover:bg-[#16A34A]/90 text-white font-semibold cursor-pointer"

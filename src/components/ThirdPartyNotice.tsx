@@ -407,7 +407,7 @@ export function ThirdPartyModal({ open, onClose }: { open: boolean; onClose: () 
               <button
                 type="button"
                 onClick={onClose}
-                aria-label="Close"
+                aria-label="Close third-party services list"
                 className="w-7 h-7 rounded-lg flex items-center justify-center text-white/30 hover:text-white hover:bg-white/10 transition-colors cursor-pointer shrink-0"
               >
                 <X className="w-3.5 h-3.5" />

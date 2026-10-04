@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useModalKeyboard } from "@/hooks/useModalKeyboard";
 import {
   X,
   Star,
@@ -268,6 +269,8 @@ function ProDemo() {
 }
 
 export default function PlanDemoModal({ isOpen, onClose, initialPlan = "starter" }: PlanDemoModalProps) {
+  // Escape closes, focus enters on open and returns to the trigger on close.
+  useModalKeyboard(isOpen, onClose);
   const [activeTab, setActiveTab] = useState<Plan>(initialPlan);
 
   if (!isOpen) return null;

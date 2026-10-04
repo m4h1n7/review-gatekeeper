@@ -160,7 +160,12 @@ export default function DemoDashboard() {
       {/* Navbar */}
       <nav className="relative z-20 px-4 sm:px-6 py-5 border-b border-white/5">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => navigate("/")}>
+          <button
+            type="button"
+            onClick={() => navigate("/")}
+            aria-label="STAR CATCH — go to home page"
+            className="flex items-center gap-2.5 cursor-pointer text-left"
+          >
             <div className="w-9 h-9 rounded-xl bg-[#16A34A]/15 flex items-center justify-center">
               <Star className="w-5 h-5 text-[#16A34A] fill-[#16A34A]" />
             </div>
@@ -168,7 +173,7 @@ export default function DemoDashboard() {
               <span className="font-bold text-base text-white tracking-wide leading-tight">STAR CATCH</span>
               <span className="text-[10px] text-[#A1A1AA] tracking-wider leading-tight">Reviews and Feedback Agency Bd</span>
             </div>
-          </div>
+          </button>
           <div className="flex items-center gap-3">
             <Button variant="outline" size="sm" onClick={() => navigate("/")} className="border-white/10 bg-white/5 hover:bg-white/10 text-[#A1A1AA] cursor-pointer">
               <ArrowLeft className="w-4 h-4 mr-1.5" />

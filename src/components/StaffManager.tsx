@@ -239,8 +239,10 @@ export default function StaffManager({
                   layout
                   className="rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden"
                 >
-                  <div
-                    className="flex items-center justify-between p-3 cursor-pointer hover:bg-white/[0.02] transition-colors"
+                  <button
+                    type="button"
+                    aria-expanded={isExpanded}
+                    className="w-full flex items-center justify-between p-3 cursor-pointer hover:bg-white/[0.02] transition-colors text-left"
                     onClick={() => setExpandedStaff(isExpanded ? null : staff.id)}
                   >
                     <div className="flex items-center gap-3">
@@ -270,7 +272,7 @@ export default function StaffManager({
                         <ChevronDown className="w-4 h-4 text-[#A1A1AA]" />
                       )}
                     </div>
-                  </div>
+                  </button>
 
                   {/* Expanded Details */}
                   <AnimatePresence>

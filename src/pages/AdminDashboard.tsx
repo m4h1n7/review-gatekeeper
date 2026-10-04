@@ -208,7 +208,12 @@ export default function AdminDashboard() {
       {/* Navbar */}
       <nav className="relative z-20 px-4 sm:px-6 py-5 border-b border-white/5">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => navigate("/")}>
+          <button
+            type="button"
+            onClick={() => navigate("/")}
+            aria-label="STAR CATCH — go to home page"
+            className="flex items-center gap-2.5 cursor-pointer text-left"
+          >
             <div className="w-9 h-9 rounded-xl bg-[#16A34A]/15 flex items-center justify-center">
               <Star className="w-5 h-5 text-[#16A34A] fill-[#16A34A]" />
             </div>
@@ -216,7 +221,7 @@ export default function AdminDashboard() {
               <span className="font-bold text-base text-white tracking-wide leading-tight">STAR CATCH</span>
               <span className="text-[10px] text-[#A1A1AA] tracking-wider leading-tight">Reviews and Feedback Agency Bd</span>
             </div>
-          </div>
+          </button>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20">
               <Shield className="w-3.5 h-3.5 text-red-400" />

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useModalKeyboard } from "@/hooks/useModalKeyboard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +16,8 @@ interface TrialExpiredModalProps {
 }
 
 export function TrialExpiredModal({ open, onClose, onSuccess }: TrialExpiredModalProps) {
+  // Escape closes, focus enters on open and returns to the trigger on close.
+  useModalKeyboard(open, onClose);
   const [senderNumber, setSenderNumber] = useState("");
   const [trxId, setTrxId] = useState("");
   const [submitted, setSubmitted] = useState(false);

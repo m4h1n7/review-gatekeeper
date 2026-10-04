@@ -279,8 +279,10 @@ export default function AccountSettings() {
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <div
-            className="flex items-center gap-2.5 cursor-pointer"
+          <button
+            type="button"
+            aria-label="STAR CATCH — go to home page"
+            className="flex items-center gap-2.5 cursor-pointer text-left"
             onClick={() => navigate("/")}
           >
             <div className="w-9 h-9 rounded-xl bg-[#16A34A]/15 flex items-center justify-center">
@@ -294,7 +296,7 @@ export default function AccountSettings() {
                 Reviews and Feedback Agency Bd
               </span>
             </div>
-          </div>
+          </button>
         </div>
       </nav>
 

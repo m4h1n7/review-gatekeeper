@@ -547,9 +547,14 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
             <>
               <CardHeader className="text-center pb-4">
                 <div className="flex justify-center">
-                  <div className="w-14 h-14 rounded-xl bg-[#16A34A]/15 flex items-center justify-center mb-2 cursor-pointer" onClick={() => navigate("/")}>
-                    <Star className="w-7 h-7 text-[#16A34A] fill-[#16A34A]" />
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => navigate("/")}
+                    aria-label="STAR CATCH — go to home page"
+                    className="w-14 h-14 rounded-xl bg-[#16A34A]/15 flex items-center justify-center mb-2 cursor-pointer"
+                  >
+                    <Star className="w-7 h-7 text-[#16A34A] fill-[#16A34A]" aria-hidden="true" />
+                  </button>
                 </div>
                 <CardTitle className="text-xl text-white">Welcome Back</CardTitle>
                 <CardDescription className="text-[#A1A1AA]">
@@ -630,9 +635,14 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
             <>
               <CardHeader className="text-center pb-4">
                 <div className="flex justify-center">
-                  <div className="w-14 h-14 rounded-xl bg-[#16A34A]/15 flex items-center justify-center mb-2 cursor-pointer" onClick={() => navigate("/")}>
-                    <Star className="w-7 h-7 text-[#16A34A] fill-[#16A34A]" />
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => navigate("/")}
+                    aria-label="STAR CATCH — go to home page"
+                    className="w-14 h-14 rounded-xl bg-[#16A34A]/15 flex items-center justify-center mb-2 cursor-pointer"
+                  >
+                    <Star className="w-7 h-7 text-[#16A34A] fill-[#16A34A]" aria-hidden="true" />
+                  </button>
                 </div>
                 <CardTitle className="text-xl text-white">Create Account</CardTitle>
                 <CardDescription className="text-[#A1A1AA]">

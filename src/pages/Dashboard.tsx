@@ -393,12 +393,17 @@ export default function Dashboard() {
       {/* Navbar */}
       <nav className="relative z-20 px-4 sm:px-6 py-4 border-b border-white/5">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => navigate("/")}>
+          <button
+            type="button"
+            onClick={() => navigate("/")}
+            aria-label="STAR CATCH — go to home page"
+            className="flex items-center gap-2.5 cursor-pointer text-left"
+          >
             <div className="w-8 h-8 rounded-lg bg-[#16A34A] flex items-center justify-center shadow-lg shadow-[#16A34A]/25">
               <Star className="w-4 h-4 text-white fill-white" />
             </div>
             <span className="font-bold text-sm text-white tracking-wide">STAR CATCH</span>
-          </div>
+          </button>
           <div className="flex items-center gap-2 overflow-x-auto flex-nowrap">
             {/* Real-time Notification Bell */}
             <NotificationBell

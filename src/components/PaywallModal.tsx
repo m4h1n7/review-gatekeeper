@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useModalKeyboard } from "@/hooks/useModalKeyboard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,6 +27,8 @@ interface PaywallModalProps {
 }
 
 export function PaywallModal({ open, onClose, onSuccess, reason, plan: initialPlan }: PaywallModalProps) {
+  // Escape closes, focus enters on open and returns to the trigger on close.
+  useModalKeyboard(open, onClose);
   const [selectedPlan, setSelectedPlan] = useState<"starter" | "pro">(initialPlan ?? "pro");
   const [senderNumber, setSenderNumber] = useState("");
   const [trxId, setTrxId] = useState("");

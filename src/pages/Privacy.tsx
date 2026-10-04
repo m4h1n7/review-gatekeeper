@@ -99,12 +99,17 @@ export default function Privacy() {
 
       <nav className="relative z-20 px-4 sm:px-6 py-5 border-b border-white/5">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => navigate("/")}>
+          <button
+            type="button"
+            onClick={() => navigate("/")}
+            aria-label="STAR CATCH — go to home page"
+            className="flex items-center gap-2.5 cursor-pointer text-left"
+          >
             <div className="w-8 h-8 rounded-lg bg-[#16A34A] flex items-center justify-center shadow-lg shadow-[#16A34A]/25">
               <Star className="w-4 h-4 text-white fill-white" />
             </div>
             <span className="font-bold text-sm text-white tracking-wide">STAR CATCH</span>
-          </div>
+          </button>
           <Button variant="outline" size="sm" onClick={() => navigate(-1)} className="border-white/10 bg-white/5 hover:bg-white/10 text-[#A1A1AA] cursor-pointer text-xs">
             <ArrowLeft className="w-3.5 h-3.5 mr-1.5" /> Back
           </Button>

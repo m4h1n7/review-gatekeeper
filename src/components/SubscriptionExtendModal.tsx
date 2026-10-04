@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useModalKeyboard } from "@/hooks/useModalKeyboard";
 import { X, Calendar, ChevronRight, Clock, Crown, Star } from "lucide-react";
 
 interface SubscriptionExtendModalProps {
@@ -34,6 +35,8 @@ export default function SubscriptionExtendModal({
   currentPlan = "pro",
   processing,
 }: SubscriptionExtendModalProps) {
+  // Escape closes, focus enters on open and returns to the trigger on close.
+  useModalKeyboard(open, onClose);
   const [selectedDays, setSelectedDays] = useState<number>(30);
   const [customDays, setCustomDays] = useState("");
   const [isCustom, setIsCustom] = useState(false);
