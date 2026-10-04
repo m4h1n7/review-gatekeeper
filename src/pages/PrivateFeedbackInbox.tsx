@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { useNavigate } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
+import { isSuperAdmin } from "@/components/SuperAdminGuard";
 import {
   Inbox,
   MessageCircle,
@@ -13,6 +14,7 @@ import {
   Clock,
   Filter,
   ArrowLeft,
+  ArrowRight,
   Search,
   Sparkles,
   Send,
@@ -21,6 +23,7 @@ import {
   X,
   ChevronDown,
   AlertTriangle,
+  Lock,
   Star,
   Users,
 } from "lucide-react";
@@ -113,6 +116,18 @@ export default function PrivateFeedbackInbox() {
       : "skip"
   );
   const toggleStatus = useMutation(api.feedback.toggleStatus);
+  const subscription = useQuery(api.subscriptions.getCurrent);
+
+  /* ─── AI Response feature gate ───
+     Business Pro only. Mirrors the convention already used in Dashboard.tsx:
+     an explicit allow-list of plans, so anything unrecognised (Starter, no
+     plan, pending payment, expired) keeps the feature hidden rather than
+     accidentally exposing it. `undefined` while the query loads is treated as
+     NOT allowed, so the button never flashes into view for a Starter user. */
+  const canUseAI =
+    isSuperAdmin(user?.email) ||
+    subscription?.plan === "pro" ||
+    subscription?.plan === "trial";
 
   const handleSignOut = async () => {
     await signOut();
@@ -174,6 +189,9 @@ export default function PrivateFeedbackInbox() {
   );
 
   const handleGenerateAI = useCallback((fb: FeedbackItem) => {
+    // Belt-and-braces guard: the UI is already gated, but a direct call must
+    // not produce an AI response for a plan that does not include it.
+    if (!canUseAI) return;
     setAiGenerating(fb.id);
     setAiResponse(null);
     // Simulate AI generation with a delay
@@ -183,7 +201,7 @@ export default function PrivateFeedbackInbox() {
       setAiResponse(response);
       setAiGenerating(null);
     }, 1500);
-  }, []);
+  }, [canUseAI]);
 
   const handleCopyResponse = useCallback(() => {
     if (aiResponse) {
@@ -523,33 +541,57 @@ export default function PrivateFeedbackInbox() {
                                 <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-[#A1A1AA]/40 pointer-events-none" />
                               </div>
 
-                              {/* AI Generate Button */}
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleGenerateAI(fb);
-                                }}
-                                disabled={aiGenerating === fb.id}
-                                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-semibold hover:bg-purple-500/20 transition-all cursor-pointer disabled:opacity-50"
-                              >
-                                {aiGenerating === fb.id ? (
-                                  <>
-                                    <div className="w-3 h-3 border-2 border-purple-400/30 border-t-purple-400 rounded-full animate-spin" />
-                                    Generating...
-                                  </>
-                                ) : (
-                                  <>
-                                    <Sparkles className="w-3.5 h-3.5" />
-                                    Generate AI Response
-                                  </>
-                                )}
-                              </button>
+                              {/* AI Generate Button — Business Pro only */}
+                              {canUseAI ? (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleGenerateAI(fb);
+                                  }}
+                                  disabled={aiGenerating === fb.id}
+                                  className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-semibold hover:bg-purple-500/20 transition-all cursor-pointer disabled:opacity-50"
+                                >
+                                  {aiGenerating === fb.id ? (
+                                    <>
+                                      <div className="w-3 h-3 border-2 border-purple-400/30 border-t-purple-400 rounded-full animate-spin" />
+                                      Generating...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Sparkles className="w-3.5 h-3.5" />
+                                      Generate AI Response
+                                    </>
+                                  )}
+                                </button>
+                              ) : (
+                                /* Starter: no purple button at all — just a
+                                   compact upgrade affordance that sits in the
+                                   same flex row, so the status dropdown keeps
+                                   its position and spacing. */
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate("/pricing");
+                                  }}
+                                  title="Generate AI Response is a Business Pro feature"
+                                  className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg border border-[#16A34A]/25 bg-[#16A34A]/10 text-[#16A34A] text-[10px] font-bold uppercase tracking-wider hover:bg-[#16A34A]/20 transition-colors cursor-pointer whitespace-nowrap"
+                                >
+                                  <Lock className="w-3 h-3" aria-hidden="true" />
+                                  AI Response
+                                  <span className="px-1.5 py-px rounded bg-[#16A34A]/20 text-[9px]">
+                                    PRO
+                                  </span>
+                                  <ArrowRight className="w-3 h-3" aria-hidden="true" />
+                                </button>
+                              )}
 
                               {/* WhatsApp Reply */}
                               {fb.phone && fb.phone !== "N/A" && (
                                 <a
                                   href={`https://wa.me/${fb.phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(
-                                    aiResponse || `Hi ${fb.customerName},\n\nThank you for your feedback. We take all customer input seriously and are working to improve your experience.\n\nWarm regards,\n${businessName}`
+                                    (canUseAI && aiResponse) || `Hi ${fb.customerName},\n\nThank you for your feedback. We take all customer input seriously and are working to improve your experience.\n\nWarm regards,\n${businessName}`
                                   )}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
@@ -557,14 +599,17 @@ export default function PrivateFeedbackInbox() {
                                   className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-[#25D366]/10 border border-[#25D366]/20 text-[#25D366] text-xs font-semibold hover:bg-[#25D366]/20 transition-colors cursor-pointer"
                                 >
                                   <MessageCircle className="w-3.5 h-3.5" />
-                                  {aiResponse ? "Send AI Reply" : "Reply via WhatsApp"}
+                                  {canUseAI && aiResponse ? "Send AI Reply" : "Reply via WhatsApp"}
                                 </a>
                               )}
                             </div>
 
-                            {/* AI Response Display */}
+                            {/* AI Response Display — Business Pro only. Gated
+                                independently of the button so no draft text,
+                                Copy or Regenerate control is ever rendered for
+                                a plan that does not include the feature. */}
                             <AnimatePresence>
-                              {aiResponse && selectedFeedback?.id === fb.id && (
+                              {canUseAI && aiResponse && selectedFeedback?.id === fb.id && (
                                 <motion.div
                                   initial={{ opacity: 0, y: 8 }}
                                   animate={{ opacity: 1, y: 0 }}
