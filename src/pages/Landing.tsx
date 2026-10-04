@@ -293,7 +293,7 @@ export default function Landing() {
                 Smart Review Gatekeeper
                 <br />That Keeps You{' '}
                 <span className="bg-gradient-to-r from-[#16A34A] via-emerald-400 to-green-300 bg-clip-text text-transparent">
-                  100% Compliant
+                  Compliant by Design
                 </span>
               </motion.h1>
 
@@ -304,8 +304,8 @@ export default function Landing() {
                 className="mt-5 sm:mt-6 text-lg text-[#A1A1AA] max-w-xl leading-relaxed"
               >
                 Give customers a seamless choice to leave a public Google review or send
-                private feedback directly to management — protecting your reputation while
-                staying 100% Google ToS Compliant.
+                private feedback directly to management — capturing unhappy customers before
+                they reach Google, and keeping your review flow aligned with Google's terms.
               </motion.p>
 
               <motion.div
@@ -513,13 +513,19 @@ export default function Landing() {
               desc={t.analyticsDesc}
               index={2}
               demo={
-                <div className="grid grid-cols-2 gap-2">
-                  {[{ label: "Total Scans", value: "1,247", color: "text-white" }, { label: "Google Redirects", value: "89%", color: "text-[#16A34A]" }, { label: "Private Captured", value: "11%", color: "text-amber-400" }, { label: "Staff Leader", value: "Rahim", color: "text-emerald-300" }].map(m => (
-                    <div key={m.label} className="rounded-lg bg-white/[0.04] border border-white/[0.06] p-2.5">
-                      <p className="text-[10px] text-zinc-500 mb-0.5">{m.label}</p>
-                      <p className={`text-sm font-bold ${m.color}`}>{m.value}</p>
-                    </div>
-                  ))}
+                <div className="space-y-2">
+                  <p className="text-[10px] text-zinc-500 flex items-center gap-1.5">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-zinc-600" aria-hidden="true" />
+                    Sample dashboard — illustrative layout, not client results
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[{ label: "Total Scans", value: "—", color: "text-white" }, { label: "Google Redirects", value: "—", color: "text-[#16A34A]" }, { label: "Private Captured", value: "—", color: "text-amber-400" }, { label: "Staff Leader", value: "—", color: "text-emerald-300" }].map(m => (
+                      <div key={m.label} className="rounded-lg bg-white/[0.04] border border-white/[0.06] p-2.5">
+                        <p className="text-[10px] text-zinc-500 mb-0.5">{m.label}</p>
+                        <p className={`text-sm font-bold ${m.color}`}>{m.value}</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               }
             />
