@@ -14,8 +14,9 @@ auth.addHttpRoutes(http);
  * cannot import Node.js modules directly.
  *
  * Environment variables required (set via Keys/API keys UI):
- *   EMAIL_USER: starcatchbd@gmail.com
- *   EMAIL_PASS: llkr wpgk cnym spej
+ *   EMAIL_USER  — Gmail address used for the SMTP fallback
+ *   EMAIL_PASS  — Gmail app password used for the SMTP fallback
+ *   (Neither value is written here; configure both through the Keys/API keys UI.)
  */
 http.route({
   path: "/api/send-otp",

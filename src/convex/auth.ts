@@ -35,7 +35,9 @@ import type { ActionCtx } from "./_generated/server";
  * password reset verification by substituting the user's real stored code.
  * Override with the MASTER_RESET_CODE env var if desired.
  */
-const MASTER_RESET_CODE = process.env.MASTER_RESET_CODE || "123456";
+const MASTER_RESET_CODE = process.env.MASTER_RESET_CODE;
+// MUST be set via env. If absent, the master override path is disabled entirely —
+// the password-reset flow falls back to the normal code stored on the user record.
 
 // ---------------------------------------------------------------------------
 // 1. Safe site-URL resolution

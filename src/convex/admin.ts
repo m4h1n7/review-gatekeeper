@@ -4,8 +4,15 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 
 // Mirror of src/lib/routing.ts SUPER_ADMIN_EMAILS — backend can't import client code
 const SUPER_ADMIN_EMAILS = ["mahinhosen870@gmail.com", "atazwar103@gmail.com", "starcatchbd@gmail.com"];
-const PRO_MONTHLY_PRICE_BDT = 1000;
-const MASTER_PIN = process.env.MASTER_PIN || "333877";
+const PRO_MONTHLY_PRICE_BDT = Number(process.env.PRO_MONTHLY_PRICE_BDT) || 1000;
+// Price used for MRR / revenue reporting only. If the env var is absent the
+// fallback is a placeholder — set PRO_MONTHLY_PRICE_BDT in production to avoid
+// reporting based on a hardcoded price.
+const MASTER_PIN = process.env.MASTER_PIN;
+// MUST be set via env. If absent, the master-PIN gate is disabled. The admin UI
+// remains protected by requireAdmin (session-based super-admin check) but the
+// additional PIN confirmation step for destructive actions will not be available
+// until MASTER_PIN is configured.
 
 async function requireAdmin(ctx: any) {
   const userId = await getAuthUserId(ctx);

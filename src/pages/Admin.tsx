@@ -52,7 +52,11 @@ import {
 import { QRCodeSVG } from "qrcode.react";
 import SubscriptionExtendModal from "@/components/SubscriptionExtendModal";
 
-const SUPER_ADMIN_EMAILS = ["mahinhosen870@gmail.com", "atazwar103@gmail.com", "starcatchbd@gmail.com"];
+// Super-admin membership is authoritative server-side (convex/admin.ts).
+// Keep any client-side reference to the list out of this file — the route is
+// already gated by SuperAdminGuard + requireAdmin(), so this constant is unused
+// and has been removed to avoid carrying a hardcoded admin allow-list in the
+// browser bundle.
 
 function GlassPanel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (

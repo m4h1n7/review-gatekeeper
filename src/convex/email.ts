@@ -19,10 +19,15 @@
 import { action } from "./_generated/server";
 import { v } from "convex/values";
 
-/** Default verified sender: "StarCatch BD <mahinhosen870@gmail.com>" */
-const DEFAULT_FROM_NAME = "StarCatch BD";
-const DEFAULT_FROM_EMAIL = "mahinhosen870@gmail.com";
-const PLATFORM_ADMIN_EMAIL = "mahinhosen870@gmail.com";
+/**
+ * Default verified sender. MUST be configurable via env so production can use a
+ * verified domain rather than a personal Gmail address. The same env-driven
+ * default is used for the platform admin copy target so alerts don't silently
+ * go to a hardcoded personal address.
+ */
+const DEFAULT_FROM_NAME = process.env.DEFAULT_FROM_NAME || "StarCatch BD";
+const DEFAULT_FROM_EMAIL = process.env.DEFAULT_FROM_EMAIL || "starcatch@example.com";
+const PLATFORM_ADMIN_EMAIL = process.env.PLATFORM_ADMIN_EMAIL || "starcatch@example.com";
 
 /**
  * Build the From header.

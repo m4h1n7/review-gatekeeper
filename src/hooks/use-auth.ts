@@ -12,10 +12,12 @@ export function useAuth() {
   // Derive isLoading directly from the dependencies instead of managing separate state
   const isLoading = isAuthLoading || user === undefined;
 
-  // Auto-assign super_admin role when mahinhosen870@gmail.com signs in
+  // Auto-assign admin role on sign-in when the server says this user is a super admin.
+  // The authoritative admin allow-list lives server-side (convex/admin.ts +
+  // convex/users.ts). Do NOT duplicate it here — the client must never carry the
+  // list of admin emails.
   useEffect(() => {
-    const adminEmails = ["mahinhosen870@gmail.com", "atazwar103@gmail.com", "starcatchbd@gmail.com"];
-    if (isAuthenticated && user && adminEmails.includes(user.email?.toLowerCase() ?? "") && user.role !== "admin") {
+    if (isAuthenticated && user && user.role !== "admin") {
       ensureSuperAdminRole().catch(() => {
         // Silently fail — role assignment will retry on next visit
       });
