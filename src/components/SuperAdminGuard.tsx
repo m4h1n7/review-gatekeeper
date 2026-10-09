@@ -3,33 +3,28 @@ import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { useNavigate } from "react-router";
-import { Shield, Star } from "lucide-react";
-import { isAdminEmail } from "@/lib/routing";
+import { Shield } from "lucide-react";
 
-/** Re-export for backward compatibility — prefer isAdminEmail from @/lib/routing */
-export function isSuperAdmin(email?: string | null): boolean {
-  return isAdminEmail(email);
-}
-
+/**
+ * SuperAdminGuard keeps the admin shell from rendering until the signed-in
+ * session is confirmed to be a super admin. The client never holds the
+ * super-admin allow-list, so the only source of truth here is the server-side
+ * role query exported from Convex.
+ */
 export function SuperAdminGuard({ children }: { children: React.ReactNode }) {
   const { isLoading: authLoading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const user = useQuery(api.users.currentUser);
   const isAdmin = useQuery(api.users.isSuperAdminUser);
 
-  const isLoading = authLoading || user === undefined || isAdmin === undefined;
-  // Check both email (client-side, instant) and role (database, persistent)
-  const admin =
-    isSuperAdmin(user?.email) ||
-    (isAdmin === true);
+  const isLoading = authLoading || isAdmin === undefined;
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       navigate("/auth?returnTo=/admin");
-    } else if (!isLoading && isAuthenticated && user !== undefined && !admin) {
+    } else if (!isLoading && isAuthenticated && !isAdmin) {
       navigate("/dashboard");
     }
-  }, [isLoading, isAuthenticated, admin, user, navigate]);
+  }, [isLoading, isAuthenticated, isAdmin, navigate]);
 
   if (isLoading) {
     return (
@@ -42,7 +37,7 @@ export function SuperAdminGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!admin) {
+  if (!isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#0D0D0D]">
         <div className="text-center">

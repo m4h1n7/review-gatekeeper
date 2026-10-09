@@ -6,6 +6,7 @@ import {
   ShieldCheck, User, Building2, MessageSquare, Activity, CreditCard,
   Users, Bell, X, Ban, ChevronDown, ListChecks,
 } from "lucide-react";
+import { COMPANY_EMAIL } from "@/lib/contacts";
 
 /**
  * "What User Data We Collect" — a single source of truth for data transparency.
@@ -518,6 +519,11 @@ function CategoryAccordion({ category }: { category: DataCategory }) {
 
 /** Inline block for use inside a page (e.g. the Privacy Policy). */
 export function DataCollectionBlock() {
+  // COMPANY_EMAIL defaults to starcatchbd@gmail.com when the env var is unset,
+  // so existing UI behaviour is preserved until env vars are configured.
+  const companyEmail = COMPANY_EMAIL;
+  const dataPrivacyEmail = `mailto:${companyEmail}?subject=Data%20Privacy%20Request`;
+  const companyEmailLink = `mailto:${companyEmail}`;
   return (
     <div className="space-y-6">
       <div className="flex items-start gap-3 p-4 rounded-xl border border-[#16A34A]/20 bg-[#16A34A]/5">
@@ -535,9 +541,8 @@ export function DataCollectionBlock() {
       <NotCollectedBlock />
 
       <p className="text-[11px] text-[#71717A] leading-relaxed">
-        To access, correct, export or delete any of this data, email{" "}
-        <a href="mailto:starcatchbd@gmail.com" className="text-[#16A34A] hover:underline">
-          starcatchbd@gmail.com
+        To access, correct, export or delete any of this data, email{" "}          <a href={companyEmailLink} className="text-[#16A34A] hover:underline">
+          {companyEmail}
         </a>{" "}
         with the subject line "Data Privacy Request". See our{" "}
         <a href="/privacy" className="text-[#16A34A] hover:underline">Privacy Policy</a> for the full process.
@@ -612,9 +617,7 @@ export function DataCollectionModal({ open, onClose }: { open: boolean; onClose:
                 <CategoryAccordion key={c.id} category={c} />
               ))}
 
-              <NotCollectedBlock />
-
-              <div className="flex flex-col sm:flex-row gap-2 pt-1">
+              <NotCollectedBlock />              <div className="flex flex-col sm:flex-row gap-2 pt-1">
                 <button
                   type="button"
                   onClick={() => {
@@ -626,7 +629,7 @@ export function DataCollectionModal({ open, onClose }: { open: boolean; onClose:
                   Read the full Privacy Policy
                 </button>
                 <a
-                  href="mailto:starcatchbd@gmail.com?subject=Data%20Privacy%20Request"
+                  href={`mailto:${COMPANY_EMAIL}?subject=Data%20Privacy%20Request`}
                   className="flex-1 h-10 rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.07] text-[#A1A1AA] hover:text-white text-xs font-medium flex items-center justify-center transition-colors"
                 >
                   Request a copy of my data

@@ -1,8 +1,7 @@
 import { mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
-
-const SUPER_ADMIN_EMAILS = ["mahinhosen870@gmail.com", "atazwar103@gmail.com", "starcatchbd@gmail.com"];
+import { SUPER_ADMIN_EMAILS } from "./users";
 
 /**
  * Admin-only: Send trial reminders to all trial accounts on Day 8 or Day 10.

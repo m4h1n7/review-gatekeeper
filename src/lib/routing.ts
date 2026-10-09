@@ -1,90 +1,83 @@
+import React from "react";
+import { Navigate, useLocation } from "react-router";
+import { useAuth } from "@/hooks/use-auth";
+import { api } from "@/convex/_generated/api";
+import { useQuery } from "convex/react";
+import { Shield, Lock } from "lucide-react";
+
 /**
- * Role-Based + Plan-Aware Routing
+ * Super admin allow-list routing helper.
  *
- * Centralises every redirect decision so RequireAuth, Auth, and Landing
- * all agree on the same destination for a given user.
+ * IMPORTANT: this module intentionally no longer holds the allow-list. The
+ * canonical server-side list lives in src/convex/users.ts and is env-driven.
+ * Client-side isAdminEmail always returns false so the allow-list never leaks
+ * into the browser bundle. Any route/provisional UI that needs super-admin
+ * gating must still be enforced server-side in Convex.
  */
-
-const SUPER_ADMIN_EMAILS = [
-  "mahinhosen870@gmail.com",
-  "atazwar103@gmail.com",
-  "starcatchbd@gmail.com",
-];
-
-export function isAdminEmail(email?: string | null): boolean {
-  return SUPER_ADMIN_EMAILS.includes(email?.toLowerCase() ?? "");
+export function isAdminEmail(_email?: string | null): boolean {
+  return false;
 }
 
-interface RoutingContext {
-  /** Whether the user is authenticated */
-  isAuthenticated: boolean;
-  /** The user's email (null if not logged in or unknown) */
-  email?: string | null;
-  /** The user's DB role ("admin" | "user" | null) */
-  role?: string | null;
-  /** Whether the user has completed onboarding (super admins always skip) */
-  onboardingDone?: boolean | null;
-  /** Subscription plan: "free" | "trial" | "starter" | "pro" | null */
-  plan?: string | null;
-  /** Subscription status: "active" | "pending" | "cancelled" | null */
-  status?: string | null;
-  /** Absolute timestamp when the plan expires */
-  expiresAt?: number | null;
-  /** Account status: "active" | "suspended" | "deleted" | null */
-  accountStatus?: string | null;
+export function ProtectedRoute({
+  children,
+  adminOnly = false,
+}: {
+  children: React.ReactNode;
+  adminOnly?: boolean;
+}) {
+  const { isAuthenticated, isLoading } = useAuth();
+  const location = useLocation();
+  const isAdmin = useQuery(api.users.isSuperAdminUser);
+
+  if (isLoading || isAuthenticated === undefined) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#0D0D0D]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-3 border-[#16A34A]/30 border-t-[#16A34A] rounded-full animate-spin" />
+          <p className="text-[#A1A1AA] text-sm">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/auth" state={{ from: location }} replace />;
+  }
+
+  if (adminOnly && !isAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#0D0D0D]">
+        <div className="text-center">
+          <Shield className="w-12 h-12 text-red-400 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-white mb-2">Access Denied</h1>
+          <p className="text-[#A1A1AA] text-sm">
+            You do not have permission to access this page.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
 }
 
-export type Destination =
-  | { path: string; reason: string };
-
-/**
- * Decide where a user should be routed based on their full context.
- *
- * Priority order:
- *  1. Unauthenticated → /auth
- *  2. Suspended / deleted → blocked page (handled by RequireAuth inline)
- *  3. Super admin → /admin
- *  4. No onboarding → /onboarding
- *  5. Expired subscription → /pricing
- *  6. Otherwise → /dashboard (client) or /admin (admin)
- */
-export function resolveDestination(ctx: RoutingContext): Destination {
-  // 1. Not logged in
-  if (!ctx.isAuthenticated) {
-    return { path: "/auth", reason: "unauthenticated" };
-  }
-
-  const admin =
-    isAdminEmail(ctx.email) || ctx.role === "admin";
-
-  // 3. Super admin always → /admin
-  if (admin) {
-    return { path: "/admin", reason: "super_admin" };
-  }
-
-  // 4. Onboarding not completed → /onboarding
-  if (ctx.onboardingDone === false) {
-    return { path: "/onboarding", reason: "onboarding_pending" };
-  }
-
-  // 5. Subscription expired → /pricing
-  const now = Date.now();
-  const isExpired =
-    ctx.expiresAt !== undefined &&
-    ctx.expiresAt !== null &&
-    ctx.expiresAt < now;
-
-  if (isExpired && ctx.plan !== "free" && ctx.plan !== undefined && ctx.plan !== null) {
-    return { path: "/pricing", reason: "subscription_expired" };
-  }
-
-  // 6. Default for clients
-  return { path: "/dashboard", reason: "default_client" };
+export default function ProtectedRouteWrapper({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return <ProtectedRoute>{children}</ProtectedRoute>;
 }
 
 /**
- * Lightweight helper: should the user see the admin portal CTA?
+ * Inline block shown to non-admin users when they try to access admin routes.
+ * Used in the table of contents sidebar and navigation links.
  */
-export function shouldShowAdminCTA(email?: string | null, role?: string | null): boolean {
-  return isAdminEmail(email) || role === "admin";
+export function AdminOnlyNotice() {
+  return (
+    <div className="flex items-center gap-2 text-[#A1A1AA] text-xs">
+      <Lock className="w-3.5 h-3.5" />
+      <span>Admin only</span>
+    </div>
+  );
 }

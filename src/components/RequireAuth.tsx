@@ -4,6 +4,10 @@ import type { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router";
 import { useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
+// isAdminEmail is kept only for backward-compatible import paths.
+// The client never receives the super-admin allow-list; admin gating is
+// enforced server-side in Convex. At the client level this helper now
+// always returns false.
 import { isAdminEmail } from "@/lib/routing";
 
 /**

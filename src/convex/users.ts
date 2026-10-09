@@ -8,8 +8,29 @@ import {
 } from "./_generated/server";
 import { v } from "convex/values";
 
-// Mirror of src/lib/constants.ts — backend can't import client code
-const SUPER_ADMIN_EMAILS = ["mahinhosen870@gmail.com", "atazwar103@gmail.com", "starcatchbd@gmail.com"];
+// Super admin allow-list is configured via environment variable only.
+// Format: comma-separated emails, e.g. "admin1@example.com,admin2@example.com"
+// This list MUST NOT be mirrored in any client-side code.
+const SUPER_ADMIN_EMAILS_RAW =
+  process.env.SUPER_ADMIN_EMAILS ||
+  process.env.ADMIN_EMAILS ||
+  "";
+
+const SUPER_ADMIN_EMAILS_INTERNAL = SUPER_ADMIN_EMAILS_RAW
+  .split(",")
+  .map((e) => e.trim().toLowerCase())
+  .filter(Boolean);
+
+// Single source of truth for the server-side super-admin allow-list.
+// Other Convex modules import this from @/convex/users instead of repeating
+// the list or reading process.env directly.
+export const SUPER_ADMIN_EMAILS = SUPER_ADMIN_EMAILS_INTERNAL;
+
+if (process.env.NODE_ENV === "production" && SUPER_ADMIN_EMAILS.length === 0) {
+  console.error(
+    "[users] No SUPER_ADMIN_EMAILS configured. Set the env var before deploying."
+  );
+}
 
 /**
  * Get the current signed in user. Returns null if the user is not signed in.
@@ -231,10 +252,12 @@ export const sendSignupOtp = mutation({
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expiry = Date.now() + 15 * 60 * 1000; // 15 minutes
 
-    // IMMEDIATE FALLBACK: always visible in the terminal/logs regardless of
-    // whether the email actually delivers. Devs can complete verification
-    // with this code even when Gmail/SMTP is blocking messages.
-    console.log("=== OTP CODE ===", otp);
+    // OTP is stored on the user record (signupOtp) for server-side retrieval.
+    // In production, never log verification codes — they are sensitive auth material.
+    // During development, devs can read the code from the Convex dashboard / DB.
+    if (process.env.NODE_ENV !== "production") {
+      console.log("=== OTP CODE (dev only) ===", otp);
+    }
 
     await ctx.db.patch(userId, {
       signupOtp: otp,

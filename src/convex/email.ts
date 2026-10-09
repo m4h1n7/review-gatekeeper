@@ -26,8 +26,18 @@ import { v } from "convex/values";
  * go to a hardcoded personal address.
  */
 const DEFAULT_FROM_NAME = process.env.DEFAULT_FROM_NAME || "StarCatch BD";
-const DEFAULT_FROM_EMAIL = process.env.DEFAULT_FROM_EMAIL || "starcatch@example.com";
-const PLATFORM_ADMIN_EMAIL = process.env.PLATFORM_ADMIN_EMAIL || "starcatch@example.com";
+
+// Email configuration MUST come from environment variables only.
+// No fallback secrets: production without these env vars cannot send email.
+const DEFAULT_FROM_EMAIL = process.env.DEFAULT_FROM_EMAIL;
+const PLATFORM_ADMIN_EMAIL = process.env.PLATFORM_ADMIN_EMAIL;
+
+if (process.env.NODE_ENV === "production" && !DEFAULT_FROM_EMAIL) {
+  console.error("[email] DEFAULT_FROM_EMAIL is not set. Email sending will fail until configured.");
+}
+if (process.env.NODE_ENV === "production" && !PLATFORM_ADMIN_EMAIL) {
+  console.error("[email] PLATFORM_ADMIN_EMAIL is not set. Admin copy emails will not be sent.");
+}
 
 /**
  * Build the From header.
@@ -36,11 +46,17 @@ const PLATFORM_ADMIN_EMAIL = process.env.PLATFORM_ADMIN_EMAIL || "starcatch@exam
  *         > "StarCatch BD <mahinhosen870@gmail.com>" (required default).
  */
 function getFrom(): string {
-  return (
-    process.env.RESEND_FROM ||
-    process.env.DEFAULT_SENDER ||
-    `${DEFAULT_FROM_NAME} <${DEFAULT_FROM_EMAIL}>`
-  );
+  // Fallback chain: explicit Resend verified domain > manual sender override >
+  // default from email env var. If DEFAULT_FROM_EMAIL is unset, fail closed
+  // rather than sending from an unverified address.
+  if (process.env.RESEND_FROM) return process.env.RESEND_FROM;
+  if (process.env.DEFAULT_SENDER) return process.env.DEFAULT_SENDER;
+  if (!DEFAULT_FROM_EMAIL) {
+    throw new Error(
+      "Email From address is not configured: set DEFAULT_FROM_EMAIL (or RESEND_FROM / DEFAULT_SENDER)."
+    );
+  }
+  return `${DEFAULT_FROM_NAME} <${DEFAULT_FROM_EMAIL}>`;
 }
 
 /** True when a Resend API key is present and non-empty. */
@@ -64,6 +80,14 @@ function isSmtpConfigured(): boolean {
 /** True when any email provider is usable (drives the OTP dev-bypass). */
 export function isEmailConfigured(): boolean {
   return isResendConfigured() || isSmtpConfigured();
+}
+
+/** Returns the platform admin email address for admin-copy alerts, or null
+ *  when PLATFORM_ADMIN_EMAIL is not configured. Callers must guard against
+ *  null before sending admin-copy emails.
+ */
+export function getPlatformAdminEmail(): string | null {
+  return PLATFORM_ADMIN_EMAIL ?? null;
 }
 
 interface SendEmailParams {
@@ -307,10 +331,13 @@ export const sendNegativeFeedback = action({
       text: `New Private Feedback for ${args.businessName}\n\nRating: ${stars}\nCustomer: ${args.customerName}\n${args.customerPhone ? `Phone: ${args.customerPhone}\n` : ""}${args.customerEmail ? `Email: ${args.customerEmail}\n` : ""}\nFeedback: ${args.message}\n\nView in Dashboard: ${dashboardUrl}`,
     });
 
-    // Platform admin copy — fire-and-forget, never fails the owner alert
-    if (args.to.toLowerCase() !== PLATFORM_ADMIN_EMAIL.toLowerCase()) {
+    // Platform admin copy — fire-and-forget, never fails the owner alert.
+    // Only send when a platform admin email is configured and differs from the
+    // business owner's address.
+    const platformAdminEmail = getPlatformAdminEmail();
+    if (platformAdminEmail && args.to.toLowerCase() !== platformAdminEmail.toLowerCase()) {
       await sendEmail({
-        to: PLATFORM_ADMIN_EMAIL,
+        to: platformAdminEmail as string,
         subject: `\u26a0\ufe0f [Platform Copy] New Private Feedback for ${args.businessName}`,
         html: `
           <!DOCTYPE html>
@@ -421,7 +448,18 @@ export const sendPaymentRejected = action({
   handler: async (_ctx, args) => {
     const planLabel = args.plan === "starter" ? "Starter Plan" : args.plan === "pro" ? "Business Pro Plan" : "your plan";
     const reasonText = args.reason || "No reason provided.";
-    const supportUrl = `https://wa.me/8801673903919?text=${encodeURIComponent("Hi Star Catch team, I need help with my payment.")}`;
+    // Support contact must be configurable via env; never hardcode phone numbers
+    // or personal WhatsApp links in email templates.
+    const rawSupportPhone = process.env.SUPPORT_PHONE;
+    const supportPhone = rawSupportPhone?.replace(/\D/g, "") || "";
+    const supportUrl =
+      supportPhone
+        ? `https://wa.me/${supportPhone}?text=${encodeURIComponent("Hi Star Catch team, I need help with my payment.")}`
+        : null;
+
+    const supportInstruction = supportUrl
+      ? `<a href="${supportUrl}" style="display:inline-block;background:#16A34A;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;text-align:center;width:100%;box-sizing:border-box;">Contact Support on WhatsApp</a>`
+      : `<p style="margin:0 0 24px;color:#3f3f46;font-size:14px;line-height:1.6;">No support contact configured. Please contact the platform admin directly.</p>`;
 
     const result = await sendEmail({
       to: args.to,
@@ -446,7 +484,7 @@ export const sendPaymentRejected = action({
                     <p style="margin:0;color:#DC2626;font-size:14px;line-height:1.5;">${reasonText}</p>
                   </div>
                   <p style="margin:0 0 24px;color:#3f3f46;font-size:14px;line-height:1.6;">Please ensure your Transaction ID and sender phone number are correct, then try again.</p>
-                  <a href="${supportUrl}" style="display:inline-block;background:#16A34A;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;text-align:center;width:100%;box-sizing:border-box;">Contact Support on WhatsApp</a>
+                  ${supportInstruction}
                 </td></tr>
                 <tr><td style="background:#fafafa;border-top:1px solid #e4e4e7;padding:20px 32px;text-align:center;">
                   <p style="margin:0;color:#d4d4d8;font-size:10px;">STAR CATCH Reviews &amp; Feedback Agency Bd</p>
@@ -457,7 +495,7 @@ export const sendPaymentRejected = action({
         </body>
         </html>
       `,
-      text: `Hi ${args.clientName || "there"},\n\nYour payment for ${planLabel} was not verified.\nReason: ${reasonText}\n\nPlease resubmit with correct details or contact support.\nWhatsApp: https://wa.me/8801673903919\n\nSTAR CATCH Reviews & Feedback Agency Bd`,
+      text: `Hi ${args.clientName || "there"},\n\nYour payment for ${planLabel} was not verified.\nReason: ${reasonText}\n\nPlease resubmit with correct details or contact support.\n${supportUrl ? `WhatsApp: ${supportUrl}` : "Contact the platform admin directly."}\n\nSTAR CATCH Reviews & Feedback Agency Bd`,
     });
 
     return { ok: result.ok, provider: result.provider, error: result.error };
@@ -562,8 +600,14 @@ export const sendTrialReminder = action({
 export const testEmailProviders = action({
   args: {},
   handler: async () => {
+    const adminEmail = getPlatformAdminEmail();
+    if (!adminEmail) {
+      throw new Error(
+        "PLATFORM_ADMIN_EMAIL is not configured. Set it before running the email integration test."
+      );
+    }
     const result = await sendEmail({
-      to: PLATFORM_ADMIN_EMAIL,
+      to: adminEmail,
       subject: "\u2705 STAR CATCH Email Integration Test — " + (isResendConfigured() ? "Resend" : "SMTP"),
       html: `
         <!DOCTYPE html>

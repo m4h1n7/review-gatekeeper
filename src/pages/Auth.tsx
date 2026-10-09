@@ -15,6 +15,10 @@ import {
 } from "@/components/ui/input-otp";
 import { useAuth } from "@/hooks/use-auth";
 import { isSuperAdmin } from "@/components/SuperAdminGuard";
+// isAdminEmail is kept only for backward-compatible import paths.
+// The client never receives the super-admin allow-list; admin gating is
+// enforced server-side in Convex. At the client level this helper now
+// always returns false.
 import { isAdminEmail } from "@/lib/routing";
 
 import { useAction, useMutation, useQuery } from "convex/react";

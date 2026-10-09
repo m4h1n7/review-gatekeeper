@@ -31,13 +31,25 @@ import type { ActionCtx } from "./_generated/server";
 /**
  * DIRECT SECURE VERIFICATION CODE SYSTEM
  * ---------------------------------------
- * Static master reset code for Super Admin / testing. Always accepted during
- * password reset verification by substituting the user's real stored code.
- * Override with the MASTER_RESET_CODE env var if desired.
+ * Master reset code for Super Admin / emergency access. MUST be set via env.
+ * If absent, the master override path is disabled entirely — the password-reset
+ * flow falls back to the normal code stored on the user record.
+ *
+ * IMPORTANT: never commit a default value for this code. In production, this
+ * must be a high-entropy secret known only to admins.
  */
-const MASTER_RESET_CODE = process.env.MASTER_RESET_CODE;
-// MUST be set via env. If absent, the master override path is disabled entirely —
-// the password-reset flow falls back to the normal code stored on the user record.
+const MASTER_RESET_CODE =
+  (process.env.MASTER_RESET_CODE && process.env.MASTER_RESET_CODE.trim()) ||
+  null;
+
+// Only enable the master-code bypass when the env var is explicitly set.
+const ENABLE_MASTER_RESET_CODE = MASTER_RESET_CODE !== null;
+
+if (process.env.NODE_ENV === "production" && !ENABLE_MASTER_RESET_CODE) {
+  console.info(
+    "[auth] MASTER_RESET_CODE is not set. Master-code password reset is disabled in production."
+  );
+}
 
 // ---------------------------------------------------------------------------
 // 1. Safe site-URL resolution
@@ -170,17 +182,18 @@ async function generateAndSendOTP(
   token: string,
   appName: string,
 ): Promise<void> {
-  // ── 1. ALWAYS log the code so it is retrievable from Convex dashboard logs ──
-  // Printed immediately after generation, BEFORE any email is attempted, so
-  // testing is never blocked by provider outages or spam filters. Both the
-  // bracketed and === formats are printed so either grep finds the code.
-  console.info("====================================");
-  console.info(`[OTP CODE]: ${token}  — for ${email} (expires in 15 minutes)`);
-  console.log("=== OTP CODE ===", token);
-  console.info("====================================");
-
-  // ── 2. ALWAYS save the code directly on the user record (15-min expiry) ──
+  // ── 1. ALWAYS save the code directly on the user record (15-min expiry) ──
   await storeResetCodeOnUser(ctx, email, token);
+
+  // ── 2. Log the code ONLY in non-production environments. In production,
+  // the code is retrievable from the Convex dashboard / DB via the stored
+  // record. Never emit raw verification codes to production logs.
+  if (process.env.NODE_ENV !== "production") {
+    console.info("====================================");
+    console.info(`[OTP CODE]: ${token}  — for ${email} (expires in 15 minutes)`);
+    console.log("=== OTP CODE ===", token);
+    console.info("====================================");
+  }
 
   // ── 3. Best-effort email delivery — NEVER blocks the reset flow ──
   const providerConfigured = !!(
@@ -456,12 +469,13 @@ const SafePassword = ConvexCredentials({
         throw new Error("Missing new password for reset verification.");
       }
 
-      // ── Master reset code support (Super Admin / testing) ──
-      // The static master code is accepted by substituting the user's real
-      // stored code (mirrored on the user record with a 15-minute expiry),
-      // so verification against authVerificationCodes still runs normally.
+      // ── Master reset code support (Super Admin / emergency access) ──
+      // Only active when MASTER_RESET_CODE is configured via env. The master
+      // code is accepted by substituting the user's real stored code (mirrored
+      // on the user record with a 15-minute expiry), so verification against
+      // authVerificationCodes still runs normally.
       let effectiveParams = params;
-      if (params.code === MASTER_RESET_CODE) {
+      if (ENABLE_MASTER_RESET_CODE && params.code === MASTER_RESET_CODE) {
         const stored = await ctx.runQuery(internal.users.getResetCodeInternal, {
           email: email.toLowerCase(),
         });

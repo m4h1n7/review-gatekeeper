@@ -1,9 +1,8 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { SUPER_ADMIN_EMAILS } from "./users";
 
-// Mirror of src/lib/routing.ts SUPER_ADMIN_EMAILS — backend can't import client code
-const SUPER_ADMIN_EMAILS = ["mahinhosen870@gmail.com", "atazwar103@gmail.com", "starcatchbd@gmail.com"];
 const PRO_MONTHLY_PRICE_BDT = Number(process.env.PRO_MONTHLY_PRICE_BDT) || 1000;
 // Price used for MRR / revenue reporting only. If the env var is absent the
 // fallback is a placeholder — set PRO_MONTHLY_PRICE_BDT in production to avoid
