@@ -1,4 +1,4 @@
-import React from "react";
+
 import { Navigate, useLocation } from "react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { api } from "@/convex/_generated/api";

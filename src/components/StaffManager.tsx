@@ -252,7 +252,7 @@ export default function StaffManager({
                       <div>
                         <p className="text-sm font-medium text-white">{staff.name}</p>
                         <p className="text-[10px] text-[#A1A1AA]">
-                          {staff.role || "Staff"} · /{businessSlug}?sid={staff.slug}
+                          {staff.role || "Staff"} — /{businessSlug}?sid={staff.slug}
                         </p>
                       </div>
                     </div>
